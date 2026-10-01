@@ -2,4 +2,4 @@
 
 Display | Name | Github Profile | Portfolio 
 --------|:----:|:--------------:|:---------:
-![] | Chua Jinghao
+![] | Chua Jinghao | [Github](https://github.com/jinghaochua) | [Portfolio](-)
