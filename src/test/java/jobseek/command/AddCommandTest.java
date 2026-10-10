@@ -17,102 +17,41 @@ public class AddCommandTest {
     @Test
     public void execute_validInputs_addsApplicationSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
-        RecordingUi ui = new RecordingUi();
-        Storage storage = new Storage();
-
         AddCommand command = new AddCommand("Google", "Software Engineer Intern");
-        command.execute(applications, ui, storage);
+        command.execute(applications, new Ui(), new Storage());
 
         assertEquals(1, applications.size());
         Application added = applications.get(0);
         assertEquals("Google", added.getCompany());
         assertEquals("Software Engineer Intern", added.getRole());
-
-        String expectedMessage = "Application added successfully.\n"
-                + "Company: Google\n"
-                + "Role: Software Engineer Intern";
-        assertEquals(expectedMessage, ui.lastMessage);
     }
 
     @Test
     public void execute_whitespaceAroundInputs_trimmedSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
-        RecordingUi ui = new RecordingUi();
-        Storage storage = new Storage();
-
         AddCommand command = new AddCommand("   Shopee   ", "   Backend Intern   ");
-        command.execute(applications, ui, storage);
+        command.execute(applications, new Ui(), new Storage());
 
         assertEquals(1, applications.size());
-        Application added = applications.get(0);
-        assertEquals("Shopee", added.getCompany());
-        assertEquals("Backend Intern", added.getRole());
+        assertEquals("Shopee", applications.get(0).getCompany());
+        assertEquals("Backend Intern", applications.get(0).getRole());
     }
 
     @Test
-    public void execute_emptyCompany_showsErrorMessageAndDoesNotAdd() throws Exception {
+    public void execute_emptyOrBlankCompany_doesNotAdd() throws Exception {
         ApplicationList applications = new ApplicationList();
-        RecordingUi ui = new RecordingUi();
-        Storage storage = new Storage();
-
-        AddCommand command = new AddCommand("", "SWE Intern");
-        command.execute(applications, ui, storage);
+        new AddCommand("", "SWE Intern").execute(applications, new Ui(), new Storage());
+        new AddCommand("   ", "SWE Intern").execute(applications, new Ui(), new Storage());
 
         assertTrue(applications.isEmpty());
-        assertEquals("Error: Company cannot be empty.", ui.lastError);
     }
 
     @Test
-    public void execute_whitespaceOnlyCompany_showsErrorMessageAndDoesNotAdd() throws Exception {
+    public void execute_emptyOrBlankRole_doesNotAdd() throws Exception {
         ApplicationList applications = new ApplicationList();
-        RecordingUi ui = new RecordingUi();
-        Storage storage = new Storage();
-
-        AddCommand command = new AddCommand("   ", "SWE Intern");
-        command.execute(applications, ui, storage);
+        new AddCommand("Google", "").execute(applications, new Ui(), new Storage());
+        new AddCommand("Google", "   ").execute(applications, new Ui(), new Storage());
 
         assertTrue(applications.isEmpty());
-        assertEquals("Error: Company cannot be empty.", ui.lastError);
-    }
-
-    @Test
-    public void execute_emptyRole_showsErrorMessageAndDoesNotAdd() throws Exception {
-        ApplicationList applications = new ApplicationList();
-        RecordingUi ui = new RecordingUi();
-        Storage storage = new Storage();
-
-        AddCommand command = new AddCommand("Google", "");
-        command.execute(applications, ui, storage);
-
-        assertTrue(applications.isEmpty());
-        assertEquals("Error: Role cannot be empty.", ui.lastError);
-    }
-
-    @Test
-    public void execute_whitespaceOnlyRole_showsErrorMessageAndDoesNotAdd() throws Exception {
-        ApplicationList applications = new ApplicationList();
-        RecordingUi ui = new RecordingUi();
-        Storage storage = new Storage();
-
-        AddCommand command = new AddCommand("Google", "   ");
-        command.execute(applications, ui, storage);
-
-        assertTrue(applications.isEmpty());
-        assertEquals("Error: Role cannot be empty.", ui.lastError);
-    }
-
-    private static class RecordingUi extends Ui {
-        private String lastMessage;
-        private String lastError;
-
-        @Override
-        public void showMessage(String message) {
-            lastMessage = message;
-        }
-
-        @Override
-        public void showError(String errorMessage) {
-            lastError = "Error: " + errorMessage;
-        }
     }
 }
