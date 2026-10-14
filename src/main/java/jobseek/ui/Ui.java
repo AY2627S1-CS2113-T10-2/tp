@@ -1,5 +1,7 @@
 package jobseek.ui;
 
+import jobseek.model.ApplicationList;
+
 import java.util.Scanner;
 
 /**
@@ -19,7 +21,16 @@ public class Ui {
      * Constructs a Ui object reading input from standard input.
      */
     public Ui() {
-        this.scanner = new Scanner(System.in);
+        this(new Scanner(System.in));
+    }
+
+    /**
+     * Constructs a Ui object reading input from the specified Scanner.
+     *
+     * @param scanner Scanner to read input from.
+     */
+    public Ui(Scanner scanner) {
+        this.scanner = scanner != null ? scanner : new Scanner(System.in);
     }
 
     /**
@@ -30,12 +41,21 @@ public class Ui {
     }
 
     /**
+     * Displays a prompt message to the user without a trailing newline.
+     *
+     * @param prompt The prompt message to display.
+     */
+    public void showPrompt(String prompt) {
+        System.out.print(prompt);
+    }
+
+    /**
      * Reads a full line of command input from the console.
      *
-     * @return The user command as a string, or an empty string if no input is available.
+     * @return The user command as a string, or null if no further input is available (EOF).
      */
     public String readCommand() {
-        return scanner.hasNextLine() ? scanner.nextLine() : "";
+        return scanner.hasNextLine() ? scanner.nextLine() : null;
     }
 
     /**
@@ -67,7 +87,58 @@ public class Ui {
         showLine();
         System.out.println(LOGO);
         System.out.println("Welcome to JobSeek - Personal Job & Internship Application Tracker!");
-        System.out.println("Type 'help' to see available commands.");
+        showLine();
+    }
+
+    /**
+     * Displays the Applications home page and menu options.
+     *
+     * @param applications The current list of applications to display.
+     */
+    public void showMenu(ApplicationList applications) {
+        showLine();
+        System.out.println("                         JOBSEEK");
+        showLine();
+        System.out.println("                     APPLICATIONS");
+        System.out.println();
+        showApplicationsSummary(applications);
+        System.out.println();
+        showMenuOptions();
+        showPrompt("Enter option:\n> ");
+    }
+
+    /**
+     * Displays the menu options without an application list.
+     */
+    public void showMenu() {
+        showMenu(null);
+    }
+
+    private void showApplicationsSummary(ApplicationList applications) {
+        if (applications == null || applications.isEmpty()) {
+            System.out.println("No applications found.");
+            System.out.println();
+            System.out.println("Add your first internship or job application.");
+            return;
+        }
+
+        for (int i = 0; i < applications.size(); i++) {
+            System.out.println((i + 1) + ". " + applications.get(i));
+        }
+        System.out.println();
+        int count = applications.size();
+        System.out.println(count + (count == 1 ? " application tracked." : " applications tracked."));
+    }
+
+    private void showMenuOptions() {
+        showLine();
+        System.out.println("[1] Add application");
+        System.out.println("[2] List applications");
+        System.out.println("[3] Delete application");
+        System.out.println("[4] Mark application as completed");
+        System.out.println("[5] Unmark application");
+        System.out.println("[6] Help");
+        System.out.println("[0] Exit");
         showLine();
     }
 
