@@ -6,13 +6,15 @@ import jobseek.model.ApplicationList;
  * Handles persistence by loading and saving job application data to local storage.
  */
 public class Storage {
+    private static final String DEFAULT_FILE_PATH = "data/applications.json";
+
     private String filePath;
 
     /**
      * Constructs a Storage instance with the default file path.
      */
     public Storage() {
-        this("data/applications.json");
+        this(DEFAULT_FILE_PATH);
     }
 
     /**
