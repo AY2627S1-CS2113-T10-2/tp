@@ -45,7 +45,13 @@ public class DeleteCommand extends Command {
             return;
         }
 
+        int sizeBefore = applications.size();
+
         Application application = applications.delete(targetIndex);
+
+        assert applications.size() == sizeBefore - 1
+                : "Deleting one application should reduce the list size by one";
+
         ui.showMessage("OK, I've deleted this application:\n  " + application);
         storage.save(applications);
     }
