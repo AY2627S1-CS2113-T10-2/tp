@@ -200,6 +200,7 @@ public class Main {
      * @param args Command line arguments (not used).
      */
     public static void main(String[] args) {
+        //assert false : "dummy assertion set to fail"; // Uncomment this line to test assertion failure handling
         new Main().run();
     }
 }
