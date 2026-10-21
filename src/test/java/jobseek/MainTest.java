@@ -7,6 +7,7 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.ViewCommand;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
@@ -362,6 +363,10 @@ public class MainTest {
         assertInstanceOf(MarkCommand.class, unmarkCmd);
         assertEquals(0, ((MarkCommand) unmarkCmd).getTargetIndex());
         assertFalse(((MarkCommand) unmarkCmd).isCompleted());
+
+        Command viewCmd = main.parseCommand("view 1");
+        assertInstanceOf(ViewCommand.class, viewCmd);
+        assertEquals(0, ((ViewCommand) viewCmd).getTargetIndex());
     }
 
     @Test

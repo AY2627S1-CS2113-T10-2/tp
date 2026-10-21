@@ -7,6 +7,8 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.ViewCommand;
+import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -112,6 +114,16 @@ public class Main {
         }
 
         String trimmedOption = option.trim();
+
+        if (trimmedOption.equalsIgnoreCase("view") || trimmedOption.toLowerCase().startsWith("view ")) {
+            try {
+                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                return ViewCommand.parse(args);
+            } catch (JobSeekException e) {
+                ui.showError(e.getMessage());
+                return null;
+            }
+        }
 
         switch (trimmedOption) {
         case "1":

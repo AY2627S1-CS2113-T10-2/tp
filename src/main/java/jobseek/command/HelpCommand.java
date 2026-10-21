@@ -19,6 +19,7 @@ public class HelpCommand extends Command {
     @Override
     public void execute(ApplicationList applications, Ui ui, Storage storage) {
         String helpMessage = "Available menu options:\n"
+                + "  view INDEX                      - View details for application at INDEX\n"
                 + "  [1] Add application             - Add a new internship or job application\n"
                 + "  [2] List applications           - View all applications in a numbered table\n"
                 + "  [3] Delete application          - Delete an application by index\n"
