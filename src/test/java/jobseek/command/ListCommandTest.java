@@ -38,18 +38,21 @@ public class ListCommandTest {
         assertTrue(lines[1].contains("Status"));
         assertTrue(lines[1].contains("Company"));
         assertTrue(lines[1].contains("Role"));
-        assertRow(lines[3], "1", "[ ]", "Acme", "SWE Intern");
-        assertRow(lines[4], "2", "[X]", "Longer Co", "Engineer");
+        assertTrue(lines[1].contains("Deadline"));
+        assertRow(lines[3], "1", "[ ]", "Acme", "SWE Intern", "-");
+        assertRow(lines[4], "2", "[X]", "Longer Co", "Engineer", "-");
         assertEquals(2, applications.size());
     }
 
-    private static void assertRow(String row, String number, String status, String company, String role) {
+    private static void assertRow(String row, String number, String status, String company, String role,
+            String deadline) {
         String[] columns = row.split(" \\| ");
-        assertEquals(4, columns.length);
+        assertEquals(5, columns.length);
         assertEquals(number, columns[0].trim());
         assertEquals(status, columns[1].trim());
         assertEquals(company, columns[2].trim());
         assertEquals(role, columns[3].trim());
+        assertEquals(deadline, columns[4].trim());
     }
 
     private static class RecordingUi extends Ui {
