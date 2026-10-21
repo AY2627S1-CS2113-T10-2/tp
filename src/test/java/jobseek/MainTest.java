@@ -35,15 +35,15 @@ public class MainTest {
     private final PrintStream standardOut = System.out;
     private ByteArrayOutputStream outputStream;
 
-    @BeforeEach
     /** Captures console output before each workflow test. */
+    @BeforeEach
     public void setUp() {
         outputStream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outputStream));
     }
 
-    @AfterEach
     /** Restores the original console output stream after each workflow test. */
+    @AfterEach
     public void tearDown() {
         System.setOut(standardOut);
     }
@@ -56,8 +56,8 @@ public class MainTest {
         return new Main(ui, storage, applications);
     }
 
-    @Test
     /** Verifies that selecting Exit terminates the application cleanly. */
+    @Test
     public void run_menuExitOption0_terminatesCleanly() {
         Main main = createMainWithInput("0\n", new ApplicationList());
         main.run();
@@ -67,8 +67,8 @@ public class MainTest {
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
     }
 
-    @Test
     /** Verifies that startup displays a warning for an upcoming active deadline. */
+    @Test
     public void run_upcomingIncompleteDeadline_showsStartupWarning() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false, LocalDate.now().plusDays(1)));
@@ -81,8 +81,8 @@ public class MainTest {
         assertTrue(output.contains("UPCOMING: Google - SWE Intern"));
     }
 
-    @Test
     /** Verifies that unsupported word commands show errors without ending the workflow. */
+    @Test
     public void run_typedWordsOnMenu_rejectedWithErrorMessage() {
         Main main = createMainWithInput("exit\nbye\nhelp\nlist\nadd\n0\n", new ApplicationList());
         main.run();
@@ -96,8 +96,8 @@ public class MainTest {
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
     }
 
-    @Test
     /** Verifies that the Help menu displays all supported options. */
+    @Test
     public void run_menuHelpOption6_showsHelpMessage() {
         Main main = createMainWithInput("6\n0\n", new ApplicationList());
         main.run();
@@ -113,8 +113,8 @@ public class MainTest {
         assertTrue(output.contains("[0] Exit"));
     }
 
-    @Test
     /** Verifies that adding an application records its company and role. */
+    @Test
     public void run_menuAddOption1_promptsAndAddsApplication() {
         ApplicationList applications = new ApplicationList();
         String input = "1\nGoogle\nSoftware Engineer Intern\n\n2\n0\n";
@@ -134,8 +134,8 @@ public class MainTest {
         assertTrue(output.contains("Software Engineer Intern"));
     }
 
-    @Test
     /** Verifies that blank company and role inputs are rejected until valid values are entered. */
+    @Test
     public void run_menuAddWithRetryOnEmptyField_promptsUntilValid() {
         ApplicationList applications = new ApplicationList();
         String input = "1\n\n   \nShopee\n\n   \nBackend Intern\n\n0\n";
@@ -151,8 +151,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Role cannot be empty."));
     }
 
-    @Test
     /** Verifies that selecting List displays the current applications. */
+    @Test
     public void run_menuListOption2_showsTable() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Shopee", "Backend Intern"));
@@ -166,8 +166,8 @@ public class MainTest {
         assertTrue(output.contains("Backend Intern"));
     }
 
-    @Test
     /** Verifies that selecting Delete removes the chosen application. */
+    @Test
     public void run_menuDeleteOption3_promptsAndDeletes() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false));
@@ -185,8 +185,8 @@ public class MainTest {
         assertTrue(output.contains("I've deleted this application:"));
     }
 
-    @Test
     /** Verifies that Delete reports an error when there are no applications. */
+    @Test
     public void run_menuDeleteWhenEmpty_showsEmptyError() {
         ApplicationList applications = new ApplicationList();
         String input = "3\n0\n";
@@ -197,8 +197,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Your application list is currently empty."));
     }
 
-    @Test
     /** Verifies that Delete rejects a non-numeric application index. */
+    @Test
     public void run_menuDeleteWithInvalidIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
@@ -210,8 +210,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Invalid application index. Please enter a valid number."));
     }
 
-    @Test
     /** Verifies that Delete rejects a blank application index. */
+    @Test
     public void run_menuDeleteWithBlankIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
@@ -223,8 +223,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Please specify a valid application index."));
     }
 
-    @Test
     /** Verifies that selecting Mark Complete updates the chosen application. */
+    @Test
     public void run_menuMarkOption4_promptsAndMarksCompleted() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false));
@@ -240,8 +240,8 @@ public class MainTest {
         assertTrue(output.contains("I've marked this application as completed:"));
     }
 
-    @Test
     /** Verifies that Mark Complete reports an error when there are no applications. */
+    @Test
     public void run_menuMarkWhenEmpty_showsEmptyError() {
         ApplicationList applications = new ApplicationList();
         String input = "4\n0\n";
@@ -252,8 +252,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Your application list is currently empty."));
     }
 
-    @Test
     /** Verifies that Mark Complete rejects a non-numeric application index. */
+    @Test
     public void run_menuMarkWithInvalidIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
@@ -265,8 +265,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Invalid application index. Please enter a valid number."));
     }
 
-    @Test
     /** Verifies that Mark Complete rejects a blank application index. */
+    @Test
     public void run_menuMarkWithBlankIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
@@ -278,8 +278,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Please specify a valid application index."));
     }
 
-    @Test
     /** Verifies that selecting Unmark clears the completion flag. */
+    @Test
     public void run_menuUnmarkOption5_promptsAndUnmarks() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", true));
@@ -295,8 +295,8 @@ public class MainTest {
         assertTrue(output.contains("I've marked this application as not completed yet:"));
     }
 
-    @Test
     /** Verifies that Unmark reports an error when there are no applications. */
+    @Test
     public void run_menuUnmarkWhenEmpty_showsEmptyError() {
         ApplicationList applications = new ApplicationList();
         String input = "5\n0\n";
@@ -307,8 +307,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Your application list is currently empty."));
     }
 
-    @Test
     /** Verifies that Unmark rejects a non-numeric application index. */
+    @Test
     public void run_menuUnmarkWithInvalidIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
@@ -320,8 +320,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Invalid application index. Please enter a valid number."));
     }
 
-    @Test
     /** Verifies that Unmark rejects a blank application index. */
+    @Test
     public void run_menuUnmarkWithBlankIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
@@ -333,8 +333,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Please specify a valid application index."));
     }
 
-    @Test
     /** Verifies that blank menu lines are ignored and Help remains accessible. */
+    @Test
     public void run_blankLinesAndEmptyInputs_ignoredGracefully() {
         String input = "\n   \n\t\n6\n0\n";
         Main main = createMainWithInput(input, new ApplicationList());
@@ -344,8 +344,8 @@ public class MainTest {
         assertTrue(output.contains("Available menu options:"));
     }
 
-    @Test
     /** Verifies that an unsupported numeric menu option displays an error. */
+    @Test
     public void run_invalidMenuOption_showsError() {
         String input = "99\n0\n";
         Main main = createMainWithInput(input, new ApplicationList());
@@ -355,8 +355,8 @@ public class MainTest {
         assertTrue(output.contains("Error: Invalid option: '99'. Enter 0, 1, 2, 3, 4, 5, or 6."));
     }
 
-    @Test
     /** Verifies that null and blank menu input do not produce commands. */
+    @Test
     public void parseCommand_nullOrEmpty_returnsNull() {
         Main main = new Main();
         assertNull(main.parseCommand(null));
@@ -364,8 +364,8 @@ public class MainTest {
         assertNull(main.parseCommand("   "));
     }
 
-    @Test
     /** Verifies that valid menu options create the expected command objects. */
+    @Test
     public void parseCommand_validNumbers_returnsCorrectCommandInstances() {
         Main main = new Main();
 
@@ -404,8 +404,8 @@ public class MainTest {
         assertFalse(((MarkCommand) unmarkCmd).isCompleted());
     }
 
-    @Test
     /** Verifies that command words are not accepted as numeric menu options. */
+    @Test
     public void parseCommand_nonNumericInput_returnsNull() {
         Main main = new Main();
         assertNull(main.parseCommand("add"));
@@ -419,8 +419,8 @@ public class MainTest {
         assertNull(main.parseCommand("foobar"));
     }
 
-    @Test
     /** Verifies that constructors initialize the application list in both cases. */
+    @Test
     public void constructors_initializeCorrectly() {
         Main mainDefault = new Main();
         assertNotNull(mainDefault.getApplications());
