@@ -81,6 +81,51 @@ public class MainTest {
         assertTrue(output.contains("UPCOMING: Google - SWE Intern"));
     }
 
+    /** Verifies that overdue and due-today active deadlines use the correct warning labels. */
+    @Test
+    public void run_overdueAndDueTodayDeadlines_showsCorrectWarnings() {
+        LocalDate today = LocalDate.now();
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Past Company", "Past Role", false, today.minusDays(1)));
+        applications.add(new Application("Today Company", "Current Role", false, today));
+        Main main = createMainWithInput("0\n", applications);
+
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("OVERDUE: Past Company - Past Role"));
+        assertTrue(output.contains("DUE TODAY: Today Company - Current Role"));
+    }
+
+    /** Verifies that the seven-day warning window includes its last day, but not the next day. */
+    @Test
+    public void run_deadlineAtWarningWindowBoundary_showsOnlyWithinWindow() {
+        LocalDate today = LocalDate.now();
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Within Window", "Intern", false, today.plusDays(7)));
+        applications.add(new Application("Outside Window", "Intern", false, today.plusDays(8)));
+        Main main = createMainWithInput("0\n", applications);
+
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("UPCOMING: Within Window - Intern"));
+        assertFalse(output.contains("UPCOMING: Outside Window - Intern"));
+    }
+
+    /** Verifies that completed applications and applications without deadlines have no warnings. */
+    @Test
+    public void run_completedAndUndatedApplications_doNotShowDeadlineWarnings() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Completed Company", "Past Role", true, LocalDate.now().minusDays(1)));
+        applications.add(new Application("Undated Company", "Open Role", false));
+        Main main = createMainWithInput("0\n", applications);
+
+        main.run();
+
+        assertFalse(outputStream.toString().contains("Deadline warnings:"));
+    }
+
     /** Verifies that unsupported word commands show errors without ending the workflow. */
     @Test
     public void run_typedWordsOnMenu_rejectedWithErrorMessage() {
