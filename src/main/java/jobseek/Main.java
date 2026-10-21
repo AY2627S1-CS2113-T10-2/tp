@@ -53,6 +53,13 @@ public class Main {
         this.applications = applications != null ? applications : new ApplicationList();
     }
 
+    /**
+     * Loads saved applications, falling back to an empty list if loading fails.
+     *
+     * @param ui UI used to report a loading error.
+     * @param storage Storage that owns the saved application file.
+     * @return Loaded applications or an empty list after an error.
+     */
     private static ApplicationList loadApplications(Ui ui, Storage storage) {
         try {
             return storage.load();
@@ -139,6 +146,7 @@ public class Main {
         }
     }
 
+    /** Prompts for application details and creates the corresponding add command. */
     private Command handleMenuAdd() {
         String company = promptNonEmpty("Company:", "Company cannot be empty.");
         if (company == null) {
@@ -152,6 +160,7 @@ public class Main {
         return new AddCommand(company, role, deadline);
     }
 
+    /** Prompts for an optional deadline and repeats until a valid date is entered. */
     private LocalDate promptDeadline() {
         while (true) {
             ui.showPrompt("Deadline (YYYY-MM-DD, leave blank if none):\n> ");
@@ -167,6 +176,7 @@ public class Main {
         }
     }
 
+    /** Prompts until the user enters a non-blank value or reaches end of input. */
     private String promptNonEmpty(String promptLabel, String errorMessage) {
         while (true) {
             ui.showPrompt(promptLabel + "\n> ");
@@ -182,17 +192,20 @@ public class Main {
         }
     }
 
+    /** Prompts for an application index and creates a delete command. */
     private Command handleMenuDelete() {
         Integer index = promptApplicationIndex("Enter application index to delete:\n> ");
         return index != null ? new DeleteCommand(index) : null;
     }
 
+    /** Prompts for an application index and creates a completion-state command. */
     private Command handleMenuMark(boolean isCompleted) {
         String action = isCompleted ? "mark as completed" : "unmark";
         Integer index = promptApplicationIndex("Enter application index to " + action + ":\n> ");
         return index != null ? new MarkCommand(index, isCompleted) : null;
     }
 
+    /** Prompts for a one-based application index and converts it to zero-based form. */
     private Integer promptApplicationIndex(String promptMessage) {
         if (applications.isEmpty()) {
             ui.showError("Your application list is currently empty.");

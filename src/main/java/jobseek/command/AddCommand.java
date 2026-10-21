@@ -38,14 +38,17 @@ public class AddCommand extends Command {
         this.deadline = deadline;
     }
 
+    /** Returns the company name entered for this command. */
     public String getCompany() {
         return company;
     }
 
+    /** Returns the role title entered for this command. */
     public String getRole() {
         return role;
     }
 
+    /** Returns the optional deadline entered for this command. */
     public LocalDate getDeadline() {
         return deadline;
     }

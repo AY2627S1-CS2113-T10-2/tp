@@ -35,6 +35,14 @@ public class DeadlineWarnings {
         }
     }
 
+    /**
+     * Adds one formatted deadline warning to the startup summary.
+     *
+     * @param warnings Summary being built.
+     * @param application Application associated with the deadline.
+     * @param deadline Deadline to describe.
+     * @param today Current date used to classify the deadline.
+     */
     private void appendWarning(StringBuilder warnings, Application application, LocalDate deadline, LocalDate today) {
         if (deadline.isBefore(today)) {
             warnings.append("OVERDUE: ");

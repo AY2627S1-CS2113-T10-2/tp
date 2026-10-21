@@ -57,6 +57,7 @@ public class ListCommand extends Command {
         ui.showMessage(table.toString());
     }
 
+    /** Returns a printable deadline value, using a dash when none is recorded. */
     private String deadlineText(Application application) {
         return application.getDeadline() == null ? "-" : application.getDeadline().toString();
     }

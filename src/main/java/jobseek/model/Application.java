@@ -48,26 +48,44 @@ public class Application {
         this.deadline = deadline;
     }
 
+    /** Returns the company name for this application. */
     public String getCompany() {
         return company;
     }
 
+    /**
+     * Updates the company name for this application.
+     *
+     * @param company New company name.
+     */
     public void setCompany(String company) {
         this.company = company;
     }
 
+    /** Returns the role title for this application. */
     public String getRole() {
         return role;
     }
 
+    /**
+     * Updates the role title for this application.
+     *
+     * @param role New role title.
+     */
     public void setRole(String role) {
         this.role = role;
     }
 
+    /** Returns whether the application process is marked complete. */
     public boolean isCompleted() {
         return isCompleted;
     }
 
+    /**
+     * Updates whether the application process is complete.
+     *
+     * @param isCompleted True to mark complete, or false to reactivate it.
+     */
     public void setCompleted(boolean isCompleted) {
         this.isCompleted = isCompleted;
     }
