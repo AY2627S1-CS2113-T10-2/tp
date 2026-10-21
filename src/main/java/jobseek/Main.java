@@ -103,7 +103,7 @@ public class Main {
 
     /**
      * Parses a user menu option string into an executable Command instance.
-     * Only numeric menu options (0, 1, 2, 3, 4, 5, 6) are accepted.
+     * Only numeric menu options (0, 1, 2, 3, 4, 5, 6, 7) are accepted.
      *
      * @param option Raw menu option string entered by the user.
      * @return The corresponding Command object, or null if the option is invalid.
@@ -125,23 +125,35 @@ public class Main {
             }
         }
 
+        if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.toLowerCase().startsWith("list ")) {
+            try {
+                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                return ListCommand.parse(args);
+            } catch (JobSeekException e) {
+                ui.showError(e.getMessage());
+                return null;
+            }
+        }
+
         switch (trimmedOption) {
         case "1":
             return handleMenuAdd();
         case "2":
             return new ListCommand();
         case "3":
-            return handleMenuDelete();
+            return new ListCommand(ListCommand.FilterType.ACTIVE);
         case "4":
-            return handleMenuMark(true);
+            return handleMenuDelete();
         case "5":
-            return handleMenuMark(false);
+            return handleMenuMark(true);
         case "6":
+            return handleMenuMark(false);
+        case "7":
             return new HelpCommand();
         case "0":
             return new ExitCommand();
         default:
-            ui.showError("Invalid option: '" + trimmedOption + "'. Enter 0, 1, 2, 3, 4, 5, or 6.");
+            ui.showError("Invalid option: '" + trimmedOption + "'. Enter 0, 1, 2, 3, 4, 5, 6, or 7.");
             return null;
         }
     }
