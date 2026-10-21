@@ -106,7 +106,8 @@ public class Storage {
                 continue;
             }
             List<String> fields = splitFields(line);
-            if (fields.equals(List.of("company", "role", "completed", "deadline"))) {
+            if (fields.stream().map(String::trim).toList()
+                    .equals(List.of("company", "role", "completed", "deadline"))) {
                 continue;
             }
             if (fields.size() != 4 || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
@@ -145,11 +146,20 @@ public class Storage {
             char character = line.charAt(i);
             if (escaped) {
                 switch (character) {
-                case '\\': field.append('\\'); break;
-                case 't': field.append('\t'); break;
-                case 'n': field.append('\n'); break;
-                case 'r': field.append('\r'); break;
-                default: throw new IOException("Invalid escape sequence in " + filePath + ".");
+                case '\\':
+                    field.append('\\');
+                    break;
+                case 't':
+                    field.append('\t');
+                    break;
+                case 'n':
+                    field.append('\n');
+                    break;
+                case 'r':
+                    field.append('\r');
+                    break;
+                default:
+                    throw new IOException("Invalid escape sequence in " + filePath + ".");
                 }
                 escaped = false;
             } else if (character == '\\') {
