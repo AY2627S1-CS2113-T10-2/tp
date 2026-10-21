@@ -8,6 +8,7 @@ import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
+import jobseek.command.SortCommand;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -102,7 +103,7 @@ public class Main {
 
     /**
      * Parses a user menu option string into an executable Command instance.
-     * Only numeric menu options (0 through 7) are accepted.
+     * Only numeric menu options (0 through 8) are accepted.
      *
      * @param option Raw menu option string entered by the user.
      * @return The corresponding Command object, or null if the option is invalid.
@@ -129,10 +130,12 @@ public class Main {
             return new HelpCommand();
         case "7":
             return handleMenuSearch();
+        case "8":
+            return new SortCommand();
         case "0":
             return new ExitCommand();
         default:
-            ui.showError("Invalid option: '" + trimmedOption + "'. Enter a number from 0 to 7.");
+            ui.showError("Invalid option: '" + trimmedOption + "'. Enter a number from 0 to 8.");
             return null;
         }
     }

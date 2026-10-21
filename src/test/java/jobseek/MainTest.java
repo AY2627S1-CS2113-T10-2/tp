@@ -8,6 +8,7 @@ import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
+import jobseek.command.SortCommand;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
@@ -69,11 +70,11 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 7."));
-        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 7."));
-        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 7."));
-        assertTrue(output.contains("Error: Invalid option: 'list'. Enter a number from 0 to 7."));
-        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 7."));
+        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 8."));
+        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 8."));
+        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 8."));
+        assertTrue(output.contains("Error: Invalid option: 'list'. Enter a number from 0 to 8."));
+        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 8."));
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
     }
 
@@ -91,6 +92,7 @@ public class MainTest {
         assertTrue(output.contains("[5] Unmark application"));
         assertTrue(output.contains("[6] Help"));
         assertTrue(output.contains("[7] Search applications"));
+        assertTrue(output.contains("[8] Sort applications"));
         assertTrue(output.contains("[0] Exit"));
     }
 
@@ -316,7 +318,7 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: '99'. Enter a number from 0 to 7."));
+        assertTrue(output.contains("Error: Invalid option: '99'. Enter a number from 0 to 8."));
     }
 
     @Test
@@ -333,6 +335,7 @@ public class MainTest {
 
         assertInstanceOf(ListCommand.class, main.parseCommand("2"));
         assertInstanceOf(HelpCommand.class, main.parseCommand("6"));
+        assertInstanceOf(SortCommand.class, main.parseCommand("8"));
         assertInstanceOf(ExitCommand.class, main.parseCommand("0"));
 
         Scanner addScanner = new Scanner("Google\nSWE Intern\n");
@@ -371,16 +374,17 @@ public class MainTest {
     }
 
     @Test
-    public void run_searchOption_keepsOriginalApplicationOrder() {
+    public void run_searchAndSortOptions_keepOriginalApplicationOrder() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Zulu", "Engineer"));
         applications.add(new Application("Acme", "Designer"));
-        Main main = createMainWithInput("7\nacm\n0\n", applications);
+        Main main = createMainWithInput("7\nacm\n8\n0\n", applications);
 
         main.run();
 
         String output = outputStream.toString();
         assertTrue(output.contains("Applications matching 'acm':"));
+        assertTrue(output.contains("Applications sorted by company, then role:"));
         assertEquals("Zulu", applications.get(0).getCompany());
         assertEquals("Acme", applications.get(1).getCompany());
     }
