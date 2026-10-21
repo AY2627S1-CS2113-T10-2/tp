@@ -130,11 +130,20 @@ public class Storage {
             char character = line.charAt(i);
             if (escaped) {
                 switch (character) {
-                case '\\': field.append('\\'); break;
-                case 't': field.append('\t'); break;
-                case 'n': field.append('\n'); break;
-                case 'r': field.append('\r'); break;
-                default: throw new IOException("Invalid escape sequence in " + filePath + ".");
+                case '\\':
+                    field.append('\\');
+                    break;
+                case 't':
+                    field.append('\t');
+                    break;
+                case 'n':
+                    field.append('\n');
+                    break;
+                case 'r':
+                    field.append('\r');
+                    break;
+                default:
+                    throw new IOException("Invalid escape sequence in " + filePath + ".");
                 }
                 escaped = false;
             } else if (character == '\\') {
