@@ -27,7 +27,8 @@ public class HelpCommandTest {
         assertTrue(ui.lastMessage.contains("[3] Delete application"));
         assertTrue(ui.lastMessage.contains("[4] Mark application completed"));
         assertTrue(ui.lastMessage.contains("[5] Unmark application"));
-        assertTrue(ui.lastMessage.contains("[6] Help"));
+        assertTrue(ui.lastMessage.contains("[6] Edit application"));
+        assertTrue(ui.lastMessage.contains("[7] Help"));
         assertTrue(ui.lastMessage.contains("[0] Exit"));
     }
 

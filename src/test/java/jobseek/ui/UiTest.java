@@ -87,7 +87,8 @@ public class UiTest {
         assertTrue(output.contains("[3] Delete application"));
         assertTrue(output.contains("[4] Mark application as completed"));
         assertTrue(output.contains("[5] Unmark application"));
-        assertTrue(output.contains("[6] Help"));
+        assertTrue(output.contains("[6] Edit application"));
+        assertTrue(output.contains("[7] Help"));
         assertTrue(output.contains("[0] Exit"));
     }
 

@@ -24,7 +24,8 @@ public class HelpCommand extends Command {
                 + "  [3] Delete application          - Delete an application by index\n"
                 + "  [4] Mark application completed  - Mark an application as completed\n"
                 + "  [5] Unmark application          - Mark an application as not completed\n"
-                + "  [6] Help                        - Show this help message\n"
+                + "  [6] Edit application            - Edit an existing application's details\n"
+                + "  [7] Help                        - Show this help message\n"
                 + "  [0] Exit                        - Exit JobSeek";
         ui.showMessage(helpMessage);
     }
