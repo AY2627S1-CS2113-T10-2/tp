@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Scanner;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -63,6 +64,19 @@ public class MainTest {
     }
 
     @Test
+    public void run_upcomingIncompleteDeadline_showsStartupWarning() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false, LocalDate.now().plusDays(1)));
+        Main main = createMainWithInput("0\n", applications);
+
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Deadline warnings:"));
+        assertTrue(output.contains("UPCOMING: Google - SWE Intern"));
+    }
+
+    @Test
     public void run_typedWordsOnMenu_rejectedWithErrorMessage() {
         Main main = createMainWithInput("exit\nbye\nhelp\nlist\nadd\n0\n", new ApplicationList());
         main.run();
@@ -95,7 +109,7 @@ public class MainTest {
     @Test
     public void run_menuAddOption1_promptsAndAddsApplication() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\nGoogle\nSoftware Engineer Intern\n2\n0\n";
+        String input = "1\nGoogle\nSoftware Engineer Intern\n\n2\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -115,7 +129,7 @@ public class MainTest {
     @Test
     public void run_menuAddWithRetryOnEmptyField_promptsUntilValid() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\n\n   \nShopee\n\n   \nBackend Intern\n0\n";
+        String input = "1\n\n   \nShopee\n\n   \nBackend Intern\n\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 

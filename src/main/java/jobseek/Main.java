@@ -11,6 +11,9 @@ import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
 /**
  * Main entry point for the JobSeek CLI application.
  */
@@ -18,6 +21,7 @@ public class Main {
     private final Ui ui;
     private final Storage storage;
     private final ApplicationList applications;
+    private final DeadlineWarnings deadlineWarnings = new DeadlineWarnings();
 
     /**
      * Constructs the main application instance and initializes core components.
@@ -72,6 +76,7 @@ public class Main {
      */
     public void run() {
         ui.showWelcome();
+        deadlineWarnings.show(applications, ui);
         boolean isExit = false;
 
         while (!isExit) {
@@ -143,7 +148,23 @@ public class Main {
         if (role == null) {
             return null;
         }
-        return new AddCommand(company, role);
+        LocalDate deadline = promptDeadline();
+        return new AddCommand(company, role, deadline);
+    }
+
+    private LocalDate promptDeadline() {
+        while (true) {
+            ui.showPrompt("Deadline (YYYY-MM-DD, leave blank if none):\n> ");
+            String input = ui.readCommand();
+            if (input == null || input.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return LocalDate.parse(input.trim());
+            } catch (DateTimeParseException e) {
+                ui.showError("Invalid deadline. Use YYYY-MM-DD or leave it blank.");
+            }
+        }
     }
 
     private String promptNonEmpty(String promptLabel, String errorMessage) {
