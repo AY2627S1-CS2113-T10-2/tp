@@ -128,4 +128,16 @@ public class ViewCommandTest {
 
         assertTrue(exception.getMessage().contains("Application index 1 does not exist"));
     }
+
+    @Test
+    public void execute_negativeIndex_throwsJobSeekException() {
+        ApplicationList list = new ApplicationList();
+        list.add(new Application("Google", "SWE Intern"));
+
+        ViewCommand command = new ViewCommand(-1);
+        JobSeekException exception = assertThrows(JobSeekException.class, () ->
+                command.execute(list, new Ui(), new Storage()));
+
+        assertTrue(exception.getMessage().contains("Application index 0 does not exist"));
+    }
 }
