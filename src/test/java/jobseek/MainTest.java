@@ -160,6 +160,35 @@ public class MainTest {
     }
 
     @Test
+    public void run_commandViewValid_displaysCard() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "view 1\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application Details [Index: 1]"));
+        assertTrue(output.contains("Company:   Google"));
+        assertTrue(output.contains("Role:      SWE Intern"));
+    }
+
+    @Test
+    public void run_commandViewInvalid_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "view\nview abc\nview 0\nview 5\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Please provide a valid positive application index. Usage: view INDEX"));
+        assertTrue(output.contains("Error: Application index 5 does not exist. (Total applications: 1)"));
+    }
+
+    @Test
     public void run_menuOption3_showsOnlyActive() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Active Co", "SWE Intern", false));
@@ -184,6 +213,14 @@ public class MainTest {
         applications.add(new Application("Done Co", "Data Analyst", true));
 
         String input = "3\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("No active applications found."));
+    }
+
+    @Test
     public void run_multipleCommands_printsMenuTitleOnlyOnce() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Shopee", "Backend Intern"));
