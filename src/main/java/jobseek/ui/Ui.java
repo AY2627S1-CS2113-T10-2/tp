@@ -139,6 +139,8 @@ public class Ui {
         System.out.println("[5] Mark application as completed");
         System.out.println("[6] Unmark application");
         System.out.println("[7] Help");
+        System.out.println("[8] Search applications");
+        System.out.println("[9] Sort applications alphabetically");
         System.out.println("[0] Exit");
         showLine();
     }

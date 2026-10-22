@@ -89,6 +89,8 @@ public class UiTest {
         assertTrue(output.contains("[5] Mark application as completed"));
         assertTrue(output.contains("[6] Unmark application"));
         assertTrue(output.contains("[7] Help"));
+        assertTrue(output.contains("[8] Search applications"));
+        assertTrue(output.contains("[9] Sort applications alphabetically"));
         assertTrue(output.contains("[0] Exit"));
     }
 

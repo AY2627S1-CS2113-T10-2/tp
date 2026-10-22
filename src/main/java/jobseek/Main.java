@@ -7,6 +7,8 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.SearchCommand;
+import jobseek.command.SortCommand;
 import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
@@ -107,7 +109,7 @@ public class Main {
 
     /**
      * Parses a user menu option string into an executable Command instance.
-     * Only numeric menu options (0, 1, 2, 3, 4, 5, 6, 7) are accepted.
+     * Accepts numeric menu options (0 through 9), plus supported list and view commands.
      *
      * @param option Raw menu option string entered by the user.
      * @return The corresponding Command object, or null if the option is invalid.
@@ -154,10 +156,14 @@ public class Main {
             return handleMenuMark(false);
         case "7":
             return new HelpCommand();
+        case "8":
+            return handleMenuSearch();
+        case "9":
+            return new SortCommand();
         case "0":
             return new ExitCommand();
         default:
-            ui.showError("Invalid option: '" + trimmedOption + "'. Enter 0, 1, 2, 3, 4, 5, 6, or 7.");
+            ui.showError("Invalid option: '" + trimmedOption + "'. Enter a number from 0 to 9.");
             return null;
         }
     }
@@ -192,6 +198,11 @@ public class Main {
     private Command handleMenuDelete() {
         Integer index = promptApplicationIndex("Enter application index to delete:\n> ");
         return index != null ? new DeleteCommand(index) : null;
+    }
+
+    private Command handleMenuSearch() {
+        String keyword = promptNonEmpty("Search company or role:", "Search term cannot be empty.");
+        return keyword != null ? new SearchCommand(keyword) : null;
     }
 
     private Command handleMenuMark(boolean isCompleted) {

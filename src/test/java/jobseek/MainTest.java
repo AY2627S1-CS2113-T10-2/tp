@@ -7,6 +7,8 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.SearchCommand;
+import jobseek.command.SortCommand;
 import jobseek.command.ViewCommand;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
@@ -69,11 +71,11 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'help'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'remove'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'add'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
+        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 9."));
+        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 9."));
+        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 9."));
+        assertTrue(output.contains("Error: Invalid option: 'remove'. Enter a number from 0 to 9."));
+        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 9."));
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
     }
 
@@ -91,6 +93,8 @@ public class MainTest {
         assertTrue(output.contains("[5] Mark application completed"));
         assertTrue(output.contains("[6] Unmark application"));
         assertTrue(output.contains("[7] Help"));
+        assertTrue(output.contains("[8] Search applications"));
+        assertTrue(output.contains("[9] Sort applications"));
         assertTrue(output.contains("[0] Exit"));
     }
 
@@ -407,7 +411,7 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: '99'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
+        assertTrue(output.contains("Error: Invalid option: '99'. Enter a number from 0 to 9."));
     }
 
     @Test
@@ -427,6 +431,7 @@ public class MainTest {
         assertEquals(ListCommand.FilterType.ACTIVE,
                 ((ListCommand) main.parseCommand("3")).getFilterType());
         assertInstanceOf(HelpCommand.class, main.parseCommand("7"));
+        assertInstanceOf(SortCommand.class, main.parseCommand("9"));
         assertInstanceOf(ExitCommand.class, main.parseCommand("0"));
 
         Scanner addScanner = new Scanner("Google\nSWE Intern\n");
@@ -459,6 +464,10 @@ public class MainTest {
         assertEquals(0, ((MarkCommand) unmarkCmd).getTargetIndex());
         assertFalse(((MarkCommand) unmarkCmd).isCompleted());
 
+        Scanner searchScanner = new Scanner("goo\n");
+        Main searchMain = new Main(new Ui(searchScanner), new Storage(), list);
+        assertInstanceOf(SearchCommand.class, searchMain.parseCommand("8"));
+
         Command viewCmd = main.parseCommand("view 1");
         assertInstanceOf(ViewCommand.class, viewCmd);
         assertEquals(0, ((ViewCommand) viewCmd).getTargetIndex());
@@ -474,6 +483,30 @@ public class MainTest {
         Command listAllCmd = main.parseCommand("list all");
         assertInstanceOf(ListCommand.class, listAllCmd);
         assertEquals(ListCommand.FilterType.ALL, ((ListCommand) listAllCmd).getFilterType());
+    }
+
+    @Test
+    public void run_searchAndSortOptions_keepOriginalApplicationOrder() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Zulu", "Engineer"));
+        applications.add(new Application("Acme", "Designer"));
+        Main main = createMainWithInput("8\nacm\n9\n0\n", applications);
+
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Applications matching 'acm':"));
+        assertTrue(output.contains("Applications sorted by company, then role:"));
+        assertEquals("Zulu", applications.get(0).getCompany());
+        assertEquals("Acme", applications.get(1).getCompany());
+    }
+
+    @Test
+    public void run_searchBlankTerm_reprompts() {
+        Main main = createMainWithInput("8\n  \nacme\n0\n", new ApplicationList());
+        main.run();
+
+        assertTrue(outputStream.toString().contains("Error: Search term cannot be empty."));
     }
 
     @Test

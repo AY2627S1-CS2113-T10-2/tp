@@ -28,6 +28,8 @@ public class HelpCommand extends Command {
                 + "  [5] Mark application completed  - Mark an application as completed\n"
                 + "  [6] Unmark application          - Mark an application as not completed\n"
                 + "  [7] Help                        - Show this help message\n"
+                + "  [8] Search applications         - Find applications by company or role\n"
+                + "  [9] Sort applications           - View applications alphabetically\n"
                 + "  [0] Exit                        - Exit JobSeek";
         ui.showMessage(helpMessage);
     }
