@@ -143,6 +143,21 @@ public class MainTest {
     }
 
     @Test
+    public void run_multipleCommands_printsMenuTitleOnlyOnce() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backend Intern"));
+        String input = "2\n2\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        int firstIndex = output.indexOf("JOBSEEK");
+        assertTrue(firstIndex >= 0);
+        int secondIndex = output.indexOf("JOBSEEK", firstIndex + 1);
+        assertEquals(-1, secondIndex);
+    }
+
+    @Test
     public void run_menuDeleteOption3_promptsAndDeletes() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false));
