@@ -74,16 +74,17 @@ public class Main {
      */
     public void run() {
         ui.showWelcome();
+        ui.showMenu(applications);
         boolean isExit = false;
 
         while (!isExit) {
-            ui.showMenu(applications);
             String fullCommand = ui.readCommand();
             if (fullCommand == null) {
                 break;
             }
             fullCommand = fullCommand.trim();
             if (fullCommand.isEmpty()) {
+                ui.showPrompt("Enter option:\n> ");
                 continue;
             }
 
@@ -95,6 +96,9 @@ public class Main {
                 } catch (Exception e) {
                     ui.showError("An error occurred while executing command: " + e.getMessage());
                 }
+            }
+            if (!isExit) {
+                ui.showPrompt("Enter option:\n> ");
             }
         }
 

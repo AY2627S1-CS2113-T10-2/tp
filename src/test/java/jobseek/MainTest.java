@@ -184,15 +184,22 @@ public class MainTest {
         applications.add(new Application("Done Co", "Data Analyst", true));
 
         String input = "3\n0\n";
+    public void run_multipleCommands_printsMenuTitleOnlyOnce() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backend Intern"));
+        String input = "2\n2\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("No active applications found."));
+        int firstIndex = output.indexOf("JOBSEEK");
+        assertTrue(firstIndex >= 0);
+        int secondIndex = output.indexOf("JOBSEEK", firstIndex + 1);
+        assertEquals(-1, secondIndex);
     }
 
     @Test
-    public void run_menuDeleteOption4_promptsAndDeletes() {
+    public void run_menuDeleteOption3_promptsAndDeletes() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false));
         applications.add(new Application("Shopee", "Backend Intern", false));
