@@ -134,10 +134,11 @@ public class Ui {
         showLine();
         System.out.println("[1] Add application");
         System.out.println("[2] List applications");
-        System.out.println("[3] Delete application");
-        System.out.println("[4] Mark application as completed");
-        System.out.println("[5] Unmark application");
-        System.out.println("[6] Help");
+        System.out.println("[3] List uncompleted applications");
+        System.out.println("[4] Delete application");
+        System.out.println("[5] Mark application as completed");
+        System.out.println("[6] Unmark application");
+        System.out.println("[7] Help");
         System.out.println("[0] Exit");
         showLine();
     }

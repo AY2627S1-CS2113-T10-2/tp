@@ -65,4 +65,27 @@ public class ApplicationTest {
         Application doneApp = new Application("Apple", "iOS Intern", true);
         assertEquals("[X] Apple | iOS Intern", doneApp.toString());
     }
+
+    @Test
+    public void getStatus_defaultsToPending() {
+        Application application = new Application("Stripe", "Backend Intern");
+        assertEquals("Pending", application.getStatus());
+    }
+
+    @Test
+    public void setStatus_updatesStatusCorrectly() {
+        Application application = new Application("Stripe", "Backend Intern");
+        application.setStatus("Accepted");
+        assertEquals("Accepted", application.getStatus());
+
+        application.setStatus("Rejected");
+        assertEquals("Rejected", application.getStatus());
+    }
+
+    @Test
+    public void constructor_fourParameters_setsStatusCorrectly() {
+        Application application = new Application("Microsoft", "Security Intern", true, "Offer Accepted");
+        assertEquals("Offer Accepted", application.getStatus());
+        assertTrue(application.isCompleted());
+    }
 }
