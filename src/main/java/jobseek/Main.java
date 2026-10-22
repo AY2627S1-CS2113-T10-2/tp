@@ -9,6 +9,8 @@ import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
+import jobseek.command.ViewCommand;
+import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -74,16 +76,17 @@ public class Main {
      */
     public void run() {
         ui.showWelcome();
+        ui.showMenu(applications);
         boolean isExit = false;
 
         while (!isExit) {
-            ui.showMenu(applications);
             String fullCommand = ui.readCommand();
             if (fullCommand == null) {
                 break;
             }
             fullCommand = fullCommand.trim();
             if (fullCommand.isEmpty()) {
+                ui.showPrompt("Enter option:\n> ");
                 continue;
             }
 
@@ -96,6 +99,9 @@ public class Main {
                     ui.showError("An error occurred while executing command: " + e.getMessage());
                 }
             }
+            if (!isExit) {
+                ui.showPrompt("Enter option:\n> ");
+            }
         }
 
         ui.showGoodbye();
@@ -103,7 +109,7 @@ public class Main {
 
     /**
      * Parses a user menu option string into an executable Command instance.
-     * Only numeric menu options (0 through 8) are accepted.
+     * Accepts numeric menu options (0 through 9), plus supported list and view commands.
      *
      * @param option Raw menu option string entered by the user.
      * @return The corresponding Command object, or null if the option is invalid.
@@ -115,27 +121,49 @@ public class Main {
 
         String trimmedOption = option.trim();
 
+        if (trimmedOption.equalsIgnoreCase("view") || trimmedOption.toLowerCase().startsWith("view ")) {
+            try {
+                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                return ViewCommand.parse(args);
+            } catch (JobSeekException e) {
+                ui.showError(e.getMessage());
+                return null;
+            }
+        }
+
+        if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.toLowerCase().startsWith("list ")) {
+            try {
+                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                return ListCommand.parse(args);
+            } catch (JobSeekException e) {
+                ui.showError(e.getMessage());
+                return null;
+            }
+        }
+
         switch (trimmedOption) {
         case "1":
             return handleMenuAdd();
         case "2":
             return new ListCommand();
         case "3":
-            return handleMenuDelete();
+            return new ListCommand(ListCommand.FilterType.ACTIVE);
         case "4":
-            return handleMenuMark(true);
+            return handleMenuDelete();
         case "5":
-            return handleMenuMark(false);
+            return handleMenuMark(true);
         case "6":
-            return new HelpCommand();
+            return handleMenuMark(false);
         case "7":
-            return handleMenuSearch();
+            return new HelpCommand();
         case "8":
+            return handleMenuSearch();
+        case "9":
             return new SortCommand();
         case "0":
             return new ExitCommand();
         default:
-            ui.showError("Invalid option: '" + trimmedOption + "'. Enter a number from 0 to 8.");
+            ui.showError("Invalid option: '" + trimmedOption + "'. Enter a number from 0 to 9.");
             return null;
         }
     }
