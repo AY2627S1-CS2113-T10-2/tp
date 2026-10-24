@@ -112,30 +112,37 @@ public class ListCommand extends Command {
         int numberWidth = Math.max("No.".length(), Integer.toString(applications.size()).length());
         int companyWidth = "Company".length();
         int roleWidth = "Role".length();
-        for (int index : matchingIndices) {
-            Application app = applications.get(index);
-            companyWidth = Math.max(companyWidth, app.getCompany().length());
-            roleWidth = Math.max(roleWidth, app.getRole().length());
+        int deadlineWidth = "Deadline".length();
+        for (int i = 0; i < applications.size(); i++) {
+            Application application = applications.get(i);
+            companyWidth = Math.max(companyWidth, application.getCompany().length());
+            roleWidth = Math.max(roleWidth, application.getRole().length());
+            deadlineWidth = Math.max(deadlineWidth, deadlineText(application).length());
         }
 
         String rowFormat = "%-" + numberWidth + "s | %-" + STATUS_WIDTH + "s | %-"
-                + companyWidth + "s | %s";
+                + companyWidth + "s | %-" + roleWidth + "s | %-" + deadlineWidth + "s";
         StringBuilder table = new StringBuilder("Here are your applications:\n");
-        table.append(String.format(rowFormat, "No.", "Status", "Company", "Role"));
+        table.append(String.format(rowFormat, "No.", "Status", "Company", "Role", "Deadline"));
         table.append('\n').append("-".repeat(numberWidth))
                 .append("-+-").append("-".repeat(STATUS_WIDTH))
                 .append("-+-").append("-".repeat(companyWidth))
-                .append("-+-").append("-".repeat(roleWidth));
+                .append("-+-").append("-".repeat(roleWidth))
+                .append("-+-").append("-".repeat(deadlineWidth));
 
-        for (int index : matchingIndices) {
-            Application app = applications.get(index);
-            table.append('\n').append(String.format(rowFormat, Integer.toString(index + 1),
-                    app.getStatusIcon(), app.getCompany(), app.getRole()));
+        for (int i = 0; i < applications.size(); i++) {
+            Application application = applications.get(i);
+            table.append('\n').append(String.format(rowFormat, Integer.toString(i + 1),
+                    application.getStatusIcon(), application.getCompany(), application.getRole(),
+                    deadlineText(application)));
         }
 
         ui.showMessage(table.toString());
     }
 
+    /** Returns a printable deadline value, using a dash when none is recorded. */
+    private String deadlineText(Application application) {
+        return application.getDeadline() == null ? "-" : application.getDeadline().toString();
     private boolean matchesFilter(Application app) {
         switch (filterType) {
         case COMPLETED:

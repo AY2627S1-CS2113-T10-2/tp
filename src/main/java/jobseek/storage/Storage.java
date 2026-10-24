@@ -1,12 +1,25 @@
 package jobseek.storage;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+
+import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 
 /**
  * Handles persistence by loading and saving job application data to local storage.
  */
 public class Storage {
-    private static final String DEFAULT_FILE_PATH = "data/applications.json";
+    private static final String DEFAULT_FILE_PATH = "data/applications.txt";
+    private static final String TITLE_HEADER = "JOBSEEK Applications";
+    private static final String COLUMN_HEADER = "company\trole\tcompleted\tdeadline";
+    private static final String HEADER = TITLE_HEADER + "\n" + COLUMN_HEADER;
 
     private String filePath;
 
@@ -26,10 +39,16 @@ public class Storage {
         this.filePath = filePath;
     }
 
+    /** Returns the path used for the application's local data file. */
     public String getFilePath() {
         return filePath;
     }
 
+    /**
+     * Updates the path used for loading and saving application data.
+     *
+     * @param filePath New path to the storage file.
+     */
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }
@@ -41,7 +60,20 @@ public class Storage {
      * @throws Exception If an I/O or serialization error occurs.
      */
     public void save(ApplicationList applications) throws Exception {
-        // Concrete file persistence logic to be implemented by storage feature branch
+        Path path = Path.of(filePath);
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+
+        List<String> lines = new ArrayList<>();
+        lines.add(HEADER);
+        for (Application application : applications.getAll()) {
+            String deadline = application.getDeadline() == null ? "" : application.getDeadline().toString();
+            lines.add(escape(application.getCompany()) + "\t" + escape(application.getRole()) + "\t"
+                    + application.isCompleted() + "\t" + deadline);
+        }
+        Files.write(path, lines, StandardCharsets.UTF_8);
     }
 
     /**
@@ -51,6 +83,82 @@ public class Storage {
      * @throws Exception If an I/O or deserialization error occurs.
      */
     public ApplicationList load() throws Exception {
-        return new ApplicationList();
+        Path path = Path.of(filePath);
+        if (!Files.exists(path)) {
+            return new ApplicationList();
+        }
+
+        ApplicationList applications = new ApplicationList();
+        List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+        for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
+            String line = lines.get(lineNumber);
+            if (line.isBlank() || line.startsWith("#")) {
+                continue;
+            }
+            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)) {
+                continue;
+            }
+            List<String> fields = splitFields(line);
+            if (fields.size() != 4 || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
+                throw new IOException("Invalid record on line " + (lineNumber + 1) + " in " + filePath + ".");
+            }
+            LocalDate deadline = null;
+            if (!fields.get(3).isEmpty()) {
+                try {
+                    deadline = LocalDate.parse(fields.get(3));
+                } catch (DateTimeParseException e) {
+                    throw new IOException("Invalid deadline on line " + (lineNumber + 1) + " in " + filePath + ".", e);
+                }
+            }
+            boolean isCompleted = Boolean.parseBoolean(fields.get(2));
+            applications.add(new Application(fields.get(0), fields.get(1), isCompleted, deadline));
+        }
+        return applications;
+    }
+
+    /** Escapes characters that would otherwise conflict with the tab-separated format. */
+    private static String escape(String value) {
+        return value.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r");
+    }
+
+    /** Decodes one saved record into its tab-separated fields. */
+    private List<String> splitFields(String line) throws IOException {
+        List<String> fields = new ArrayList<>();
+        StringBuilder field = new StringBuilder();
+        boolean escaped = false;
+        for (int i = 0; i < line.length(); i++) {
+            char character = line.charAt(i);
+            if (escaped) {
+                switch (character) {
+                case '\\':
+                    field.append('\\');
+                    break;
+                case 't':
+                    field.append('\t');
+                    break;
+                case 'n':
+                    field.append('\n');
+                    break;
+                case 'r':
+                    field.append('\r');
+                    break;
+                default:
+                    throw new IOException("Invalid escape sequence in " + filePath + ".");
+                }
+                escaped = false;
+            } else if (character == '\\') {
+                escaped = true;
+            } else if (character == '\t') {
+                fields.add(field.toString());
+                field.setLength(0);
+            } else {
+                field.append(character);
+            }
+        }
+        if (escaped) {
+            throw new IOException("Incomplete escape sequence in " + filePath + ".");
+        }
+        fields.add(field.toString());
+        return fields;
     }
 }

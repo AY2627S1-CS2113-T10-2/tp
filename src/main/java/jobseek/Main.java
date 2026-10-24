@@ -17,6 +17,9 @@ import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
 /**
  * Main entry point for the JobSeek CLI application.
  */
@@ -24,6 +27,7 @@ public class Main {
     private final Ui ui;
     private final Storage storage;
     private final ApplicationList applications;
+    private final DeadlineWarnings deadlineWarnings = new DeadlineWarnings();
 
     /**
      * Constructs the main application instance and initializes core components.
@@ -58,6 +62,13 @@ public class Main {
         assert this.applications != null : "Applications list should not be null";
     }
 
+    /**
+     * Loads saved applications, falling back to an empty list if loading fails.
+     *
+     * @param ui UI used to report a loading error.
+     * @param storage Storage that owns the saved application file.
+     * @return Loaded applications or an empty list after an error.
+     */
     private static ApplicationList loadApplications(Ui ui, Storage storage) {
         try {
             return storage.load();
@@ -81,6 +92,7 @@ public class Main {
      */
     public void run() {
         ui.showWelcome();
+        deadlineWarnings.show(applications, ui);
         ui.showMenu(applications);
         boolean isExit = false;
 
@@ -177,6 +189,7 @@ public class Main {
         }
     }
 
+    /** Prompts for application details and creates the corresponding add command. */
     private Command handleMenuAdd() {
         String company = promptNonEmpty("Company:", "Company cannot be empty.");
         if (company == null) {
@@ -186,9 +199,27 @@ public class Main {
         if (role == null) {
             return null;
         }
-        return new AddCommand(company, role);
+        LocalDate deadline = promptDeadline();
+        return new AddCommand(company, role, deadline);
     }
 
+    /** Prompts for an optional deadline and repeats until a valid date is entered. */
+    private LocalDate promptDeadline() {
+        while (true) {
+            ui.showPrompt("Deadline (YYYY-MM-DD, leave blank if none):\n> ");
+            String input = ui.readCommand();
+            if (input == null || input.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return LocalDate.parse(input.trim());
+            } catch (DateTimeParseException e) {
+                ui.showError("Invalid deadline. Use YYYY-MM-DD or leave it blank.");
+            }
+        }
+    }
+
+    /** Prompts until the user enters a non-blank value or reaches end of input. */
     private String promptNonEmpty(String promptLabel, String errorMessage) {
         while (true) {
             ui.showPrompt(promptLabel + "\n> ");
@@ -204,6 +235,7 @@ public class Main {
         }
     }
 
+    /** Prompts for an application index and creates a delete command. */
     private Command handleMenuDelete() {
         Integer index = promptApplicationIndex("Enter application index to delete:\n> ");
         return index != null ? new DeleteCommand(index) : null;

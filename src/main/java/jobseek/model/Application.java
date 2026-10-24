@@ -1,5 +1,7 @@
 package jobseek.model;
 
+import java.time.LocalDate;
+
 /**
  * Represents a single job or internship application record.
  */
@@ -9,7 +11,7 @@ public class Application {
     private String company;
     private String role;
     private boolean isCompleted;
-    private String status;
+    private LocalDate deadline;
 
     /**
      * Constructs an Application with the specified company and role.
@@ -61,28 +63,46 @@ public class Application {
         this(company, role, false, status);
     }
 
+    /** Returns the company name for this application. */
     public String getCompany() {
         return company;
     }
 
+    /**
+     * Updates the company name for this application.
+     *
+     * @param company New company name.
+     */
     public void setCompany(String company) {
         assert company != null && !company.trim().isEmpty() : "Company cannot be null or empty";
         this.company = company;
     }
 
+    /** Returns the role title for this application. */
     public String getRole() {
         return role;
     }
 
+    /**
+     * Updates the role title for this application.
+     *
+     * @param role New role title.
+     */
     public void setRole(String role) {
         assert role != null && !role.trim().isEmpty() : "Role cannot be null or empty";
         this.role = role;
     }
 
+    /** Returns whether the application process is marked complete. */
     public boolean isCompleted() {
         return isCompleted;
     }
 
+    /**
+     * Updates whether the application process is complete.
+     *
+     * @param isCompleted True to mark complete, or false to reactivate it.
+     */
     public void setCompleted(boolean isCompleted) {
         this.isCompleted = isCompleted;
     }
@@ -94,6 +114,24 @@ public class Application {
     public void setStatus(String status) {
         assert status != null && !status.trim().isEmpty() : "Status cannot be null or empty";
         this.status = (status != null && !status.trim().isEmpty()) ? status.trim() : DEFAULT_STATUS;
+    }
+
+    /**
+     * Returns the application's optional deadline.
+     *
+     * @return The deadline, or null if no deadline was recorded.
+     */
+    public LocalDate getDeadline() {
+        return deadline;
+    }
+
+    /**
+     * Updates the deadline for the application's next action.
+     *
+     * @param deadline The new deadline, or null to remove it.
+     */
+    public void setDeadline(LocalDate deadline) {
+        this.deadline = deadline;
     }
 
     /**
