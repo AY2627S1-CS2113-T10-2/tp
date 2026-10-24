@@ -71,12 +71,17 @@ public class Ui {
 
     /**
      * Displays an error message prefixed with an error label and divider lines.
+     * If the message already contains an error label, it is printed without duplication.
      *
      * @param errorMessage Error message text to display.
      */
     public void showError(String errorMessage) {
         showLine();
-        System.out.println("Error: " + errorMessage);
+        if (errorMessage != null && errorMessage.startsWith("Error: ")) {
+            System.out.println(errorMessage);
+        } else {
+            System.out.println("Error: " + errorMessage);
+        }
         showLine();
     }
 
@@ -134,10 +139,14 @@ public class Ui {
         showLine();
         System.out.println("[1] Add application");
         System.out.println("[2] List applications");
-        System.out.println("[3] Delete application");
-        System.out.println("[4] Mark application as completed");
-        System.out.println("[5] Unmark application");
-        System.out.println("[6] Help");
+        System.out.println("[3] List uncompleted applications");
+        System.out.println("[4] Delete application");
+        System.out.println("[5] Mark application as completed");
+        System.out.println("[6] Unmark application");
+        System.out.println("[7] Help");
+        System.out.println("[8] Search applications");
+        System.out.println("[9] Sort applications alphabetically");
+        System.out.println("[10] Edit application");
         System.out.println("[0] Exit");
         showLine();
     }

@@ -60,6 +60,15 @@ public class UiTest {
     }
 
     @Test
+    public void showError_existingErrorPrefix_doesNotDuplicateErrorPrefix() {
+        Ui ui = new Ui();
+        ui.showError("Error: Custom error message");
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Custom error message"));
+        org.junit.jupiter.api.Assertions.assertFalse(output.contains("Error: Error:"));
+    }
+
+    @Test
     public void showWelcome_printsLogoAndWelcomeMessage() {
         Ui ui = new Ui();
         ui.showWelcome();
@@ -84,10 +93,14 @@ public class UiTest {
         assertTrue(output.contains("No applications found."));
         assertTrue(output.contains("[1] Add application"));
         assertTrue(output.contains("[2] List applications"));
-        assertTrue(output.contains("[3] Delete application"));
-        assertTrue(output.contains("[4] Mark application as completed"));
-        assertTrue(output.contains("[5] Unmark application"));
-        assertTrue(output.contains("[6] Help"));
+        assertTrue(output.contains("[3] List uncompleted applications"));
+        assertTrue(output.contains("[4] Delete application"));
+        assertTrue(output.contains("[5] Mark application as completed"));
+        assertTrue(output.contains("[6] Unmark application"));
+        assertTrue(output.contains("[7] Help"));
+        assertTrue(output.contains("[8] Search applications"));
+        assertTrue(output.contains("[9] Sort applications alphabetically"));
+        assertTrue(output.contains("[10] Edit application"));
         assertTrue(output.contains("[0] Exit"));
     }
 
@@ -101,6 +114,17 @@ public class UiTest {
         assertTrue(output.contains("Google"));
         assertTrue(output.contains("SWE Intern"));
         assertTrue(output.contains("1 application tracked."));
+    }
+
+    @Test
+    public void showMenu_multipleApplications_pluralSummaryCount() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        applications.add(new Application("Meta", "Data Analyst"));
+        Ui ui = new Ui();
+        ui.showMenu(applications);
+        String output = outputStream.toString();
+        assertTrue(output.contains("2 applications tracked."));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package jobseek.command;
 
+import jobseek.exception.JobSeekException;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
@@ -7,14 +8,16 @@ import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests the user-visible output of the list command.
+ * Tests the user-visible output and filtering of the list command.
  */
 public class ListCommandTest {
+
     @Test
-    public void execute_emptyList_showsClearMessage() {
+    public void execute_emptyList_showsNoApplicationsFoundMessage() {
         RecordingUi ui = new RecordingUi();
 
         new ListCommand().execute(new ApplicationList(), ui, new Storage());
@@ -23,10 +26,11 @@ public class ListCommandTest {
     }
 
     @Test
-    public void execute_multipleApplications_showsNumberedTableInListOrder() {
+    public void execute_defaultFilter_showsOnlyActiveApplicationsWithOriginalIndex() {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Acme", "SWE Intern"));
+        applications.add(new Application("Acme", "SWE Intern", false));
         applications.add(new Application("Longer Co", "Engineer", true));
+        applications.add(new Application("Tech Corp", "Data Analyst", false));
         RecordingUi ui = new RecordingUi();
 
         new ListCommand().execute(applications, ui, new Storage());

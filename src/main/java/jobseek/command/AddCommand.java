@@ -64,6 +64,10 @@ public class AddCommand extends Command {
      */
     @Override
     public void execute(ApplicationList applications, Ui ui, Storage storage) throws Exception {
+        assert applications != null : "Applications list cannot be null";
+        assert ui != null : "Ui instance cannot be null";
+        assert storage != null : "Storage instance cannot be null";
+
         if (company.isEmpty()) {
             ui.showError("Company cannot be empty.");
             return;
@@ -73,8 +77,13 @@ public class AddCommand extends Command {
             return;
         }
 
-        Application application = new Application(company, role, false, deadline);
+        int sizeBefore = applications.size();
+        Application application = new Application(company, role);
         applications.add(application);
+
+        assert applications.size() == sizeBefore + 1 : "Adding one application should increase list size by one";
+        assert applications.get(applications.size() - 1) == application
+                : "Last element in list should be newly added application";
 
         String message = "Application added successfully.\n"
                 + "Company: " + application.getCompany() + "\n"
