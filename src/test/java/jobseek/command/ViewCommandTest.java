@@ -46,30 +46,50 @@ public class ViewCommandTest {
     @Test
     public void parse_nullOrEmptyArgument_throwsJobSeekException() {
         JobSeekException nullException = assertThrows(JobSeekException.class, () -> ViewCommand.parse(null));
-        assertEquals("Error: Please provide a valid positive application index. Usage: view INDEX",
+        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
                 nullException.getMessage());
 
         JobSeekException emptyException = assertThrows(JobSeekException.class, () -> ViewCommand.parse("   "));
-        assertEquals("Error: Please provide a valid positive application index. Usage: view INDEX",
+        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
                 emptyException.getMessage());
     }
 
     @Test
     public void parse_nonNumericArgument_throwsJobSeekException() {
         JobSeekException exception = assertThrows(JobSeekException.class, () -> ViewCommand.parse("abc"));
-        assertEquals("Error: Please provide a valid positive application index. Usage: view INDEX",
+        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
                 exception.getMessage());
     }
 
     @Test
     public void parse_zeroOrNegativeArgument_throwsJobSeekException() {
         JobSeekException zeroException = assertThrows(JobSeekException.class, () -> ViewCommand.parse("0"));
-        assertEquals("Error: Please provide a valid positive application index. Usage: view INDEX",
+        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
                 zeroException.getMessage());
 
         JobSeekException negativeException = assertThrows(JobSeekException.class, () -> ViewCommand.parse("-5"));
-        assertEquals("Error: Please provide a valid positive application index. Usage: view INDEX",
+        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
                 negativeException.getMessage());
+    }
+
+    @Test
+    public void parse_integerOverflow_throwsJobSeekException() {
+        JobSeekException exception = assertThrows(JobSeekException.class, () -> ViewCommand.parse("2147483648"));
+        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
+                exception.getMessage());
+    }
+
+    @Test
+    public void parse_extraTokens_throwsJobSeekException() {
+        JobSeekException exception = assertThrows(JobSeekException.class, () -> ViewCommand.parse("1 2"));
+        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
+                exception.getMessage());
+    }
+
+    @Test
+    public void parse_zeroPaddedIndex_parsesCorrectly() throws Exception {
+        ViewCommand command = ViewCommand.parse("007");
+        assertEquals(6, command.getTargetIndex());
     }
 
     @Test
@@ -83,6 +103,7 @@ public class ViewCommandTest {
         String output = outputStream.toString();
         assertTrue(output.contains("=================================================="));
         assertTrue(output.contains("Application Details [Index: 1]"));
+        assertTrue(output.contains("--------------------------------------------------"));
         assertTrue(output.contains("Company:   Google"));
         assertTrue(output.contains("Role:      SWE Intern"));
         assertTrue(output.contains("Status:    Pending"));
@@ -100,6 +121,7 @@ public class ViewCommandTest {
 
         String output = outputStream.toString();
         assertTrue(output.contains("Application Details [Index: 1]"));
+        assertTrue(output.contains("--------------------------------------------------"));
         assertTrue(output.contains("Company:   Shopee"));
         assertTrue(output.contains("Role:      Backend Intern"));
         assertTrue(output.contains("Status:    Accepted"));

@@ -581,6 +581,22 @@ public class MainTest {
     }
 
     @Test
+    public void run_menuEditStatusReprompts_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "10\n1\n3\n99\n2\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Accepted", applications.get(0).getStatus());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Application status updated successfully."));
+        assertTrue(output.contains("Status: Accepted"));
+    }
+
+    @Test
     public void run_menuEditAllFields_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
@@ -750,5 +766,143 @@ public class MainTest {
 
         Main mainCustom = new Main(new Ui(), new Storage(), null);
         assertNotNull(mainCustom.getApplications());
+    }
+
+    @Test
+    public void run_immediateEofAtPrompts_handlesGracefully() {
+        Main addMain = createMainWithInput("1\n", new ApplicationList());
+        addMain.run();
+
+        Main addRoleMain = createMainWithInput("1\nGoogle\n", new ApplicationList());
+        addRoleMain.run();
+
+        Main searchMain = createMainWithInput("8\n", new ApplicationList());
+        searchMain.run();
+
+        ApplicationList list = new ApplicationList();
+        list.add(new Application("Google", "SWE Intern"));
+        Main editFieldMain = createMainWithInput("10\n1\n", list);
+        editFieldMain.run();
+
+        Main editAllMidMain = createMainWithInput("10\n1\n4\nNewCo\n", list);
+        editAllMidMain.run();
+
+        assertEquals("Google", list.get(0).getCompany());
+    }
+
+    @Test
+    public void run_menuAddUnicodeEmojis_storesAndDisplays() {
+        ApplicationList applications = new ApplicationList();
+        String input = "1\n🚀 Tech & Co.\n🎉 Lead SWE 💻✨\n2\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("🚀 Tech & Co.", applications.get(0).getCompany());
+        assertEquals("🎉 Lead SWE 💻✨", applications.get(0).getRole());
+        String output = outputStream.toString();
+        assertTrue(output.contains("🚀 Tech & Co."));
+        assertTrue(output.contains("🎉 Lead SWE 💻✨"));
+    }
+
+    @Test
+    public void run_menuAddFormatTokens_handledAsLiterals() {
+        ApplicationList applications = new ApplicationList();
+        String input = "1\n%s%d%x%n\n%s Developer\n8\n%s\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("%s%d%x%n", applications.get(0).getCompany());
+        String output = outputStream.toString();
+        assertTrue(output.contains("%s%d%x%n"));
+        assertTrue(output.contains("Applications matching '%s':"));
+    }
+
+    @Test
+    public void run_menuEditStatusRepeatedInvalid_repromptsAndUpdates() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "10\n1\n3\ninvalid\n99\n???\nfoo\nbar\n-1\n4\n0\nAccepted\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Accepted", applications.get(0).getStatus());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid status choice: 'invalid'."));
+        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Application status updated successfully."));
+    }
+
+    @Test
+    public void run_indexIntegerOverflow_showsInvalidNumberError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "4\n2147483648\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid application index. Please enter a valid number."));
+    }
+
+    @Test
+    public void run_listInvalidFilter_showsCleanError() {
+        Main main = createMainWithInput("list invalid\n0\n", new ApplicationList());
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid list filter: 'invalid'. Usage: list [completed|all]"));
+        org.junit.jupiter.api.Assertions.assertFalse(output.contains("Error: Error:"));
+    }
+
+    @Test
+    public void run_viewOutOfBounds_showsCleanError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        Main main = createMainWithInput("view 2\n0\n", applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Application index 2 does not exist. (Total applications: 1)"));
+        org.junit.jupiter.api.Assertions.assertFalse(output.contains("An error occurred while executing command:"));
+    }
+
+    @Test
+    public void run_commandViewWithTab_displaysCard() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        Main main = createMainWithInput("view\t1\n0\n", applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application Details [Index: 1]"));
+        assertTrue(output.contains("Company:   Google"));
+    }
+
+    @Test
+    public void run_commandListWithTab_displaysFilteredList() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backend Intern"));
+
+        Main main = createMainWithInput("list\tall\n0\n", applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Here are your applications:"));
+        assertTrue(output.contains("Shopee"));
+    }
+
+    @Test
+    public void run_menuAddTabsInFields_normalizedToSpaces() {
+        ApplicationList applications = new ApplicationList();
+        String input = "1\nGoogle\tLLC\nSWE\tIntern\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Google LLC", applications.get(0).getCompany());
+        assertEquals("SWE Intern", applications.get(0).getRole());
     }
 }

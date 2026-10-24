@@ -65,7 +65,7 @@ public class ListCommand extends Command {
         case "all":
             return new ListCommand(FilterType.ALL);
         default:
-            throw new JobSeekException("Error: Invalid list filter: '" + args.trim()
+            throw new JobSeekException("Invalid list filter: '" + args.trim()
                     + "'. Usage: list [completed|all]");
         }
     }

@@ -60,6 +60,15 @@ public class UiTest {
     }
 
     @Test
+    public void showError_existingErrorPrefix_doesNotDuplicateErrorPrefix() {
+        Ui ui = new Ui();
+        ui.showError("Error: Custom error message");
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Custom error message"));
+        org.junit.jupiter.api.Assertions.assertFalse(output.contains("Error: Error:"));
+    }
+
+    @Test
     public void showWelcome_printsLogoAndWelcomeMessage() {
         Ui ui = new Ui();
         ui.showWelcome();
@@ -105,6 +114,17 @@ public class UiTest {
         assertTrue(output.contains("Google"));
         assertTrue(output.contains("SWE Intern"));
         assertTrue(output.contains("1 application tracked."));
+    }
+
+    @Test
+    public void showMenu_multipleApplications_pluralSummaryCount() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        applications.add(new Application("Meta", "Data Analyst"));
+        Ui ui = new Ui();
+        ui.showMenu(applications);
+        String output = outputStream.toString();
+        assertTrue(output.contains("2 applications tracked."));
     }
 
     @Test

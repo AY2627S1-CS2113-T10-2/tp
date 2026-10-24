@@ -40,6 +40,20 @@ public class SortCommandTest {
         assertEquals("No applications found.", ui.lastMessage);
     }
 
+    @Test
+    public void execute_identicalCompanyAndRole_preservesOriginalAdditionOrder() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        applications.add(new Application("Google", "SWE Intern"));
+        RecordingUi ui = new RecordingUi();
+
+        new SortCommand().execute(applications, ui, new Storage());
+
+        String[] lines = ui.lastMessage.split("\\R");
+        assertTrue(lines[3].startsWith("1 "));
+        assertTrue(lines[4].startsWith("2 "));
+    }
+
     private static class RecordingUi extends Ui {
         private String lastMessage;
 

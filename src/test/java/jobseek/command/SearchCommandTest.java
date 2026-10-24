@@ -53,6 +53,19 @@ public class SearchCommandTest {
         assertEquals("No applications found.", ui.lastMessage);
     }
 
+    @Test
+    public void execute_matchesUnicodeEmojiAndFormatString_findsMatchingEntries() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("🚀 Tech Corp", "%s Developer"));
+        RecordingUi ui = new RecordingUi();
+
+        new SearchCommand("🚀").execute(applications, ui, new Storage());
+        assertTrue(ui.lastMessage.contains("🚀 Tech Corp"));
+
+        new SearchCommand("%s").execute(applications, ui, new Storage());
+        assertTrue(ui.lastMessage.contains("%s Developer"));
+    }
+
     private static class RecordingUi extends Ui {
         private String lastMessage;
 

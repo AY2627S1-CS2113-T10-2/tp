@@ -71,12 +71,17 @@ public class Ui {
 
     /**
      * Displays an error message prefixed with an error label and divider lines.
+     * If the message already contains an error label, it is printed without duplication.
      *
      * @param errorMessage Error message text to display.
      */
     public void showError(String errorMessage) {
         showLine();
-        System.out.println("Error: " + errorMessage);
+        if (errorMessage != null && errorMessage.startsWith("Error: ")) {
+            System.out.println(errorMessage);
+        } else {
+            System.out.println("Error: " + errorMessage);
+        }
         showLine();
     }
 
