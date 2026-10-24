@@ -67,13 +67,13 @@ public class ApplicationTest {
     }
 
     @Test
-    public void getStatus_default_returnsPending() {
+    public void getStatus_defaultsToPending() {
         Application application = new Application("Google", "SWE Intern");
         assertEquals("Pending", application.getStatus());
     }
 
     @Test
-    public void setStatus_validStatus_updatesSuccessfully() {
+    public void setStatus_updatesStatusCorrectly() {
         Application application = new Application("Google", "SWE Intern");
         application.setStatus("Accepted");
         assertEquals("Accepted", application.getStatus());
@@ -89,5 +89,12 @@ public class ApplicationTest {
 
         Application app2 = new Application("Shopee", "Backend", "Rejected");
         assertEquals("Rejected", app2.getStatus());
+    }
+
+    @Test
+    public void constructor_fourParameters_setsStatusCorrectly() {
+        Application application = new Application("Microsoft", "Security Intern", true, "Offer Accepted");
+        assertEquals("Offer Accepted", application.getStatus());
+        assertTrue(application.isCompleted());
     }
 }

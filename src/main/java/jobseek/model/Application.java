@@ -88,12 +88,12 @@ public class Application {
     }
 
     public String getStatus() {
-        return status;
+        return status != null ? status : DEFAULT_STATUS;
     }
 
     public void setStatus(String status) {
         assert status != null && !status.trim().isEmpty() : "Status cannot be null or empty";
-        this.status = status.trim();
+        this.status = (status != null && !status.trim().isEmpty()) ? status.trim() : DEFAULT_STATUS;
     }
 
     /**

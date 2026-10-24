@@ -8,6 +8,9 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.SearchCommand;
+import jobseek.command.SortCommand;
+import jobseek.command.ViewCommand;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
@@ -65,15 +68,15 @@ public class MainTest {
 
     @Test
     public void run_typedWordsOnMenu_rejectedWithErrorMessage() {
-        Main main = createMainWithInput("exit\nbye\nhelp\nlist\nadd\n0\n", new ApplicationList());
+        Main main = createMainWithInput("exit\nbye\nhelp\nremove\nadd\n0\n", new ApplicationList());
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'help'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'list'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
-        assertTrue(output.contains("Error: Invalid option: 'add'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
+        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'remove'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
     }
 
@@ -86,11 +89,14 @@ public class MainTest {
         assertTrue(output.contains("Available menu options:"));
         assertTrue(output.contains("[1] Add application"));
         assertTrue(output.contains("[2] List applications"));
-        assertTrue(output.contains("[3] Delete application"));
-        assertTrue(output.contains("[4] Mark application completed"));
-        assertTrue(output.contains("[5] Unmark application"));
-        assertTrue(output.contains("[6] Edit application"));
+        assertTrue(output.contains("[3] List uncompleted apps"));
+        assertTrue(output.contains("[4] Delete application"));
+        assertTrue(output.contains("[5] Mark application completed"));
+        assertTrue(output.contains("[6] Unmark application"));
         assertTrue(output.contains("[7] Help"));
+        assertTrue(output.contains("[8] Search applications"));
+        assertTrue(output.contains("[9] Sort applications"));
+        assertTrue(output.contains("[10] Edit application"));
         assertTrue(output.contains("[0] Exit"));
     }
 
@@ -145,12 +151,103 @@ public class MainTest {
     }
 
     @Test
+    public void run_commandListFilters_showsFilteredApplications() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Active Co", "SWE Intern", false));
+        applications.add(new Application("Done Co", "Data Analyst", true));
+
+        String input = "list\nlist completed\nlist all\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Active Co"));
+        assertTrue(output.contains("Done Co"));
+    }
+
+    @Test
+    public void run_commandViewValid_displaysCard() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "view 1\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application Details [Index: 1]"));
+        assertTrue(output.contains("Company:   Google"));
+        assertTrue(output.contains("Role:      SWE Intern"));
+    }
+
+    @Test
+    public void run_commandViewInvalid_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "view\nview abc\nview 0\nview 5\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Please provide a valid positive application index. Usage: view INDEX"));
+        assertTrue(output.contains("Error: Application index 5 does not exist. (Total applications: 1)"));
+    }
+
+    @Test
+    public void run_menuOption3_showsOnlyActive() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Active Co", "SWE Intern", false));
+        applications.add(new Application("Done Co", "Data Analyst", true));
+
+        String input = "3\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        int tableStart = output.indexOf("Here are your applications:\n");
+        assertTrue(tableStart >= 0);
+        int tableEnd = output.indexOf("JOBSEEK", tableStart);
+        String tableOutput = tableEnd >= 0 ? output.substring(tableStart, tableEnd) : output.substring(tableStart);
+        assertTrue(tableOutput.contains("Active Co"));
+        assertFalse(tableOutput.contains("Done Co"));
+    }
+
+    @Test
+    public void run_menuOption3NoActive_showsFallbackMessage() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Done Co", "Data Analyst", true));
+
+        String input = "3\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("No active applications found."));
+    }
+
+    @Test
+    public void run_multipleCommands_printsMenuTitleOnlyOnce() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backend Intern"));
+        String input = "2\n2\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        int firstIndex = output.indexOf("JOBSEEK");
+        assertTrue(firstIndex >= 0);
+        int secondIndex = output.indexOf("JOBSEEK", firstIndex + 1);
+        assertEquals(-1, secondIndex);
+    }
+
+    @Test
     public void run_menuDeleteOption3_promptsAndDeletes() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false));
         applications.add(new Application("Shopee", "Backend Intern", false));
 
-        String input = "3\n1\n0\n";
+        String input = "4\n1\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -165,7 +262,7 @@ public class MainTest {
     @Test
     public void run_menuDeleteWhenEmpty_showsEmptyError() {
         ApplicationList applications = new ApplicationList();
-        String input = "3\n0\n";
+        String input = "4\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -177,7 +274,7 @@ public class MainTest {
     public void run_menuDeleteWithInvalidIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "3\ninvalidNumber\n0\n";
+        String input = "4\ninvalidNumber\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -189,7 +286,7 @@ public class MainTest {
     public void run_menuDeleteWithBlankIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "3\n   \n0\n";
+        String input = "4\n   \n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -198,11 +295,11 @@ public class MainTest {
     }
 
     @Test
-    public void run_menuMarkOption4_promptsAndMarksCompleted() {
+    public void run_menuMarkOption5_promptsAndMarksCompleted() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false));
 
-        String input = "4\n1\n0\n";
+        String input = "5\n1\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -216,7 +313,7 @@ public class MainTest {
     @Test
     public void run_menuMarkWhenEmpty_showsEmptyError() {
         ApplicationList applications = new ApplicationList();
-        String input = "4\n0\n";
+        String input = "5\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -228,7 +325,7 @@ public class MainTest {
     public void run_menuMarkWithInvalidIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "4\nabc\n0\n";
+        String input = "5\nabc\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -240,7 +337,7 @@ public class MainTest {
     public void run_menuMarkWithBlankIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "4\n   \n0\n";
+        String input = "5\n   \n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -249,11 +346,11 @@ public class MainTest {
     }
 
     @Test
-    public void run_menuUnmarkOption5_promptsAndUnmarks() {
+    public void run_menuUnmarkOption6_promptsAndUnmarks() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", true));
 
-        String input = "5\n1\n0\n";
+        String input = "6\n1\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -267,7 +364,7 @@ public class MainTest {
     @Test
     public void run_menuUnmarkWhenEmpty_showsEmptyError() {
         ApplicationList applications = new ApplicationList();
-        String input = "5\n0\n";
+        String input = "6\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -279,7 +376,7 @@ public class MainTest {
     public void run_menuUnmarkWithInvalidIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "5\nabc\n0\n";
+        String input = "6\nabc\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -291,7 +388,7 @@ public class MainTest {
     public void run_menuUnmarkWithBlankIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "5\n   \n0\n";
+        String input = "6\n   \n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -316,15 +413,15 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: '99'. Enter 0, 1, 2, 3, 4, 5, 6, or 7."));
+        assertTrue(output.contains("Error: Invalid option: '99'. Enter a number from 0 to 10."));
     }
 
     @Test
-    public void run_menuEditOption6_updatesCompanyOnly() {
+    public void run_menuEditOption10_updatesCompanyOnly() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Googl", "SWE Intern", false));
 
-        String input = "6\n1\n1\nGoogle\n0\n";
+        String input = "10\n1\n1\nGoogle\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -338,11 +435,11 @@ public class MainTest {
     }
 
     @Test
-    public void run_menuEditOption6_updatesRoleOnly() {
+    public void run_menuEditOption10_updatesRoleOnly() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Shopee", "Backnd Intern", false));
 
-        String input = "6\n1\n2\nBackend Intern\n0\n";
+        String input = "10\n1\n2\nBackend Intern\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -354,11 +451,11 @@ public class MainTest {
     }
 
     @Test
-    public void run_menuEditOption6_updatesBothFields() {
+    public void run_menuEditOption10_updatesBothFields() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false));
 
-        String input = "6\n1\n4\nNewCorp\nNewRole\n1\n0\n";
+        String input = "10\n1\n4\nNewCorp\nNewRole\n1\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -371,7 +468,7 @@ public class MainTest {
     @Test
     public void run_menuEditEmptyList_showsError() {
         ApplicationList applications = new ApplicationList();
-        String input = "6\n0\n";
+        String input = "10\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -383,7 +480,7 @@ public class MainTest {
     public void run_menuEditInvalidIndexFormat_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "6\nabc\n0\n";
+        String input = "10\nabc\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -395,7 +492,7 @@ public class MainTest {
     public void run_menuEditBlankIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "6\n   \n0\n";
+        String input = "10\n   \n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -407,7 +504,7 @@ public class MainTest {
     public void run_menuEditOutOfBoundsIndex_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "6\n99\n0\n";
+        String input = "10\n99\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -419,7 +516,7 @@ public class MainTest {
     public void run_menuEditInvalidFieldChoice_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
-        String input = "6\n1\n99\n0\n";
+        String input = "10\n1\n99\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -432,7 +529,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
 
-        String input = "6\n1\n3\n2\n0\n";
+        String input = "10\n1\n3\n2\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -448,7 +545,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Grab", "Data Analyst", false, "Pending"));
 
-        String input = "6\n1\n3\n3\n0\n";
+        String input = "10\n1\n3\n3\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -463,7 +560,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false, "Pending"));
 
-        String input = "6\n1\n3\nAccepted\n0\n";
+        String input = "10\n1\n3\nAccepted\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -475,7 +572,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
-        String input = "6\n1\n3\n99\n0\n";
+        String input = "10\n1\n3\n99\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -488,7 +585,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
 
-        String input = "6\n1\n4\nNewCorp\nNewRole\n2\n0\n";
+        String input = "10\n1\n4\nNewCorp\nNewRole\n2\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -506,7 +603,7 @@ public class MainTest {
     public void run_menuEditEmptyCompany_promptsUntilValid() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Googl", "SWE Intern"));
-        String input = "6\n1\n1\n\n   \nGoogle\n0\n";
+        String input = "10\n1\n1\n\n   \nGoogle\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -519,7 +616,7 @@ public class MainTest {
     public void run_menuEditEmptyRole_promptsUntilValid() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE"));
-        String input = "6\n1\n2\n\n   \nSenior SWE\n0\n";
+        String input = "10\n1\n2\n\n   \nSenior SWE\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -541,7 +638,11 @@ public class MainTest {
         Main main = new Main();
 
         assertInstanceOf(ListCommand.class, main.parseCommand("2"));
+        assertInstanceOf(ListCommand.class, main.parseCommand("3"));
+        assertEquals(ListCommand.FilterType.ACTIVE,
+                ((ListCommand) main.parseCommand("3")).getFilterType());
         assertInstanceOf(HelpCommand.class, main.parseCommand("7"));
+        assertInstanceOf(SortCommand.class, main.parseCommand("9"));
         assertInstanceOf(ExitCommand.class, main.parseCommand("0"));
 
         Scanner addScanner = new Scanner("Google\nSWE Intern\n");
@@ -556,38 +657,81 @@ public class MainTest {
 
         Scanner delScanner = new Scanner("1\n");
         Main delMain = new Main(new Ui(delScanner), new Storage(), list);
-        Command deleteCmd = delMain.parseCommand("3");
+        Command deleteCmd = delMain.parseCommand("4");
         assertInstanceOf(DeleteCommand.class, deleteCmd);
         assertEquals(0, ((DeleteCommand) deleteCmd).getTargetIndex());
 
         Scanner markScanner = new Scanner("1\n");
         Main markMain = new Main(new Ui(markScanner), new Storage(), list);
-        Command markCmd = markMain.parseCommand("4");
+        Command markCmd = markMain.parseCommand("5");
         assertInstanceOf(MarkCommand.class, markCmd);
         assertEquals(0, ((MarkCommand) markCmd).getTargetIndex());
         assertTrue(((MarkCommand) markCmd).isCompleted());
 
         Scanner unmarkScanner = new Scanner("1\n");
         Main unmarkMain = new Main(new Ui(unmarkScanner), new Storage(), list);
-        Command unmarkCmd = unmarkMain.parseCommand("5");
+        Command unmarkCmd = unmarkMain.parseCommand("6");
         assertInstanceOf(MarkCommand.class, unmarkCmd);
         assertEquals(0, ((MarkCommand) unmarkCmd).getTargetIndex());
         assertFalse(((MarkCommand) unmarkCmd).isCompleted());
 
         Scanner editScanner = new Scanner("1\n1\nGoogle LLC\n");
         Main editMain = new Main(new Ui(editScanner), new Storage(), list);
-        Command editCmd = editMain.parseCommand("6");
+        Command editCmd = editMain.parseCommand("10");
         assertInstanceOf(EditCommand.class, editCmd);
         assertEquals(0, ((EditCommand) editCmd).getTargetIndex());
         assertEquals("Google LLC", ((EditCommand) editCmd).getNewCompany());
         assertNull(((EditCommand) editCmd).getNewRole());
+
+        Scanner searchScanner = new Scanner("goo\n");
+        Main searchMain = new Main(new Ui(searchScanner), new Storage(), list);
+        assertInstanceOf(SearchCommand.class, searchMain.parseCommand("8"));
+
+        Command viewCmd = main.parseCommand("view 1");
+        assertInstanceOf(ViewCommand.class, viewCmd);
+        assertEquals(0, ((ViewCommand) viewCmd).getTargetIndex());
+
+        Command listActiveCmd = main.parseCommand("list");
+        assertInstanceOf(ListCommand.class, listActiveCmd);
+        assertEquals(ListCommand.FilterType.ACTIVE, ((ListCommand) listActiveCmd).getFilterType());
+
+        Command listCompletedCmd = main.parseCommand("list completed");
+        assertInstanceOf(ListCommand.class, listCompletedCmd);
+        assertEquals(ListCommand.FilterType.COMPLETED, ((ListCommand) listCompletedCmd).getFilterType());
+
+        Command listAllCmd = main.parseCommand("list all");
+        assertInstanceOf(ListCommand.class, listAllCmd);
+        assertEquals(ListCommand.FilterType.ALL, ((ListCommand) listAllCmd).getFilterType());
+    }
+
+    @Test
+    public void run_searchAndSortOptions_keepOriginalApplicationOrder() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Zulu", "Engineer"));
+        applications.add(new Application("Acme", "Designer"));
+        Main main = createMainWithInput("8\nacm\n9\n0\n", applications);
+
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Applications matching 'acm':"));
+        assertTrue(output.contains("Applications sorted by company, then role:"));
+        assertEquals("Zulu", applications.get(0).getCompany());
+        assertEquals("Acme", applications.get(1).getCompany());
+    }
+
+    @Test
+    public void run_searchBlankTerm_reprompts() {
+        Main main = createMainWithInput("8\n  \nacme\n0\n", new ApplicationList());
+        main.run();
+
+        assertTrue(outputStream.toString().contains("Error: Search term cannot be empty."));
     }
 
     @Test
     public void parseCommand_nonNumericInput_returnsNull() {
         Main main = new Main();
         assertNull(main.parseCommand("add"));
-        assertNull(main.parseCommand("list"));
         assertNull(main.parseCommand("delete"));
         assertNull(main.parseCommand("mark"));
         assertNull(main.parseCommand("unmark"));
@@ -596,6 +740,7 @@ public class MainTest {
         assertNull(main.parseCommand("exit"));
         assertNull(main.parseCommand("bye"));
         assertNull(main.parseCommand("foobar"));
+        assertNull(main.parseCommand("remove"));
     }
 
     @Test

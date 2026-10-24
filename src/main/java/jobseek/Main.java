@@ -8,7 +8,11 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.SearchCommand;
+import jobseek.command.SortCommand;
 import jobseek.command.StatusCommand;
+import jobseek.command.ViewCommand;
+import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -77,16 +81,17 @@ public class Main {
      */
     public void run() {
         ui.showWelcome();
+        ui.showMenu(applications);
         boolean isExit = false;
 
         while (!isExit) {
-            ui.showMenu(applications);
             String fullCommand = ui.readCommand();
             if (fullCommand == null) {
                 break;
             }
             fullCommand = fullCommand.trim();
             if (fullCommand.isEmpty()) {
+                ui.showPrompt("Enter option:\n> ");
                 continue;
             }
 
@@ -99,6 +104,9 @@ public class Main {
                     ui.showError("An error occurred while executing command: " + e.getMessage());
                 }
             }
+            if (!isExit) {
+                ui.showPrompt("Enter option:\n> ");
+            }
         }
 
         ui.showGoodbye();
@@ -106,7 +114,7 @@ public class Main {
 
     /**
      * Parses a user menu option string into an executable Command instance.
-     * Only numeric menu options (0, 1, 2, 3, 4, 5, 6, 7) are accepted.
+     * Accepts numeric menu options (0 through 10), plus supported list and view commands.
      *
      * @param option Raw menu option string entered by the user.
      * @return The corresponding Command object, or null if the option is invalid.
@@ -118,25 +126,51 @@ public class Main {
 
         String trimmedOption = option.trim();
 
+        if (trimmedOption.equalsIgnoreCase("view") || trimmedOption.toLowerCase().startsWith("view ")) {
+            try {
+                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                return ViewCommand.parse(args);
+            } catch (JobSeekException e) {
+                ui.showError(e.getMessage());
+                return null;
+            }
+        }
+
+        if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.toLowerCase().startsWith("list ")) {
+            try {
+                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                return ListCommand.parse(args);
+            } catch (JobSeekException e) {
+                ui.showError(e.getMessage());
+                return null;
+            }
+        }
+
         switch (trimmedOption) {
         case "1":
             return handleMenuAdd();
         case "2":
             return new ListCommand();
         case "3":
-            return handleMenuDelete();
+            return new ListCommand(ListCommand.FilterType.ACTIVE);
         case "4":
-            return handleMenuMark(true);
+            return handleMenuDelete();
         case "5":
-            return handleMenuMark(false);
+            return handleMenuMark(true);
         case "6":
-            return handleMenuEdit();
+            return handleMenuMark(false);
         case "7":
             return new HelpCommand();
+        case "8":
+            return handleMenuSearch();
+        case "9":
+            return new SortCommand();
+        case "10":
+            return handleMenuEdit();
         case "0":
             return new ExitCommand();
         default:
-            ui.showError("Invalid option: '" + trimmedOption + "'. Enter 0, 1, 2, 3, 4, 5, 6, or 7.");
+            ui.showError("Invalid option: '" + trimmedOption + "'. Enter a number from 0 to 10.");
             return null;
         }
     }
@@ -171,6 +205,11 @@ public class Main {
     private Command handleMenuDelete() {
         Integer index = promptApplicationIndex("Enter application index to delete:\n> ");
         return index != null ? new DeleteCommand(index) : null;
+    }
+
+    private Command handleMenuSearch() {
+        String keyword = promptNonEmpty("Search company or role:", "Search term cannot be empty.");
+        return keyword != null ? new SearchCommand(keyword) : null;
     }
 
     private Command handleMenuMark(boolean isCompleted) {
