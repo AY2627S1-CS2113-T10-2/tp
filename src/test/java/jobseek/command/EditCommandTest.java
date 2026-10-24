@@ -167,7 +167,8 @@ public class EditCommandTest {
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: At least one field (company or role) must be specified for editing."));
+        assertTrue(output.contains("Error: At least one field (company, role, or status) "
+                + "must be specified for editing."));
     }
 
     @Test
@@ -181,7 +182,44 @@ public class EditCommandTest {
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: At least one field (company or role) must be specified for editing."));
+        assertTrue(output.contains("Error: At least one field (company, role, or status) "
+                + "must be specified for editing."));
+    }
+
+    @Test
+    public void execute_updateStatusOnly_success() throws Exception {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
+
+        EditCommand command = new EditCommand(0, null, null, "Accepted");
+        command.execute(applications, new Ui(), new Storage());
+
+        assertEquals("Shopee", applications.get(0).getCompany());
+        assertEquals("Backend Intern", applications.get(0).getRole());
+        assertEquals("Accepted", applications.get(0).getStatus());
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application updated successfully."));
+        assertTrue(output.contains("Status: Accepted"));
+    }
+
+    @Test
+    public void execute_updateAllThreeFields_success() throws Exception {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
+
+        EditCommand command = new EditCommand(0, "NewCorp", "NewRole", "Rejected");
+        command.execute(applications, new Ui(), new Storage());
+
+        assertEquals("NewCorp", applications.get(0).getCompany());
+        assertEquals("NewRole", applications.get(0).getRole());
+        assertEquals("Rejected", applications.get(0).getStatus());
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application updated successfully."));
+        assertTrue(output.contains("Company: NewCorp"));
+        assertTrue(output.contains("Role: NewRole"));
+        assertTrue(output.contains("Status: Rejected"));
     }
 
     @Test

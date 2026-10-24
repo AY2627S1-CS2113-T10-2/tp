@@ -13,7 +13,7 @@ public class Application {
 
     /**
      * Constructs an Application with the specified company and role.
-     * By default, the application status is set to incomplete (false) and status to "Pending".
+     * By default, the application is set to incomplete (false) and status to "Pending".
      *
      * @param company Name of the company applied to.
      * @param role Title of the job or internship role.
@@ -34,18 +34,31 @@ public class Application {
     }
 
     /**
-     * Constructs an Application with the specified company, role, completion status, and status string.
+     * Constructs an Application with the specified company, role, completion status, and recruitment status.
      *
      * @param company Name of the company applied to.
      * @param role Title of the job or internship role.
      * @param isCompleted True if the application process is completed, false otherwise.
-     * @param status Current application recruitment stage (e.g., Pending, Accepted, Rejected).
+     * @param status Current recruitment status indicator (e.g. "Pending", "Accepted", "Rejected").
      */
     public Application(String company, String role, boolean isCompleted, String status) {
+        assert company != null : "Company should not be null";
+        assert role != null : "Role should not be null";
         this.company = company;
         this.role = role;
         this.isCompleted = isCompleted;
         this.status = (status != null && !status.trim().isEmpty()) ? status.trim() : DEFAULT_STATUS;
+    }
+
+    /**
+     * Constructs an Application with the specified company, role, and recruitment status.
+     *
+     * @param company Name of the company applied to.
+     * @param role Title of the job or internship role.
+     * @param status Current recruitment status indicator.
+     */
+    public Application(String company, String role, String status) {
+        this(company, role, false, status);
     }
 
     public String getCompany() {
@@ -53,6 +66,7 @@ public class Application {
     }
 
     public void setCompany(String company) {
+        assert company != null && !company.trim().isEmpty() : "Company cannot be null or empty";
         this.company = company;
     }
 
@@ -61,6 +75,7 @@ public class Application {
     }
 
     public void setRole(String role) {
+        assert role != null && !role.trim().isEmpty() : "Role cannot be null or empty";
         this.role = role;
     }
 
@@ -77,6 +92,7 @@ public class Application {
     }
 
     public void setStatus(String status) {
+        assert status != null && !status.trim().isEmpty() : "Status cannot be null or empty";
         this.status = (status != null && !status.trim().isEmpty()) ? status.trim() : DEFAULT_STATUS;
     }
 
