@@ -8,6 +8,7 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.StatusCommand;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -45,9 +46,12 @@ public class Main {
      * @param applications In-memory list of applications.
      */
     public Main(Ui ui, Storage storage, ApplicationList applications) {
+        assert ui != null : "Ui instance should not be null";
+        assert storage != null : "Storage instance should not be null";
         this.ui = ui;
         this.storage = storage;
         this.applications = applications != null ? applications : new ApplicationList();
+        assert this.applications != null : "Applications list should not be null";
     }
 
     private static ApplicationList loadApplications(Ui ui, Storage storage) {
@@ -186,7 +190,7 @@ public class Main {
             return null;
         }
 
-        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Both):\n> ");
+        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> ");
         String fieldChoice = ui.readCommand();
         if (fieldChoice == null) {
             return null;
@@ -201,14 +205,49 @@ public class Main {
             String role = promptNonEmpty("Enter new role:", "Role cannot be empty.");
             return role != null ? new EditCommand(index, null, role) : null;
         case "3":
-            String bothCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
-            if (bothCompany == null) {
+            String status = promptStatus();
+            return status != null ? new StatusCommand(index, status) : null;
+        case "4":
+            String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
+            if (allCompany == null) {
                 return null;
             }
-            String bothRole = promptNonEmpty("Enter new role:", "Role cannot be empty.");
-            return bothRole != null ? new EditCommand(index, bothCompany, bothRole) : null;
+            String allRole = promptNonEmpty("Enter new role:", "Role cannot be empty.");
+            if (allRole == null) {
+                return null;
+            }
+            String allStatus = promptStatus();
+            return allStatus != null ? new EditCommand(index, allCompany, allRole, allStatus) : null;
         default:
-            ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter 1, 2, or 3.");
+            ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter 1, 2, 3, or 4.");
+            return null;
+        }
+    }
+
+    private String promptStatus() {
+        ui.showPrompt("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ");
+        String input = ui.readCommand();
+        if (input == null) {
+            return null;
+        }
+        String trimmed = input.trim();
+        switch (trimmed) {
+        case "1":
+            return "Pending";
+        case "2":
+            return "Accepted";
+        case "3":
+            return "Rejected";
+        default:
+            if (trimmed.equalsIgnoreCase("Pending")) {
+                return "Pending";
+            } else if (trimmed.equalsIgnoreCase("Accepted")) {
+                return "Accepted";
+            } else if (trimmed.equalsIgnoreCase("Rejected")) {
+                return "Rejected";
+            }
+            ui.showError("Invalid status choice: '" + trimmed
+                    + "'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).");
             return null;
         }
     }

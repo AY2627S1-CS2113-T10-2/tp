@@ -332,7 +332,7 @@ public class MainTest {
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
         assertTrue(output.contains("Enter application index to edit:\n> "));
-        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Both):\n> "));
+        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> "));
         assertTrue(output.contains("Enter new company:\n> "));
         assertTrue(output.contains("Application updated successfully."));
     }
@@ -358,7 +358,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false));
 
-        String input = "6\n1\n3\nNewCorp\nNewRole\n0\n";
+        String input = "6\n1\n4\nNewCorp\nNewRole\n1\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -424,7 +424,82 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid field choice: '99'. Enter 1, 2, or 3."));
+        assertTrue(output.contains("Error: Invalid field choice: '99'. Enter 1, 2, 3, or 4."));
+    }
+
+    @Test
+    public void run_menuEditStatusOnly_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
+
+        String input = "6\n1\n3\n2\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Accepted", applications.get(0).getStatus());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> "));
+        assertTrue(output.contains("Application status updated successfully."));
+        assertTrue(output.contains("Status: Accepted"));
+    }
+
+    @Test
+    public void run_menuEditStatusRejected_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Grab", "Data Analyst", false, "Pending"));
+
+        String input = "6\n1\n3\n3\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Rejected", applications.get(0).getStatus());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application status updated successfully."));
+        assertTrue(output.contains("Status: Rejected"));
+    }
+
+    @Test
+    public void run_menuEditStatusText_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false, "Pending"));
+
+        String input = "6\n1\n3\nAccepted\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Accepted", applications.get(0).getStatus());
+    }
+
+    @Test
+    public void run_menuEditStatusInvalid_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        String input = "6\n1\n3\n99\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+    }
+
+    @Test
+    public void run_menuEditAllFields_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
+
+        String input = "6\n1\n4\nNewCorp\nNewRole\n2\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("NewCorp", applications.get(0).getCompany());
+        assertEquals("NewRole", applications.get(0).getRole());
+        assertEquals("Accepted", applications.get(0).getStatus());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application updated successfully."));
+        assertTrue(output.contains("Company: NewCorp"));
+        assertTrue(output.contains("Role: NewRole"));
+        assertTrue(output.contains("Status: Accepted"));
     }
 
     @Test
