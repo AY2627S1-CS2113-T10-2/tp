@@ -32,7 +32,10 @@ public class ApplicationList {
      */
     public void add(Application app) {
         if (app != null) {
+            int sizeBefore = applications.size();
             applications.add(app);
+            assert applications.size() == sizeBefore + 1 : "List size should increase by 1 after adding";
+            assert applications.contains(app) : "List should contain the newly added application";
         }
     }
 
@@ -63,7 +66,9 @@ public class ApplicationList {
             throw new IndexOutOfBoundsException("Invalid index: " + index + ". Must be between 0 and "
                     + (applications.size() - 1) + ".");
         }
-        return applications.get(index);
+        Application app = applications.get(index);
+        assert app != null : "Application at valid index should not be null";
+        return app;
     }
 
     /**
