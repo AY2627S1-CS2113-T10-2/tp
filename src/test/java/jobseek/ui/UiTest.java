@@ -91,6 +91,7 @@ public class UiTest {
         assertTrue(output.contains("[7] Help"));
         assertTrue(output.contains("[8] Search applications"));
         assertTrue(output.contains("[9] Sort applications alphabetically"));
+        assertTrue(output.contains("[10] Edit application"));
         assertTrue(output.contains("[0] Exit"));
     }
 

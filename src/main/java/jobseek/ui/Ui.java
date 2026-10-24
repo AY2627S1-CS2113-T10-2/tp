@@ -141,6 +141,7 @@ public class Ui {
         System.out.println("[7] Help");
         System.out.println("[8] Search applications");
         System.out.println("[9] Sort applications alphabetically");
+        System.out.println("[10] Edit application");
         System.out.println("[0] Exit");
         showLine();
     }

@@ -21,6 +21,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 | `7` | Help | Show the menu options. |
 | `8` | Search applications | Find applications by company or role. |
 | `9` | Sort applications | View applications alphabetically by company, then role. |
+| `10` | Edit application | Update specific fields (company, role, or both) of an application. |
 | `0` | Exit | Quit JobSeek. |
 
 You can also type `list` for active applications, `list completed` for completed applications, or `list all` for every application. Type `view INDEX` to see the details of an application at its original number.

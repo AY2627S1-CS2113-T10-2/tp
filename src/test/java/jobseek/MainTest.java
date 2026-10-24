@@ -3,6 +3,7 @@ package jobseek;
 import jobseek.command.AddCommand;
 import jobseek.command.Command;
 import jobseek.command.DeleteCommand;
+import jobseek.command.EditCommand;
 import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
@@ -71,11 +72,11 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 9."));
-        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 9."));
-        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 9."));
-        assertTrue(output.contains("Error: Invalid option: 'remove'. Enter a number from 0 to 9."));
-        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 9."));
+        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'remove'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
     }
 
@@ -95,6 +96,7 @@ public class MainTest {
         assertTrue(output.contains("[7] Help"));
         assertTrue(output.contains("[8] Search applications"));
         assertTrue(output.contains("[9] Sort applications"));
+        assertTrue(output.contains("[10] Edit application"));
         assertTrue(output.contains("[0] Exit"));
     }
 
@@ -411,7 +413,141 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: '99'. Enter a number from 0 to 9."));
+        assertTrue(output.contains("Error: Invalid option: '99'. Enter a number from 0 to 10."));
+    }
+
+    @Test
+    public void run_menuEditOption10_updatesCompanyOnly() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Googl", "SWE Intern", false));
+
+        String input = "10\n1\n1\nGoogle\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Google", applications.get(0).getCompany());
+        assertEquals("SWE Intern", applications.get(0).getRole());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Enter application index to edit:\n> "));
+        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Both):\n> "));
+        assertTrue(output.contains("Enter new company:\n> "));
+        assertTrue(output.contains("Application updated successfully."));
+    }
+
+    @Test
+    public void run_menuEditOption10_updatesRoleOnly() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backnd Intern", false));
+
+        String input = "10\n1\n2\nBackend Intern\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Shopee", applications.get(0).getCompany());
+        assertEquals("Backend Intern", applications.get(0).getRole());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Enter new role:\n> "));
+        assertTrue(output.contains("Application updated successfully."));
+    }
+
+    @Test
+    public void run_menuEditOption10_updatesBothFields() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("OldCorp", "OldRole", false));
+
+        String input = "10\n1\n3\nNewCorp\nNewRole\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("NewCorp", applications.get(0).getCompany());
+        assertEquals("NewRole", applications.get(0).getRole());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application updated successfully."));
+    }
+
+    @Test
+    public void run_menuEditEmptyList_showsError() {
+        ApplicationList applications = new ApplicationList();
+        String input = "10\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Your application list is currently empty."));
+    }
+
+    @Test
+    public void run_menuEditInvalidIndexFormat_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        String input = "10\nabc\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid application index. Please enter a valid number."));
+    }
+
+    @Test
+    public void run_menuEditBlankIndex_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        String input = "10\n   \n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Please specify a valid application index."));
+    }
+
+    @Test
+    public void run_menuEditOutOfBoundsIndex_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        String input = "10\n99\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid application index: 99. Please enter a number between 1 and 1."));
+    }
+
+    @Test
+    public void run_menuEditInvalidFieldChoice_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        String input = "10\n1\n99\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid field choice: '99'. Enter 1, 2, or 3."));
+    }
+
+    @Test
+    public void run_menuEditEmptyCompany_promptsUntilValid() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Googl", "SWE Intern"));
+        String input = "10\n1\n1\n\n   \nGoogle\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Google", applications.get(0).getCompany());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Company cannot be empty."));
+    }
+
+    @Test
+    public void run_menuEditEmptyRole_promptsUntilValid() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE"));
+        String input = "10\n1\n2\n\n   \nSenior SWE\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Senior SWE", applications.get(0).getRole());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Role cannot be empty."));
     }
 
     @Test
@@ -463,6 +599,14 @@ public class MainTest {
         assertInstanceOf(MarkCommand.class, unmarkCmd);
         assertEquals(0, ((MarkCommand) unmarkCmd).getTargetIndex());
         assertFalse(((MarkCommand) unmarkCmd).isCompleted());
+
+        Scanner editScanner = new Scanner("1\n1\nGoogle LLC\n");
+        Main editMain = new Main(new Ui(editScanner), new Storage(), list);
+        Command editCmd = editMain.parseCommand("10");
+        assertInstanceOf(EditCommand.class, editCmd);
+        assertEquals(0, ((EditCommand) editCmd).getTargetIndex());
+        assertEquals("Google LLC", ((EditCommand) editCmd).getNewCompany());
+        assertNull(((EditCommand) editCmd).getNewRole());
 
         Scanner searchScanner = new Scanner("goo\n");
         Main searchMain = new Main(new Ui(searchScanner), new Storage(), list);
@@ -516,6 +660,7 @@ public class MainTest {
         assertNull(main.parseCommand("delete"));
         assertNull(main.parseCommand("mark"));
         assertNull(main.parseCommand("unmark"));
+        assertNull(main.parseCommand("edit"));
         assertNull(main.parseCommand("help"));
         assertNull(main.parseCommand("exit"));
         assertNull(main.parseCommand("bye"));

@@ -30,6 +30,7 @@ public class HelpCommand extends Command {
                 + "  [7] Help                        - Show this help message\n"
                 + "  [8] Search applications         - Find applications by company or role\n"
                 + "  [9] Sort applications           - View applications alphabetically\n"
+                + "  [10] Edit application           - Edit an existing application's details\n"
                 + "  [0] Exit                        - Exit JobSeek";
         ui.showMessage(helpMessage);
     }
