@@ -100,6 +100,8 @@ public class Main {
                 try {
                     command.execute(applications, ui, storage);
                     isExit = command.isExit();
+                } catch (JobSeekException e) {
+                    ui.showError(e.getMessage());
                 } catch (Exception e) {
                     ui.showError("An error occurred while executing command: " + e.getMessage());
                 }
@@ -126,9 +128,9 @@ public class Main {
 
         String trimmedOption = option.trim();
 
-        if (trimmedOption.equalsIgnoreCase("view") || trimmedOption.toLowerCase().startsWith("view ")) {
+        if (trimmedOption.equalsIgnoreCase("view") || trimmedOption.matches("(?i)^view\\s+.*")) {
             try {
-                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                String args = trimmedOption.replaceFirst("(?i)^view", "").trim();
                 return ViewCommand.parse(args);
             } catch (JobSeekException e) {
                 ui.showError(e.getMessage());
@@ -136,9 +138,9 @@ public class Main {
             }
         }
 
-        if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.toLowerCase().startsWith("list ")) {
+        if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.matches("(?i)^list\\s+.*")) {
             try {
-                String args = trimmedOption.length() > 4 ? trimmedOption.substring(4) : "";
+                String args = trimmedOption.replaceFirst("(?i)^list", "").trim();
                 return ListCommand.parse(args);
             } catch (JobSeekException e) {
                 ui.showError(e.getMessage());
@@ -194,7 +196,7 @@ public class Main {
             if (input == null) {
                 return null;
             }
-            String trimmed = input.trim();
+            String trimmed = input.trim().replace('\t', ' ');
             if (!trimmed.isEmpty()) {
                 return trimmed;
             }
@@ -264,30 +266,31 @@ public class Main {
     }
 
     private String promptStatus() {
-        ui.showPrompt("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ");
-        String input = ui.readCommand();
-        if (input == null) {
-            return null;
-        }
-        String trimmed = input.trim();
-        switch (trimmed) {
-        case "1":
-            return "Pending";
-        case "2":
-            return "Accepted";
-        case "3":
-            return "Rejected";
-        default:
-            if (trimmed.equalsIgnoreCase("Pending")) {
-                return "Pending";
-            } else if (trimmed.equalsIgnoreCase("Accepted")) {
-                return "Accepted";
-            } else if (trimmed.equalsIgnoreCase("Rejected")) {
-                return "Rejected";
+        while (true) {
+            ui.showPrompt("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ");
+            String input = ui.readCommand();
+            if (input == null) {
+                return null;
             }
-            ui.showError("Invalid status choice: '" + trimmed
-                    + "'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).");
-            return null;
+            String trimmed = input.trim();
+            switch (trimmed) {
+            case "1":
+                return "Pending";
+            case "2":
+                return "Accepted";
+            case "3":
+                return "Rejected";
+            default:
+                if (trimmed.equalsIgnoreCase("Pending")) {
+                    return "Pending";
+                } else if (trimmed.equalsIgnoreCase("Accepted")) {
+                    return "Accepted";
+                } else if (trimmed.equalsIgnoreCase("Rejected")) {
+                    return "Rejected";
+                }
+                ui.showError("Invalid status choice: '" + trimmed
+                        + "'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).");
+            }
         }
     }
 

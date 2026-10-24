@@ -11,6 +11,7 @@ import jobseek.ui.Ui;
  */
 public class ViewCommand extends Command {
     private static final String DIVIDER = "==================================================";
+    private static final String SUB_DIVIDER = "--------------------------------------------------";
     private final int targetIndex;
 
     /**
@@ -35,18 +36,18 @@ public class ViewCommand extends Command {
      */
     public static ViewCommand parse(String args) throws JobSeekException {
         if (args == null || args.trim().isEmpty()) {
-            throw new JobSeekException("Error: Please provide a valid positive application index. Usage: view INDEX");
+            throw new JobSeekException("Please provide a valid positive application index. Usage: view INDEX");
         }
 
         try {
             int oneBasedIndex = Integer.parseInt(args.trim());
             if (oneBasedIndex <= 0) {
-                throw new JobSeekException("Error: Please provide a valid positive application index. "
+                throw new JobSeekException("Please provide a valid positive application index. "
                         + "Usage: view INDEX");
             }
             return new ViewCommand(oneBasedIndex - 1);
         } catch (NumberFormatException e) {
-            throw new JobSeekException("Error: Please provide a valid positive application index. Usage: view INDEX");
+            throw new JobSeekException("Please provide a valid positive application index. Usage: view INDEX");
         }
     }
 
@@ -61,7 +62,7 @@ public class ViewCommand extends Command {
     @Override
     public void execute(ApplicationList applications, Ui ui, Storage storage) throws JobSeekException {
         if (targetIndex < 0 || targetIndex >= applications.size()) {
-            throw new JobSeekException("Error: Application index " + (targetIndex + 1)
+            throw new JobSeekException("Application index " + (targetIndex + 1)
                     + " does not exist. (Total applications: " + applications.size() + ")");
         }
 
@@ -70,6 +71,7 @@ public class ViewCommand extends Command {
 
         String card = DIVIDER + "\n"
                 + "Application Details [Index: " + (targetIndex + 1) + "]\n"
+                + SUB_DIVIDER + "\n"
                 + "Company:   " + app.getCompany() + "\n"
                 + "Role:      " + app.getRole() + "\n"
                 + "Status:    " + app.getStatus() + "\n"

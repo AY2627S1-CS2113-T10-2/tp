@@ -105,10 +105,8 @@ public class EditCommand extends Command {
 
         StringBuilder message = new StringBuilder("Application updated successfully.\n");
         message.append("Company: ").append(application.getCompany()).append("\n");
-        message.append("Role: ").append(application.getRole());
-        if (newStatus != null) {
-            message.append("\nStatus: ").append(application.getStatus());
-        }
+        message.append("Role: ").append(application.getRole()).append("\n");
+        message.append("Status: ").append(application.getStatus());
         ui.showMessage(message.toString());
 
         storage.save(applications);

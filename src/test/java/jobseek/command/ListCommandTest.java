@@ -113,7 +113,7 @@ public class ListCommandTest {
     @Test
     public void parse_invalidArgument_throwsJobSeekException() {
         JobSeekException exception = assertThrows(JobSeekException.class, () -> ListCommand.parse("invalid"));
-        assertEquals("Error: Invalid list filter: 'invalid'. Usage: list [completed|all]", exception.getMessage());
+        assertEquals("Invalid list filter: 'invalid'. Usage: list [completed|all]", exception.getMessage());
     }
 
     private static void assertRow(String row, String number, String status, String company, String role) {

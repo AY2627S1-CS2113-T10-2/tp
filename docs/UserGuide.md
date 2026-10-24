@@ -83,16 +83,27 @@ Choose `10` to update details of an existing application in place without deleti
      - `Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ` (if editing status or all)
 - **Input validation & error handling**:
   - If your application list is currently empty, JobSeek notifies you with `Error: Your application list is currently empty.` and returns to the menu.
-  - Non-numeric or blank index inputs are rejected (`Error: Please specify a valid application index.`).
+  - Blank index input is rejected with `Error: Please specify a valid application index.`.
+  - Non-numeric index input is rejected with `Error: Invalid application index. Please enter a valid number.`.
   - Out-of-bounds indices are rejected (`Error: Invalid application index: X. Please enter a number between 1 and Y.`).
   - Empty company or role values are rejected and reprompted.
+  - Invalid status choices are rejected and reprompted (`Error: Invalid status choice: '...'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).`).
+  - Entering an invalid field choice (anything other than 1, 2, 3, or 4) displays `Error: Invalid field choice: '<choice>'. Enter 1, 2, 3, or 4.` and returns to the menu.
   - Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
 - **Confirmation message**:
+  For field choices `1`, `2`, or `4` (Company, Role, or All):
   ```text
   Application updated successfully.
   Company: Alphabet Inc.
   Role: Senior SWE Intern
   Status: Pending
+  ```
+  For field choice `3` (Status only):
+  ```text
+  Application status updated successfully.
+  Company: Alphabet Inc.
+  Role: Senior SWE Intern
+  Status: Accepted
   ```
 
 ---
@@ -155,7 +166,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
     list [completed|all]            - List active, completed, or all applications
     view INDEX                      - View details for application at INDEX
     [1] Add application             - Add a new internship or job application
-    [2] List applications           - View all applications in a numbered table
+    [2] List applications           - View active applications in a numbered table
     [3] List uncompleted apps       - View active / uncompleted applications
     [4] Delete application          - Delete an application by index
     [5] Mark application completed  - Mark an application as completed

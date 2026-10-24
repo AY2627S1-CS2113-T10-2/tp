@@ -232,7 +232,7 @@ The alphabetical view follows the same formatting path after sorting the index c
    Company: Google
    Role: SWE Intern
    ```
-4. Choose `2` to list applications. Confirm the new record appears as `1. [ ] Google | SWE Intern`.
+4. Choose `2` to list applications. Confirm the new record appears in the active applications table with `No.` 1, `Status` `[ ]`, `Company` `Google`, and `Role` `SWE Intern`.
 
 ### Viewing help instructions
 
@@ -244,8 +244,8 @@ The alphabetical view follows the same formatting path after sorting the index c
 1. Start JobSeek with an empty application list and choose `10`. Confirm `Error: Your application list is currently empty.` appears.
 2. Add an application using `1` with company `Googl` and role `SWE Intern`.
 3. Choose `10` and enter application index `1`.
-4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google` and `Role: SWE Intern`.
-5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm role is updated to `Backend Intern` while company remains `Google`.
+4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google`, `Role: SWE Intern`, and `Status: Pending`.
+5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm role is updated to `Backend Intern` while company remains `Google` and status remains `Pending`.
 6. Choose `10` and test invalid inputs: enter non-numeric index `abc` or out-of-bounds `99`. Confirm clear error messages are displayed.
 
 ### Managing recruitment status

@@ -22,7 +22,7 @@ public class HelpCommand extends Command {
                 + "  list [completed|all]            - List active, completed, or all applications\n"
                 + "  view INDEX                      - View details for application at INDEX\n"
                 + "  [1] Add application             - Add a new internship or job application\n"
-                + "  [2] List applications           - View all applications in a numbered table\n"
+                + "  [2] List applications           - View active applications in a numbered table\n"
                 + "  [3] List uncompleted apps       - View active / uncompleted applications\n"
                 + "  [4] Delete application          - Delete an application by index\n"
                 + "  [5] Mark application completed  - Mark an application as completed\n"
