@@ -189,6 +189,255 @@ sequenceDiagram
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
 
+### Startup deadline warnings
+
+#### Overview
+
+The startup deadline warnings feature helps users identify applications that require attention when they launch JobSeek. It displays a summary of overdue deadlines, deadlines due today, and deadlines within the next seven days.
+
+Warnings apply only to applications that have not been marked as completed. Applications without a recorded deadline are excluded. This allows users to track applications even when their deadlines are unknown.
+
+For example, if the current date is `2026-10-28`, an incomplete application with a deadline of `2026-10-27` is classified as `OVERDUE`, while one with a deadline of `2026-10-30` is classified as `UPCOMING`.
+
+#### Design and implementation
+
+The feature involves the following classes:
+
+| Class | Responsibility |
+|---|---|
+| `Main` | Coordinates startup and invokes the deadline check before displaying the menu. |
+| `DeadlineWarnings` | Selects applications requiring attention and builds the warning summary. |
+| `ApplicationList` | Provides access to the stored application records. |
+| `Application` | Stores the optional deadline and completion flag for each application. |
+| `Ui` | Displays the warning summary to the user. |
+
+The following class diagram shows the relationships relevant to deadline checking. Unrelated fields and methods are omitted.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Main {
+        +run() void
+    }
+
+    class DeadlineWarnings {
+        -UPCOMING_WINDOW_DAYS int
+        +show(applications, ui) void
+        -appendWarning(warnings, application, deadline, today) void
+    }
+
+    class ApplicationList {
+        +size() int
+        +get(index) Application
+    }
+
+    class Application {
+        +getDeadline() LocalDate
+        +isCompleted() boolean
+    }
+
+    class Ui {
+        +showMessage(message) void
+    }
+
+    Main --> DeadlineWarnings : invokes
+    DeadlineWarnings ..> ApplicationList : reads
+    ApplicationList --> Application : contains
+    DeadlineWarnings ..> Application : inspects
+    DeadlineWarnings ..> Ui : displays summary
+```
+
+Each application's deadline is represented using `LocalDate`. A `null` deadline indicates that no deadline has been recorded. `LocalDate` supports comparisons between calendar dates without requiring a time of day.
+
+During normal startup, `Main` loads saved applications through `Storage` before `run()` begins. Within `run()`, it displays the welcome message, calls `DeadlineWarnings.show(applications, ui)`, and then displays the menu.
+
+`DeadlineWarnings.show()` obtains the current date once using `LocalDate.now()`. It then iterates through the applications and excludes any record that:
+
+- Has been marked as completed.
+- Has no recorded deadline.
+- Has a deadline later than seven days after the current date.
+
+The remaining applications are classified using the following rules:
+
+| Deadline relative to today | Classification |
+|---|---|
+| Earlier than today | `OVERDUE` |
+| Equal to today | `DUE TODAY` |
+| After today, up to and including seven days away | `UPCOMING` |
+
+The seven-day boundary is inclusive. For example, when today is `2026-10-28`, a deadline of `2026-11-04` is included, while `2026-11-05` is excluded. There is no lower date limit for overdue applications.
+
+The private `appendWarning()` method adds each warning to a `StringBuilder`. Each entry contains its classification, company, role and deadline. After checking all applications, `show()` displays the accumulated summary through a single call to `Ui.showMessage()`. If no applications qualify, it displays no warning message.
+
+#### Sequence of interactions
+
+The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in a note to keep the diagram focused on interactions between objects.
+
+```mermaid
+sequenceDiagram
+    participant main as main:Main
+    participant warnings as deadlineWarnings:DeadlineWarnings
+    participant list as applications:ApplicationList
+    participant app as application:Application
+    participant ui as ui:Ui
+
+    main->>ui: showWelcome()
+    main->>warnings: show(applications, ui)
+    activate warnings
+    Note over warnings: Obtain today's date once
+
+    loop Each application
+        warnings->>list: get(i)
+        list-->>warnings: application
+        warnings->>app: getDeadline()
+        app-->>warnings: deadline
+        warnings->>app: isCompleted()
+        app-->>warnings: completed
+
+        opt Incomplete and deadline exists and deadline <= today + 7 days
+            Note over warnings: Classify deadline and append warning
+        end
+    end
+
+    opt Warning summary is not empty
+        warnings->>ui: showMessage(summary)
+    end
+
+    warnings-->>main: return
+    deactivate warnings
+    main->>ui: showMenu(applications)
+```
+
+#### Design considerations
+
+**Separate warning logic from startup coordination.**  
+`Main` controls when the check occurs, while `DeadlineWarnings` handles selection and classification. This keeps deadline rules in one class and allows them to be changed without expanding the startup workflow. An alternative would be to place the entire check inside `Main.run()`, but that would give `Main` additional responsibility for deadline processing.
+
+**Derive warnings from application data.**  
+Warning classifications are calculated from the deadline and current date whenever the application starts. They are not stored separately. This avoids persisting a classification such as `UPCOMING` that could become outdated as time passes.
+
+**Display one consolidated summary.**  
+Accumulating warnings before displaying them groups all relevant deadlines together. It also keeps the output operation separate from the iteration over application records.
+
+#### Current limitations and possible extensions
+
+The check runs once at startup. Warnings do not automatically refresh after an application is added or when the date changes while JobSeek remains open. A possible extension is to provide a command that invokes the same check on demand.
+
+The upcoming window is currently fixed at seven days through `UPCOMING_WINDOW_DAYS`. It could later become configurable.
+
+The implementation uses the system's current date directly. A future improvement could inject a `Clock` to make date-boundary tests independent of the day on which they run.
+
+### Local storage
+
+#### Overview
+
+The local storage feature preserves application records between JobSeek sessions. Applications are saved to `data/applications.txt` and loaded when the program starts.
+
+The `Storage` class handles file access and conversion between application objects and their text representation. This keeps file-handling details separate from command execution and user interaction.
+
+#### Design and implementation
+
+The feature involves the following classes:
+
+| Class | Responsibility |
+|---|---|
+| `Storage` | Reads and writes application records in the local data file. |
+| `ApplicationList` | Holds the application records in memory. |
+| `Application` | Represents an individual application and its stored fields. |
+| `Main` | Loads saved records during startup and reports loading errors. |
+
+`Storage` uses `data/applications.txt` by default. Its constructor also accepts a custom file path, allowing tests to use temporary files without modifying the user's saved data.
+
+#### File format
+
+The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains four tab-separated fields:
+
+| Field | Representation |
+|---|---|
+| Company | Escaped text |
+| Role | Escaped text |
+| Completion flag | `true` or `false` |
+| Deadline | ISO date such as `2026-11-03`, or an empty field |
+
+An empty deadline field represents an application without a recorded deadline.
+
+Backslashes, tabs, newlines and carriage returns within text fields are escaped before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company or role names from being mistaken for field or record separators.
+
+**Current limitation:** Recruitment status (`Pending`, `Accepted` or `Rejected`) is not included in the stored format. Therefore, changes to this status are not preserved by the current storage implementation.
+
+#### Saving applications
+
+Commands that modify application data call `Storage.save(applications)` to persist the updated list.
+
+The save operation performs the following steps:
+
+1. Converts the configured file path into a `Path`.
+2. Creates missing parent directories, if required.
+3. Adds the title and column headers.
+4. Converts each application into a tab-separated record.
+5. Writes the complete contents using UTF-8 encoding.
+
+The operation rewrites the file using the current list. Consequently, applications removed from the list are also removed from the saved data.
+
+#### Loading applications
+
+During normal startup, `Main` calls `Storage.load()` before entering the main interaction loop.
+
+If the file does not exist, `load()` returns an empty `ApplicationList`. Otherwise, it reads the file and processes each line. Blank lines, comment lines beginning with `#`, and recognised header lines are ignored.
+
+For each application record, `Storage` checks that there are exactly four fields and that the completion flag is either `true` or `false`. A non-empty deadline is parsed using `LocalDate.parse()`. Valid records are reconstructed as `Application` objects and added to the list.
+
+The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note.
+
+```mermaid
+sequenceDiagram
+    participant main as Main
+    participant storage as storage:Storage
+    participant list as applications:ApplicationList
+    participant app as application:Application
+
+    main->>storage: load()
+    activate storage
+    Note over storage: Read UTF-8 file if it exists
+    create participant list
+    storage->>list: new ApplicationList()
+
+    loop Each application record
+        Note over storage: Decode fields and validate record
+        create participant app
+        storage->>app: new Application(company, role, completed, deadline)
+        storage->>list: add(application)
+    end
+
+    storage-->>main: applications
+    deactivate storage
+```
+
+#### Error handling
+
+Invalid field counts, completion flags, deadlines or escape sequences cause loading to fail with an `IOException`. Field-count, completion-flag and deadline errors identify the affected line.
+
+`Main.loadApplications()` catches loading exceptions, displays an error through `Ui.showError()`, and returns an empty list. A failed load therefore does not return a partially loaded application list.
+
+Saving errors propagate to the caller. During command execution, `Main` catches these errors and displays an error message.
+
+#### Design considerations
+
+**Human-readable text format.**  
+The tab-separated format is simple to inspect and uses Java's standard file APIs. An alternative would be JSON, which could represent additional fields more explicitly but would require a different serialisation approach.
+
+**Save the complete list.**  
+Rewriting the complete list keeps persistence straightforward because additions, updates and deletions use the same save operation. The trade-off is that each save processes every application.
+
+**Separate persistence from application logic.**  
+Commands request a save without implementing file encoding or parsing themselves. Changes to the storage format can therefore be concentrated in `Storage`.
+
+#### Possible improvements
+
+A future version could persist recruitment status and support older file formats. Saving could also use a temporary file followed by an atomic replacement to reduce the risk of an interrupted write damaging the existing data file.
+
+Loading currently falls back to an empty list after an error. A future recovery mechanism could protect the original file from being overwritten by subsequent saves until the user resolves the loading problem.
 
 ## Product scope
 ### Target user profile
