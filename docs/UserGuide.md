@@ -5,14 +5,17 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 ## Quick start
 
 1. Install Java 25 or later.
-2. Run the latest `jobseek.jar` using `java -jar jobseek.jar`.
-3. Enter a number from the menu and follow the prompts. You can also type the `list` and `view` commands below. Enter `0` to exit.
+2. Download the latest `jobseek.jar` and place it in a folder where you have write permission.
+3. Open a terminal in that folder and run `java -jar jobseek.jar`.
+4. Enter a number from the menu and follow the prompts. You can also type the `list` and `view` commands described below. Enter `0` to exit.
+
+**Note:** Double-clicking the JAR may not open a usable terminal window. JobSeek needs write permission in the launch folder to create and update its data file.
 
 ## Menu options
 
 | Number | Action | What it does |
 | --- | --- | --- |
-| `1` | Add application | Enter a company and role. Both must be non-empty. |
+| `1` | Add application | Enter a company, role and optional deadline. Company and role must be non-empty. |
 | `2` | List applications | Show active applications with their original numbers and status. |
 | `3` | List uncompleted applications | Show active applications with their original numbers. |
 | `4` | Delete application | Enter an application number to remove it. |
@@ -33,6 +36,7 @@ Choose `1` to create and track a new job or internship application.
 - **Prompt sequence**:
   1. `Company:\n> ` — Enter the name of the company or organization (e.g., `Google`, `Shopee`, `GovTech`).
   2. `Role:\n> ` — Enter the title of the role or internship (e.g., `SWE Intern`, `Backend Engineer`, `Data Analyst`).
+  3. `Deadline (YYYY-MM-DD, leave blank if none):` — Enter a deadline such as `2026-11-03`, or press Enter if no deadline is known. Invalid dates display an error and you will be prompted again.
 - **Input validation**:
   - Both company and role are required fields and cannot be empty or whitespace-only.
   - If an empty input is submitted, JobSeek displays an error message (e.g., `Error: Company cannot be empty.`) and reprompts until a valid input is received.
@@ -149,9 +153,58 @@ Choose `9` to view applications ordered by company name, then by role when compa
 
 ---
 
+### Deleting an application
+
+Choose `4` to permanently remove an application.
+
+1. Enter `list all` to find the number of the application you want to delete.
+2. Enter `4` at the main menu.
+3. Enter the application number when prompted.
+
+For example, entering `2` at the deletion prompt removes application number `2`.
+
+There is no additional confirmation prompt or undo feature. Application numbers after the deleted entry shift down by one, so check the list again before deleting another application.
+
+If the list is empty or the application number is invalid, JobSeek displays an error without deleting anything.
+
+---
+
+### Deadline warnings
+
+JobSeek automatically checks deadlines when it starts and displays warnings before the main menu.
+
+| Warning | Meaning |
+| --- | --- |
+| `OVERDUE` | The deadline is earlier than today. |
+| `DUE TODAY` | The deadline is today. |
+| `UPCOMING` | The deadline is within the next seven days, including exactly seven days away. |
+
+Only applications that have not been marked as completed are included. Applications without deadlines do not produce warnings.
+
+For example, if today is `2026-10-28`, the following warnings may appear:
+
+```text
+Deadline warnings:
+OVERDUE: Google - SWE Intern (deadline 2026-10-27)
+DUE TODAY: Shopee - Backend Intern (deadline 2026-10-28)
+UPCOMING: GovTech - Data Analyst (deadline 2026-11-03)
+```
+
+If no applications require attention, no warning summary appears. Warnings are checked once at startup and do not automatically refresh while JobSeek remains open.
+
+---
+
 ## Data
 
-Search, sort, list, and help only display information. They do not change application data. In the current team `master`, file persistence is not yet implemented, so applications are kept only for the current run. A separate storage task is in progress.
+JobSeek automatically saves application data to `data/applications.txt` when commands modify application records. Saved records are loaded when you next start JobSeek.
+
+- Company, role, completion status and optional deadline are preserved between sessions.
+- Recruitment status (`Pending`, `Accepted` or `Rejected`) is currently not saved and resets to `Pending` when records are loaded.
+- If the data file does not exist, JobSeek starts with an empty application list.
+- If loading fails, JobSeek displays an error and starts with an empty list. Back up the existing data file before making changes, as subsequent saves may overwrite it.
+- Search, sort, list and help only display information and do not modify saved data.
+
+The data file location is relative to the folder from which you launch JobSeek. Launch the application from the same folder each time to access the same saved records.
 
 ---
 
