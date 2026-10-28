@@ -11,6 +11,7 @@ public class Application {
     private String company;
     private String role;
     private boolean isCompleted;
+    private String status;
     private LocalDate deadline;
 
     /**
@@ -21,7 +22,7 @@ public class Application {
      * @param role Title of the job or internship role.
      */
     public Application(String company, String role) {
-        this(company, role, false, DEFAULT_STATUS);
+        this(company, role, false, DEFAULT_STATUS, null);
     }
 
     /**
@@ -32,7 +33,7 @@ public class Application {
      * @param isCompleted True if the application process is completed, false otherwise.
      */
     public Application(String company, String role, boolean isCompleted) {
-        this(company, role, isCompleted, DEFAULT_STATUS);
+        this(company, role, isCompleted, DEFAULT_STATUS, null);
     }
 
     /**
@@ -44,12 +45,7 @@ public class Application {
      * @param status Current recruitment status indicator (e.g. "Pending", "Accepted", "Rejected").
      */
     public Application(String company, String role, boolean isCompleted, String status) {
-        assert company != null : "Company should not be null";
-        assert role != null : "Role should not be null";
-        this.company = company;
-        this.role = role;
-        this.isCompleted = isCompleted;
-        this.status = (status != null && !status.trim().isEmpty()) ? status.trim() : DEFAULT_STATUS;
+        this(company, role, isCompleted, status, null);
     }
 
     /**
@@ -60,7 +56,38 @@ public class Application {
      * @param status Current recruitment status indicator.
      */
     public Application(String company, String role, String status) {
-        this(company, role, false, status);
+        this(company, role, false, status, null);
+    }
+
+    /**
+     * Constructs an Application with an optional deadline.
+     *
+     * @param company Name of the company applied to.
+     * @param role Title of the job or internship role.
+     * @param isCompleted Whether the application is completed.
+     * @param deadline Deadline for the next required action, or null when none is known.
+     */
+    public Application(String company, String role, boolean isCompleted, LocalDate deadline) {
+        this(company, role, isCompleted, DEFAULT_STATUS, deadline);
+    }
+
+    /**
+     * Constructs an Application with company, role, completion status, recruitment status, and deadline.
+     *
+     * @param company Name of the company applied to.
+     * @param role Title of the job or internship role.
+     * @param isCompleted Whether the application is completed.
+     * @param status Current recruitment status indicator.
+     * @param deadline Deadline for the next required action, or null when none is known.
+     */
+    public Application(String company, String role, boolean isCompleted, String status, LocalDate deadline) {
+        assert company != null : "Company should not be null";
+        assert role != null : "Role should not be null";
+        this.company = company;
+        this.role = role;
+        this.isCompleted = isCompleted;
+        this.status = (status != null && !status.trim().isEmpty()) ? status.trim() : DEFAULT_STATUS;
+        this.deadline = deadline;
     }
 
     /** Returns the company name for this application. */

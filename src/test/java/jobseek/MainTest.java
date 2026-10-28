@@ -894,7 +894,7 @@ public class MainTest {
     @Test
     public void run_menuAddFormatTokens_handledAsLiterals() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\n%s%d%x%n\n%s Developer\n8\n%s\n0\n";
+        String input = "1\n%s%d%x%n\n%s Developer\n\n8\n%s\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
