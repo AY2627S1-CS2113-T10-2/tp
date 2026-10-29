@@ -2,7 +2,13 @@
 
 ## Acknowledgements
 
-{list here sources of all reused/adapted ideas, code, documentation, and third-party libraries -- include links to the original source as well}
+* **[AddressBook-Level3 (AB3)](https://github.com/se-edu/addressbook-level3)**: Original codebase structure and documentation layout adapted for our project.
+* **Libraries Used**:
+  * [Jackson](https://github.com/FasterXML/jackson) for JSON serialization and parsing.
+  * [JUnit 5](https://junit.org/junit5/) for unit testing and automated test execution.
+* **Documentation & Tools**:
+  * [Mermaid](https://mermaid.js.org/) for rendering UML class and sequence diagrams.
+  * [JavaFX](https://openjfx.io/) for graphical user interface components.
 
 ## Design & implementation
 
