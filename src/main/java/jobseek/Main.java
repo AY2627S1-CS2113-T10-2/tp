@@ -2,6 +2,7 @@ package jobseek;
 
 import jobseek.command.AddCommand;
 import jobseek.command.Command;
+import jobseek.command.CommandHistory;
 import jobseek.command.DeleteCommand;
 import jobseek.command.EditCommand;
 import jobseek.command.ExitCommand;
@@ -12,6 +13,7 @@ import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
 import jobseek.command.StatusCommand;
 import jobseek.command.TodayCommand;
+import jobseek.command.UndoCommand;
 import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
@@ -31,6 +33,7 @@ public class Main {
     private final Storage storage;
     private final ApplicationList applications;
     private final DeadlineWarnings deadlineWarnings = new DeadlineWarnings();
+    private final CommandHistory history = new CommandHistory();
 
     /**
      * Constructs the main application instance and initializes core components.
@@ -118,6 +121,7 @@ public class Main {
             if (command != null) {
                 try {
                     command.execute(applications, ui, storage);
+                    history.record(command);
                     isExit = command.isExit();
                 } catch (JobSeekException e) {
                     ui.showError(e.getMessage());
@@ -155,6 +159,10 @@ public class Main {
                 ui.showError(e.getMessage());
                 return null;
             }
+        }
+
+        if (trimmedOption.equalsIgnoreCase("undo")) {
+            return new UndoCommand(history);
         }
 
         if (trimmedOption.equalsIgnoreCase("today")) {

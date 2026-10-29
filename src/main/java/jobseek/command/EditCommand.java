@@ -8,11 +8,15 @@ import jobseek.ui.Ui;
 /**
  * Handles editing specific existing fields (company, role, recruitment stage, or all) of an application.
  */
-public class EditCommand extends Command {
+public class EditCommand extends UndoableCommand {
     private final int targetIndex;
     private final String newCompany;
     private final String newRole;
     private final String newStatus;
+    private Application editedApplication;
+    private String previousCompany;
+    private String previousRole;
+    private String previousStatus;
 
     /**
      * Constructs an EditCommand with the specified target index and new field values for company and role.
@@ -90,6 +94,13 @@ public class EditCommand extends Command {
         Application application = applications.get(targetIndex);
         assert application != null : "Application at valid index should not be null";
 
+        // Remember all old values so undo can restore the application exactly.
+        editedApplication = application;
+        previousCompany = application.getCompany();
+        previousRole = application.getRole();
+        previousStatus = application.getStatus();
+        markChanged();
+
         if (newCompany != null) {
             application.setCompany(newCompany);
         }
@@ -110,5 +121,14 @@ public class EditCommand extends Command {
         ui.showMessage(message.toString());
 
         storage.save(applications);
+    }
+
+    /** Restores the company, role and status the application had before this command ran. */
+    @Override
+    public String undo(ApplicationList applications) {
+        editedApplication.setCompany(previousCompany);
+        editedApplication.setRole(previousRole);
+        editedApplication.setStatus(previousStatus);
+        return "edit of " + editedApplication;
     }
 }

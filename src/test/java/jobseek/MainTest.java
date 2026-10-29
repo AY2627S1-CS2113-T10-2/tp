@@ -350,7 +350,7 @@ public class MainTest {
         applications.add(new Application("Google", "SWE Intern", false));
         applications.add(new Application("Shopee", "Backend Intern", false));
 
-        String input = "4\n1\n0\n";
+        String input = "4\n1\ny\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -359,7 +359,48 @@ public class MainTest {
 
         String output = outputStream.toString();
         assertTrue(output.contains("Enter application index to delete:\n> "));
+        assertTrue(output.contains("Delete [ ] Google | SWE Intern? (y/n)"));
         assertTrue(output.contains("I've deleted this application:"));
+    }
+
+    /** Verifies that declining the confirmation keeps the application. */
+    @Test
+    public void run_menuDeleteDeclined_keepsApplication() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false));
+
+        Main main = createMainWithInput("4\n1\nn\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertTrue(outputStream.toString().contains("Deletion cancelled."));
+    }
+
+    /** Verifies that undo brings back an application deleted earlier in the same session. */
+    @Test
+    public void run_undoAfterDelete_restoresApplication() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false));
+
+        Main main = createMainWithInput("4\n1\ny\nundo\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertEquals("Google", applications.get(0).getCompany());
+        assertTrue(outputStream.toString().contains("Undone: deleted"));
+    }
+
+    /** Verifies that undo with nothing to undo reports an error and changes nothing. */
+    @Test
+    public void run_undoWithEmptyHistory_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false));
+
+        Main main = createMainWithInput("undo\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertTrue(outputStream.toString().contains("Error: Nothing to undo."));
     }
 
     /** Verifies that Delete reports an error when there are no applications. */

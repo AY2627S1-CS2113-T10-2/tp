@@ -247,17 +247,38 @@ Choose `9` to view applications ordered by company name, then by role when compa
 
 ### Deleting an application
 
-Choose `4` to permanently remove an application.
+Choose `4` to remove an application. JobSeek asks you to confirm first, and you can reverse the deletion with `undo`.
 
 1. Enter `list all` to find the number of the application you want to delete.
 2. Enter `4` at the main menu.
 3. Enter the application number when prompted.
+4. JobSeek shows the application and asks `Delete ... ? (y/n)`. Enter `y` or `yes` to delete it. Any other answer cancels the deletion and nothing changes.
 
-For example, entering `2` at the deletion prompt removes application number `2`.
+For example, entering `2` at the deletion prompt and `y` at the confirmation prompt removes application number `2`.
 
-There is no additional confirmation prompt or undo feature. Application numbers after the deleted entry shift down by one, so check the list again before deleting another application.
+Application numbers after the deleted entry shift down by one, so check the list again before deleting another application.
 
 If the list is empty or the application number is invalid, JobSeek displays an error without deleting anything.
+
+---
+
+### Undoing a change: `undo`
+
+Reverses the most recent change to your applications, such as an accidental deletion.
+
+- **Usage**: Enter `undo` at the main menu prompt.
+- **What can be undone**: adding, deleting, editing, changing the status of, and marking or unmarking an application.
+- Enter `undo` again to step further back, newest change first.
+- Commands that only display information (`list`, `view`, `search`, `today`) and cancelled or failed commands are not recorded.
+- The history is kept in memory only, so it is cleared when you exit JobSeek.
+- If there is nothing to undo, JobSeek shows `Nothing to undo.`.
+
+```text
+> undo
+____________________________________________________________
+Undone: deleted [ ] Google | SWE Intern
+____________________________________________________________
+```
 
 ---
 
@@ -385,6 +406,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
   ```text
   Available menu options:
     list [completed|all]            - List active, completed, or all applications
+    undo                            - Undo the last add, delete, edit, status or mark change
     add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
     edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
     delete|mark|unmark INDEX        - Delete, complete or reopen an application
@@ -416,7 +438,8 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **List completed applications** | `list completed` | `list completed` |
 | **List all applications** | `list all` | `list all` |
 | **View application details** | `view <application_number>` | `view 1` |
-| **Delete application** | `4` | Choose `4`, then enter application index (e.g. `2`) |
+| **Delete application** | `4` | Choose `4`, enter application index (e.g. `2`), then confirm with `y` |
+| **Undo last change** | `undo` | `undo` |
 | **Mark application completed** | `5` | Choose `5`, then enter application index (e.g. `1`) |
 | **Unmark application** | `6` | Choose `6`, then enter application index (e.g. `1`) |
 | **Today dashboard** | `today` | `today` |
