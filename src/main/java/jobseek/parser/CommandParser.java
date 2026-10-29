@@ -5,19 +5,24 @@ import jobseek.command.Command;
 import jobseek.command.DeleteCommand;
 import jobseek.command.EditCommand;
 import jobseek.command.ExitCommand;
+import jobseek.command.FindCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
 import jobseek.exception.JobSeekException;
+import jobseek.model.Application;
+import jobseek.model.ApplicationFilters;
 import jobseek.model.RecruitmentStage;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
@@ -29,6 +34,7 @@ import java.util.regex.Pattern;
  * <li>{@code add c/COMPANY r/ROLE [d/YYYY-MM-DD]}</li>
  * <li>{@code edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE]}</li>
  * <li>{@code delete INDEX}, {@code mark INDEX}, {@code unmark INDEX}</li>
+ * <li>{@code find [c/TEXT] [r/TEXT] [s/STAGE] [b/DATE] [a/DATE] [m/yes|no]}, which combines filters</li>
  * <li>{@code search KEYWORD}, {@code sort}, {@code help}, {@code exit}</li>
  * </ul>
  * Input that does not start with one of these words is not handled here, so the caller can fall back
@@ -42,6 +48,9 @@ public class CommandParser {
     public static final String MARK_USAGE = "Usage: mark INDEX";
     public static final String UNMARK_USAGE = "Usage: unmark INDEX";
     public static final String SEARCH_USAGE = "Usage: search KEYWORD";
+    public static final String FIND_USAGE = "Usage: find [c/COMPANY] [r/ROLE] [s/STAGE] [b/DATE] [a/DATE] "
+            + "[m/yes|no] (at least one filter; b/ = deadline on or before, a/ = on or after, "
+            + "m/ = marked completed)";
 
     /** A field prefix is a lowercase letter and a slash at the start of the text or after a space. */
     private static final Pattern FIELD_PREFIX = Pattern.compile("(?:^|\\s)([a-z])/");
@@ -77,6 +86,8 @@ public class CommandParser {
             return new MarkCommand(parseIndex(arguments, MARK_USAGE), true);
         case "unmark":
             return new MarkCommand(parseIndex(arguments, UNMARK_USAGE), false);
+        case "find":
+            return parseFind(arguments);
         case "search":
             if (arguments.isEmpty()) {
                 throw new JobSeekException("Search term cannot be empty. " + SEARCH_USAGE);
@@ -116,6 +127,72 @@ public class CommandParser {
             throw new JobSeekException("Nothing to edit. " + EDIT_USAGE);
         }
         return new EditCommand(index, company, role, stage == null ? null : parseStage(stage));
+    }
+
+    /**
+     * Builds a find command. Each filter given becomes one {@link Predicate}; they are joined with
+     * {@code and}, so an application must satisfy all of them to be shown.
+     */
+    private static Command parseFind(String arguments) throws JobSeekException {
+        Fields fields = parseFields(arguments, "crsbam", FIND_USAGE);
+        if (!fields.leadingText.isEmpty()) {
+            throw new JobSeekException("Unexpected text '" + fields.leadingText + "'. " + FIND_USAGE);
+        }
+        if (fields.values.isEmpty()) {
+            throw new JobSeekException("Please give at least one filter. " + FIND_USAGE);
+        }
+
+        Predicate<Application> filter = application -> true;
+        List<String> conditions = new ArrayList<>();
+        for (Map.Entry<Character, String> entry : fields.values.entrySet()) {
+            String value = entry.getValue();
+            switch (entry.getKey()) {
+            case 'c':
+                filter = filter.and(ApplicationFilters.companyContains(value));
+                conditions.add("company contains '" + value + "'");
+                break;
+            case 'r':
+                filter = filter.and(ApplicationFilters.roleContains(value));
+                conditions.add("role contains '" + value + "'");
+                break;
+            case 's':
+                String stage = parseStage(value);
+                filter = filter.and(ApplicationFilters.inStage(RecruitmentStage.fromLabel(stage)));
+                conditions.add("stage is " + stage);
+                break;
+            case 'b':
+                LocalDate before = parseDeadline(value);
+                filter = filter.and(ApplicationFilters.deadlineOnOrBefore(before));
+                conditions.add("deadline on or before " + before);
+                break;
+            case 'a':
+                LocalDate after = parseDeadline(value);
+                filter = filter.and(ApplicationFilters.deadlineOnOrAfter(after));
+                conditions.add("deadline on or after " + after);
+                break;
+            default:
+                boolean completed = parseYesNo(value);
+                filter = filter.and(ApplicationFilters.isCompleted(completed));
+                conditions.add(completed ? "marked completed" : "not marked completed");
+                break;
+            }
+        }
+        return new FindCommand(filter, String.join(", ", conditions));
+    }
+
+    private static boolean parseYesNo(String text) throws JobSeekException {
+        switch (text.toLowerCase(Locale.ROOT)) {
+        case "yes":
+        case "y":
+        case "true":
+            return true;
+        case "no":
+        case "n":
+        case "false":
+            return false;
+        default:
+            throw new JobSeekException("Invalid value for m/: '" + text + "'. Use yes or no.");
+        }
     }
 
     /** Converts a one-based index typed by the user into the zero-based index commands expect. */

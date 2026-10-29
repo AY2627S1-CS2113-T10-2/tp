@@ -419,6 +419,45 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 * **Prefix syntax vs. positional arguments:** with `add Google SWE Intern` it is impossible to tell where the company name ends. Prefixes allow multi-word values and any field order.
 * **Limitation:** a value cannot contain a space followed by a single letter and a slash (for example ` r/`).
 
+### Combined filters (`find`)
+
+#### Overview
+
+`find` lets the user combine several conditions, for example `find c/google s/interview a/2026-11-01`. The existing `search` command only matches one keyword against company or role, which is not enough once there are dozens of applications.
+
+#### Design and implementation
+
+| Class | Responsibility |
+|---|---|
+| `ApplicationFilters` (`model`) | Static factory methods such as `companyContains`, `inStage` and `deadlineOnOrBefore`. Each returns a `Predicate<Application>`. |
+| `CommandParser` (`parser`) | `parseFind` turns each prefix (`c/ r/ s/ b/ a/ m/`) into a predicate and joins them with `Predicate.and`. It also builds a readable description of the conditions. |
+| `FindCommand` (`command`) | Holds one combined `Predicate<Application>` and a description. It tests every application, then shows the matches through `ApplicationTable`. |
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Main
+    participant CommandParser
+    participant FindCommand
+    participant ApplicationTable
+    User->>Main: find c/google s/interview
+    Main->>CommandParser: parse(input)
+    CommandParser-->>Main: FindCommand(company AND stage)
+    Main->>FindCommand: execute(applications, ui, storage)
+    FindCommand->>FindCommand: filter.test(application) for each
+    FindCommand->>ApplicationTable: format(applications, matchIndices, heading)
+    FindCommand-->>User: matching rows with original numbers
+```
+
+`FindCommand` never needs to know which filters were chosen, because the parser has already combined them into a single predicate. Adding a new filter therefore means adding one factory method to `ApplicationFilters` and one prefix to `parseFind`; `FindCommand` stays unchanged. This is the strategy pattern, using Java's functional interface `Predicate` instead of a hand-written interface.
+
+#### Design considerations
+
+* **Predicates vs. one method with many `if` statements:** a single method checking six optional parameters grows with every new filter and is hard to test. Small predicates are tested one by one (`FindCommandTest`) and combined freely.
+* **`and` only:** all filters must match. Supporting `or` would need a more complex syntax, so it is left out.
+* **Applications without a deadline** never match `b/` or `a/`, because "unknown" is not before or after any date.
+* **Original numbering:** results use the index in the full list (like `search` and `sort`), so numbers stay valid for `edit` and `delete`.
+
 ### Today dashboard
 
 `TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per status). `Main.parseCommand` creates it for the text command `today`.

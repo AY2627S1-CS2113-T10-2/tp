@@ -40,6 +40,7 @@ Instead of answering prompts one by one, you can type a whole command on one lin
 | Delete | `delete INDEX` | `delete 3` |
 | Mark / unmark | `mark INDEX`, `unmark INDEX` | `mark 1` |
 | Search | `search KEYWORD` | `search google` |
+| Find (combined filters) | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/..]` | `find c/google s/interview` |
 | Sort | `sort` | `sort` |
 | Help / exit | `help`, `exit` | `exit` |
 
@@ -48,6 +49,33 @@ Instead of answering prompts one by one, you can type a whole command on one lin
 - Command words are not case-sensitive. `INDEX` is the number shown by `list`.
 - A field value ends where the next ` x/` prefix starts, so avoid typing text such as ` r/` inside a company name.
 - If a command is wrong, JobSeek shows what is wrong and the correct format, and nothing is changed.
+
+---
+
+### Finding with combined filters: `find`
+
+Narrows the list using several conditions at once. An application is shown only if it satisfies **every** filter you give.
+
+- **Format**: `find [c/COMPANY] [r/ROLE] [s/STAGE] [b/DATE] [a/DATE] [m/yes|no]` (give at least one filter, in any order)
+
+| Filter | Meaning |
+| --- | --- |
+| `c/TEXT` | Company contains the text (ignores upper/lower case). |
+| `r/TEXT` | Role contains the text (ignores upper/lower case). |
+| `s/STAGE` | Recruitment stage equals `STAGE`, such as `Interview` or the shortcut `OA`. |
+| `b/YYYY-MM-DD` | Deadline is on or before the date. |
+| `a/YYYY-MM-DD` | Deadline is on or after the date. |
+| `m/yes` or `m/no` | The application is (or is not) marked as completed. |
+
+Applications without a deadline never match `b/` or `a/`. Use both together to find a date range.
+
+Examples:
+
+- `find c/google s/interview` shows Google applications that are at the interview stage.
+- `find r/intern a/2026-11-01 b/2026-11-30` shows internships with a deadline in November 2026.
+- `find m/no s/offer` shows offers you have not marked as completed yet.
+
+Results keep the numbers from the full list, so you can use them directly with `view`, `edit` and `delete`. If nothing matches, JobSeek says so and shows the conditions it searched for. `find` only displays results and never changes your data. For a quick single-word lookup, `search KEYWORD` is still available.
 
 ---
 
@@ -360,6 +388,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
     add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
     edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
     delete|mark|unmark INDEX        - Delete, complete or reopen an application
+    find c/.. r/.. s/.. b/.. a/..   - Combine filters (company, role, stage, deadline)
     search KEYWORD | sort           - Search by company/role, or view alphabetically
     today                           - Show overdue, due-today and upcoming deadlines
     view INDEX                      - View details for application at INDEX
