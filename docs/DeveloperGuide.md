@@ -388,6 +388,50 @@ sequenceDiagram
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
 
+### Delete confirmation and undo
+
+#### Overview
+
+`DeleteCommand` asks the user to confirm before removing an application, and `undo` reverses the most recent change. Both exist to protect the user from slips: the data file is overwritten on every save, so a mistaken delete would otherwise be permanent.
+
+#### Design and implementation
+
+| Class | Responsibility |
+|---|---|
+| `UndoableCommand` | Abstract subclass of `Command` that adds `undo(ApplicationList)` and a `hasChanged()` flag. |
+| `AddCommand`, `DeleteCommand`, `EditCommand`, `StatusCommand`, `MarkCommand` | Extend `UndoableCommand`. Each remembers what it needs (the affected `Application` and its old values) while executing. |
+| `CommandHistory` | A stack (`ArrayDeque`) of undoable commands that actually changed the list. |
+| `UndoCommand` | Pops the newest command, calls its `undo`, shows what was undone and saves. |
+| `Main` | Owns the `CommandHistory`, records each executed command, and creates `UndoCommand` for the text command `undo`. |
+
+```mermaid
+classDiagram
+    Command <|-- UndoableCommand
+    Command <|-- UndoCommand
+    UndoableCommand <|-- AddCommand
+    UndoableCommand <|-- DeleteCommand
+    UndoableCommand <|-- EditCommand
+    UndoableCommand <|-- StatusCommand
+    UndoableCommand <|-- MarkCommand
+    CommandHistory o-- UndoableCommand
+    UndoCommand --> CommandHistory
+    class UndoableCommand {
+        <<abstract>>
+        +undo(applications) String
+        +hasChanged() boolean
+    }
+```
+
+Confirmation happens inside `DeleteCommand.execute` by calling `ui.readCommand()`, so it applies however the command was created (menu option or a future typed command). Only `y` or `yes` (case-insensitive) confirms; anything else, including end of input, cancels.
+
+Undo works on the same `Application` objects that were changed. Commands keep a reference plus the previous values, so an undo is exact even when two applications look identical (`AddCommand.undo` compares by identity, not `equals`). `DeleteCommand.undo` uses the new `ApplicationList.insert(index, app)` to restore the original position.
+
+#### Design considerations
+
+* **Command history vs. snapshots:** storing a copy of the whole list after each change is simpler but wastes memory and would hide which change was undone. Per-command undo gives a precise message and fits the existing Command pattern.
+* **`hasChanged()`:** rejected commands (invalid index, cancelled delete) call `markChanged()` never, so they are not recorded and `undo` never reverts something that did not happen.
+* **Limitations:** history is in memory only and there is no redo.
+
 ### Today dashboard
 
 `TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per status). `Main.parseCommand` creates it for the text command `today`.
