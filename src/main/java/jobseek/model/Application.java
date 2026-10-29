@@ -13,6 +13,9 @@ public class Application {
     private boolean isCompleted;
     private String status;
     private LocalDate deadline;
+    private String portalLink;
+    private String email;
+    private String notes;
 
     /**
      * Constructs an Application with the specified company and role.
@@ -22,7 +25,7 @@ public class Application {
      * @param role Title of the job or internship role.
      */
     public Application(String company, String role) {
-        this(company, role, false, DEFAULT_STATUS, null);
+        this(company, role, false, DEFAULT_STATUS, null, "", "", "");
     }
 
     /**
@@ -33,7 +36,7 @@ public class Application {
      * @param isCompleted True if the application process is completed, false otherwise.
      */
     public Application(String company, String role, boolean isCompleted) {
-        this(company, role, isCompleted, DEFAULT_STATUS, null);
+        this(company, role, isCompleted, DEFAULT_STATUS, null, "", "", "");
     }
 
     /**
@@ -45,7 +48,7 @@ public class Application {
      * @param status Current recruitment status indicator (e.g. "Pending", "Accepted", "Rejected").
      */
     public Application(String company, String role, boolean isCompleted, String status) {
-        this(company, role, isCompleted, status, null);
+        this(company, role, isCompleted, status, null, "", "", "");
     }
 
     /**
@@ -56,7 +59,7 @@ public class Application {
      * @param status Current recruitment status indicator.
      */
     public Application(String company, String role, String status) {
-        this(company, role, false, status, null);
+        this(company, role, false, status, null, "", "", "");
     }
 
     /**
@@ -68,7 +71,7 @@ public class Application {
      * @param deadline Deadline for the next required action, or null when none is known.
      */
     public Application(String company, String role, boolean isCompleted, LocalDate deadline) {
-        this(company, role, isCompleted, DEFAULT_STATUS, deadline);
+        this(company, role, isCompleted, DEFAULT_STATUS, deadline, "", "", "");
     }
 
     /**
@@ -81,6 +84,23 @@ public class Application {
      * @param deadline Deadline for the next required action, or null when none is known.
      */
     public Application(String company, String role, boolean isCompleted, String status, LocalDate deadline) {
+        this(company, role, isCompleted, status, deadline, "", "", "");
+    }
+
+    /**
+     * Constructs an Application with all attributes including portal link, email, and notes.
+     *
+     * @param company Name of the company applied to.
+     * @param role Title of the job or internship role.
+     * @param isCompleted Whether the application is completed.
+     * @param status Current recruitment status indicator.
+     * @param deadline Deadline for the next required action, or null when none is known.
+     * @param portalLink Web link to the company's application portal.
+     * @param email Contact email for the recruiter or application.
+     * @param notes Additional freeform notes about the application.
+     */
+    public Application(String company, String role, boolean isCompleted, String status,
+                       LocalDate deadline, String portalLink, String email, String notes) {
         assert company != null : "Company should not be null";
         assert role != null : "Role should not be null";
         this.company = company;
@@ -88,6 +108,9 @@ public class Application {
         this.isCompleted = isCompleted;
         this.status = (status != null && !status.trim().isEmpty()) ? status.trim() : DEFAULT_STATUS;
         this.deadline = deadline;
+        this.portalLink = portalLink != null ? portalLink.trim() : "";
+        this.email = email != null ? email.trim() : "";
+        this.notes = notes != null ? notes.trim() : "";
     }
 
     /** Returns the company name for this application. */
@@ -159,6 +182,60 @@ public class Application {
      */
     public void setDeadline(LocalDate deadline) {
         this.deadline = deadline;
+    }
+
+    /**
+     * Returns the company application portal link.
+     *
+     * @return The portal link, or an empty string if not recorded.
+     */
+    public String getPortalLink() {
+        return portalLink != null ? portalLink : "";
+    }
+
+    /**
+     * Updates the company application portal link.
+     *
+     * @param portalLink New portal link.
+     */
+    public void setPortalLink(String portalLink) {
+        this.portalLink = portalLink != null ? portalLink.trim() : "";
+    }
+
+    /**
+     * Returns the contact email associated with this application.
+     *
+     * @return The contact email, or an empty string if not recorded.
+     */
+    public String getEmail() {
+        return email != null ? email : "";
+    }
+
+    /**
+     * Updates the contact email associated with this application.
+     *
+     * @param email New contact email.
+     */
+    public void setEmail(String email) {
+        this.email = email != null ? email.trim() : "";
+    }
+
+    /**
+     * Returns the freeform notes recorded for this application.
+     *
+     * @return The notes, or an empty string if not recorded.
+     */
+    public String getNotes() {
+        return notes != null ? notes : "";
+    }
+
+    /**
+     * Updates the freeform notes recorded for this application.
+     *
+     * @param notes New notes text.
+     */
+    public void setNotes(String notes) {
+        this.notes = notes != null ? notes.trim() : "";
     }
 
     /**

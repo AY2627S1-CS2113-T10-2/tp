@@ -14,6 +14,9 @@ public class AddCommand extends Command {
     private final String company;
     private final String role;
     private final LocalDate deadline;
+    private final String portalLink;
+    private final String email;
+    private final String notes;
 
     /**
      * Constructs an AddCommand with the given company and role.
@@ -22,7 +25,7 @@ public class AddCommand extends Command {
      * @param role Role name for the application.
      */
     public AddCommand(String company, String role) {
-        this(company, role, null);
+        this(company, role, null, "", "", "");
     }
 
     /**
@@ -33,9 +36,27 @@ public class AddCommand extends Command {
      * @param deadline Deadline for the next required action, if known.
      */
     public AddCommand(String company, String role, LocalDate deadline) {
+        this(company, role, deadline, "", "", "");
+    }
+
+    /**
+     * Constructs an add command with all optional fields including portal link, email, and notes.
+     *
+     * @param company Company name for the application.
+     * @param role Role name for the application.
+     * @param deadline Deadline for the next required action, if known.
+     * @param portalLink Web link to the company's application portal.
+     * @param email Contact email for the recruiter or application.
+     * @param notes Additional freeform notes about the application.
+     */
+    public AddCommand(String company, String role, LocalDate deadline,
+                      String portalLink, String email, String notes) {
         this.company = company != null ? company.trim() : "";
         this.role = role != null ? role.trim() : "";
         this.deadline = deadline;
+        this.portalLink = portalLink != null ? portalLink.trim() : "";
+        this.email = email != null ? email.trim() : "";
+        this.notes = notes != null ? notes.trim() : "";
     }
 
     /** Returns the company name entered for this command. */
@@ -51,6 +72,21 @@ public class AddCommand extends Command {
     /** Returns the optional deadline entered for this command. */
     public LocalDate getDeadline() {
         return deadline;
+    }
+
+    /** Returns the optional portal link entered for this command. */
+    public String getPortalLink() {
+        return portalLink;
+    }
+
+    /** Returns the optional email entered for this command. */
+    public String getEmail() {
+        return email;
+    }
+
+    /** Returns the optional notes entered for this command. */
+    public String getNotes() {
+        return notes;
     }
 
     /**
@@ -78,18 +114,30 @@ public class AddCommand extends Command {
         }
 
         int sizeBefore = applications.size();
-        Application application = new Application(company, role);
+        Application application = new Application(company, role, false, Application.DEFAULT_STATUS,
+                deadline, portalLink, email, notes);
         applications.add(application);
 
         assert applications.size() == sizeBefore + 1 : "Adding one application should increase list size by one";
         assert applications.get(applications.size() - 1) == application
                 : "Last element in list should be newly added application";
 
-        String message = "Application added successfully.\n"
-                + "Company: " + application.getCompany() + "\n"
-                + "Role: " + application.getRole()
-                + (deadline == null ? "" : "\nDeadline: " + deadline);
-        ui.showMessage(message);
+        StringBuilder message = new StringBuilder("Application added successfully.\n");
+        message.append("Company: ").append(application.getCompany()).append("\n");
+        message.append("Role: ").append(application.getRole());
+        if (deadline != null) {
+            message.append("\nDeadline: ").append(deadline);
+        }
+        if (!portalLink.isEmpty()) {
+            message.append("\nPortal Link: ").append(portalLink);
+        }
+        if (!email.isEmpty()) {
+            message.append("\nEmail: ").append(email);
+        }
+        if (!notes.isEmpty()) {
+            message.append("\nNotes: ").append(notes);
+        }
+        ui.showMessage(message.toString());
 
         storage.save(applications);
     }

@@ -200,7 +200,10 @@ public class Main {
             return null;
         }
         LocalDate deadline = promptDeadline();
-        return new AddCommand(company, role, deadline);
+        String portalLink = promptOptional("Company Portal Link (leave blank if none):");
+        String email = promptOptional("Contact Email (leave blank if none):");
+        String notes = promptOptional("Notes (leave blank if none):");
+        return new AddCommand(company, role, deadline, portalLink, email, notes);
     }
 
     /** Prompts for an optional deadline and repeats until a valid date is entered. */
@@ -217,6 +220,16 @@ public class Main {
                 ui.showError("Invalid deadline. Use YYYY-MM-DD or leave it blank.");
             }
         }
+    }
+
+    /** Prompts for optional input string, returning empty string if left blank or at EOF. */
+    private String promptOptional(String promptLabel) {
+        ui.showPrompt(promptLabel + "\n> ");
+        String input = ui.readCommand();
+        if (input == null) {
+            return "";
+        }
+        return input.trim().replace('\t', ' ');
     }
 
     /** Prompts until the user enters a non-blank value or reaches end of input. */
@@ -263,7 +276,8 @@ public class Main {
             return null;
         }
 
-        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> ");
+        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Status, 4: Deadline, "
+                + "5: Portal Link, 6: Email, 7: Notes, 8: All):\n> ");
         String fieldChoice = ui.readCommand();
         if (fieldChoice == null) {
             return null;
@@ -273,14 +287,26 @@ public class Main {
         switch (trimmedChoice) {
         case "1":
             String company = promptNonEmpty("Enter new company:", "Company cannot be empty.");
-            return company != null ? new EditCommand(index, company, null) : null;
+            return company != null ? EditCommand.editCompany(index, company) : null;
         case "2":
             String role = promptNonEmpty("Enter new role:", "Role cannot be empty.");
-            return role != null ? new EditCommand(index, null, role) : null;
+            return role != null ? EditCommand.editRole(index, role) : null;
         case "3":
             String status = promptStatus();
             return status != null ? new StatusCommand(index, status) : null;
         case "4":
+            LocalDate deadline = promptDeadline();
+            return EditCommand.editDeadline(index, deadline);
+        case "5":
+            String portalLink = promptOptional("Enter new company portal link (leave blank to clear):");
+            return EditCommand.editPortalLink(index, portalLink);
+        case "6":
+            String email = promptOptional("Enter new contact email (leave blank to clear):");
+            return EditCommand.editEmail(index, email);
+        case "7":
+            String notes = promptOptional("Enter new notes (leave blank to clear):");
+            return EditCommand.editNotes(index, notes);
+        case "8":
             String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
             if (allCompany == null) {
                 return null;
@@ -290,9 +316,17 @@ public class Main {
                 return null;
             }
             String allStatus = promptStatus();
-            return allStatus != null ? new EditCommand(index, allCompany, allRole, allStatus) : null;
+            if (allStatus == null) {
+                return null;
+            }
+            LocalDate allDeadline = promptDeadline();
+            String allPortalLink = promptOptional("Company Portal Link (leave blank to clear):");
+            String allEmail = promptOptional("Contact Email (leave blank to clear):");
+            String allNotes = promptOptional("Notes (leave blank to clear):");
+            return EditCommand.editAll(index, allCompany, allRole, allStatus,
+                    allDeadline, allPortalLink, allEmail, allNotes);
         default:
-            ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter 1, 2, 3, or 4.");
+            ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter a number from 1 to 8.");
             return null;
         }
     }

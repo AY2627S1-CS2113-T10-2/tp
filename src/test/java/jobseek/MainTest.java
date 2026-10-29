@@ -170,7 +170,7 @@ public class MainTest {
     @Test
     public void run_menuAddOption1_promptsAndAddsApplication() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\nGoogle\nSoftware Engineer Intern\n\n2\n0\n";
+        String input = "1\nGoogle\nSoftware Engineer Intern\n\n\n\n\n2\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -512,7 +512,8 @@ public class MainTest {
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
         assertTrue(output.contains("Enter application index to edit:\n> "));
-        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> "));
+        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Status, 4: Deadline, "
+                + "5: Portal Link, 6: Email, 7: Notes, 8: All):\n> "));
         assertTrue(output.contains("Enter new company:\n> "));
         assertTrue(output.contains("Application updated successfully."));
     }
@@ -538,7 +539,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false));
 
-        String input = "10\n1\n4\nNewCorp\nNewRole\n1\n0\n";
+        String input = "10\n1\n8\nNewCorp\nNewRole\n1\n\n\n\n\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -604,7 +605,7 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid field choice: '99'. Enter 1, 2, 3, or 4."));
+        assertTrue(output.contains("Error: Invalid field choice: '99'. Enter a number from 1 to 8."));
     }
 
     @Test
@@ -684,7 +685,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
 
-        String input = "10\n1\n4\nNewCorp\nNewRole\n2\n0\n";
+        String input = "10\n1\n8\nNewCorp\nNewRole\n2\n\n\n\n\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -894,7 +895,7 @@ public class MainTest {
     @Test
     public void run_menuAddFormatTokens_handledAsLiterals() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\n%s%d%x%n\n%s Developer\n\n8\n%s\n0\n";
+        String input = "1\n%s%d%x%n\n%s Developer\n\n\n\n\n8\n%s\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -991,5 +992,121 @@ public class MainTest {
 
         assertEquals("Google LLC", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
+    }
+
+    @Test
+    public void run_menuAddWithAllFields_addsSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        String input = "1\nNetflix\nPlatform SWE\n2026-12-05\nhttps://jobs.netflix.com\n"
+                + "hr@netflix.com\nTop priority\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        Application app = applications.get(0);
+        assertEquals("Netflix", app.getCompany());
+        assertEquals("Platform SWE", app.getRole());
+        assertEquals(java.time.LocalDate.of(2026, 12, 5), app.getDeadline());
+        assertEquals("https://jobs.netflix.com", app.getPortalLink());
+        assertEquals("hr@netflix.com", app.getEmail());
+        assertEquals("Top priority", app.getNotes());
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Portal Link: https://jobs.netflix.com"));
+        assertTrue(output.contains("Email: hr@netflix.com"));
+        assertTrue(output.contains("Notes: Top priority"));
+    }
+
+    @Test
+    public void run_menuEditDeadlineOption4_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        String input = "10\n1\n4\n2026-12-15\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals(java.time.LocalDate.of(2026, 12, 15), applications.get(0).getDeadline());
+        assertTrue(outputStream.toString().contains("Deadline: 2026-12-15"));
+    }
+
+    @Test
+    public void run_menuEditPortalLinkOption5_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Shopee", "Backend"));
+        String input = "10\n1\n5\nhttps://careers.shopee.sg\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("https://careers.shopee.sg", applications.get(0).getPortalLink());
+        assertTrue(outputStream.toString().contains("Portal Link: https://careers.shopee.sg"));
+    }
+
+    @Test
+    public void run_menuEditEmailOption6_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Grab", "Data Analyst"));
+        String input = "10\n1\n6\nrecruitment@grab.com\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("recruitment@grab.com", applications.get(0).getEmail());
+        assertTrue(outputStream.toString().contains("Email: recruitment@grab.com"));
+    }
+
+    @Test
+    public void run_menuEditNotesOption7_updatesSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("ByteDance", "Fullstack"));
+        String input = "10\n1\n7\nPassed technical interview\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals("Passed technical interview", applications.get(0).getNotes());
+        assertTrue(outputStream.toString().contains("Notes: Passed technical interview"));
+    }
+
+    @Test
+    public void run_menuAddOmitOptionalFields_savesEmptyStrings() {
+        ApplicationList applications = new ApplicationList();
+        String input = "1\nMeta\nSoftware Engineer\n\n\n\n\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        Application app = applications.get(0);
+        assertEquals("Meta", app.getCompany());
+        assertEquals("Software Engineer", app.getRole());
+        assertEquals("", app.getPortalLink());
+        assertEquals("", app.getEmail());
+        assertEquals("", app.getNotes());
+        assertEquals(null, app.getDeadline());
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application added successfully."));
+        assertTrue(output.contains("Company: Meta"));
+        assertTrue(output.contains("Role: Software Engineer"));
+        assertFalse(output.contains("Deadline:"));
+        assertFalse(output.contains("Portal Link:"));
+        assertFalse(output.contains("Email:"));
+        assertFalse(output.contains("Notes:"));
+    }
+
+    @Test
+    public void run_menuEditClearOptionalFields_clearsSuccessfully() {
+        ApplicationList applications = new ApplicationList();
+        java.time.LocalDate deadline = java.time.LocalDate.of(2026, 12, 1);
+        applications.add(new Application("Apple", "iOS Intern", false, "Pending",
+                deadline, "https://jobs.apple.com", "jobs@apple.com", "Interview scheduled"));
+
+        // Edit deadline (4) to blank, portal link (5) to blank, email (6) to blank, notes (7) to blank
+        String input = "10\n1\n4\n\n10\n1\n5\n\n10\n1\n6\n\n10\n1\n7\n\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        Application app = applications.get(0);
+        assertEquals(null, app.getDeadline());
+        assertEquals("", app.getPortalLink());
+        assertEquals("", app.getEmail());
+        assertEquals("", app.getNotes());
     }
 }

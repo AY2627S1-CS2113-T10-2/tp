@@ -5,14 +5,22 @@ import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
+import java.time.LocalDate;
+
 /**
- * Handles editing specific existing fields (company, role, status, or all) of an application.
+ * Handles editing specific existing fields (company, role, status, deadline, portal link, email, notes, or all)
+ * of an application.
  */
 public class EditCommand extends Command {
     private final int targetIndex;
     private final String newCompany;
     private final String newRole;
     private final String newStatus;
+    private final LocalDate newDeadline;
+    private final String newPortalLink;
+    private final String newEmail;
+    private final String newNotes;
+    private boolean isDeadlineUpdated;
 
     /**
      * Constructs an EditCommand with the specified target index and new field values for company and role.
@@ -22,7 +30,7 @@ public class EditCommand extends Command {
      * @param newRole New role title, or null if role is not being updated.
      */
     public EditCommand(int targetIndex, String newCompany, String newRole) {
-        this(targetIndex, newCompany, newRole, null);
+        this(targetIndex, newCompany, newRole, null, null, null, null, null);
     }
 
     /**
@@ -34,10 +42,72 @@ public class EditCommand extends Command {
      * @param newStatus New recruitment status, or null if status is not being updated.
      */
     public EditCommand(int targetIndex, String newCompany, String newRole, String newStatus) {
+        this(targetIndex, newCompany, newRole, newStatus, null, null, null, null);
+    }
+
+    /**
+     * Constructs an EditCommand with all editable fields including portal link, email, and notes.
+     *
+     * @param targetIndex 0-based index of the application to edit.
+     * @param newCompany New company name, or null if company is not being updated.
+     * @param newRole New role title, or null if role is not being updated.
+     * @param newStatus New recruitment status, or null if status is not being updated.
+     * @param newDeadline New deadline, or null if deadline is not being updated.
+     * @param newPortalLink New portal link, or null if portal link is not being updated.
+     * @param newEmail New contact email, or null if email is not being updated.
+     * @param newNotes New freeform notes, or null if notes are not being updated.
+     */
+    public EditCommand(int targetIndex, String newCompany, String newRole, String newStatus,
+                       LocalDate newDeadline, String newPortalLink, String newEmail, String newNotes) {
         this.targetIndex = targetIndex;
         this.newCompany = (newCompany != null && !newCompany.trim().isEmpty()) ? newCompany.trim() : null;
         this.newRole = (newRole != null && !newRole.trim().isEmpty()) ? newRole.trim() : null;
         this.newStatus = (newStatus != null && !newStatus.trim().isEmpty()) ? newStatus.trim() : null;
+        this.newDeadline = newDeadline;
+        this.newPortalLink = newPortalLink != null ? newPortalLink.trim() : null;
+        this.newEmail = newEmail != null ? newEmail.trim() : null;
+        this.newNotes = newNotes != null ? newNotes.trim() : null;
+        this.isDeadlineUpdated = newDeadline != null;
+    }
+
+    /** Creates an EditCommand updating only the company name. */
+    public static EditCommand editCompany(int targetIndex, String company) {
+        return new EditCommand(targetIndex, company, null, null, null, null, null, null);
+    }
+
+    /** Creates an EditCommand updating only the role title. */
+    public static EditCommand editRole(int targetIndex, String role) {
+        return new EditCommand(targetIndex, null, role, null, null, null, null, null);
+    }
+
+    /** Creates an EditCommand updating only the company portal link. */
+    public static EditCommand editPortalLink(int targetIndex, String portalLink) {
+        return new EditCommand(targetIndex, null, null, null, null, portalLink, null, null);
+    }
+
+    /** Creates an EditCommand updating only the contact email. */
+    public static EditCommand editEmail(int targetIndex, String email) {
+        return new EditCommand(targetIndex, null, null, null, null, null, email, null);
+    }
+
+    /** Creates an EditCommand updating only the freeform notes. */
+    public static EditCommand editNotes(int targetIndex, String notes) {
+        return new EditCommand(targetIndex, null, null, null, null, null, null, notes);
+    }
+
+    /** Creates an EditCommand updating only the deadline. */
+    public static EditCommand editDeadline(int targetIndex, LocalDate deadline) {
+        EditCommand command = new EditCommand(targetIndex, null, null, null, deadline, null, null, null);
+        command.isDeadlineUpdated = true;
+        return command;
+    }
+
+    /** Creates an EditCommand updating all fields of an application. */
+    public static EditCommand editAll(int targetIndex, String company, String role, String status,
+                                      LocalDate deadline, String portalLink, String email, String notes) {
+        EditCommand command = new EditCommand(targetIndex, company, role, status, deadline, portalLink, email, notes);
+        command.isDeadlineUpdated = true;
+        return command;
     }
 
     public int getTargetIndex() {
@@ -54,6 +124,22 @@ public class EditCommand extends Command {
 
     public String getNewStatus() {
         return newStatus;
+    }
+
+    public LocalDate getNewDeadline() {
+        return newDeadline;
+    }
+
+    public String getNewPortalLink() {
+        return newPortalLink;
+    }
+
+    public String getNewEmail() {
+        return newEmail;
+    }
+
+    public String getNewNotes() {
+        return newNotes;
     }
 
     /**
@@ -82,7 +168,8 @@ public class EditCommand extends Command {
             return;
         }
 
-        if (newCompany == null && newRole == null && newStatus == null) {
+        if (newCompany == null && newRole == null && newStatus == null
+                && !isDeadlineUpdated && newPortalLink == null && newEmail == null && newNotes == null) {
             ui.showError("At least one field (company, role, or status) must be specified for editing.");
             return;
         }
@@ -99,6 +186,18 @@ public class EditCommand extends Command {
         if (newStatus != null) {
             application.setStatus(newStatus);
         }
+        if (isDeadlineUpdated) {
+            application.setDeadline(newDeadline);
+        }
+        if (newPortalLink != null) {
+            application.setPortalLink(newPortalLink);
+        }
+        if (newEmail != null) {
+            application.setEmail(newEmail);
+        }
+        if (newNotes != null) {
+            application.setNotes(newNotes);
+        }
 
         assert !application.getCompany().isEmpty() : "Company should not be empty after edit";
         assert !application.getRole().isEmpty() : "Role should not be empty after edit";
@@ -107,6 +206,18 @@ public class EditCommand extends Command {
         message.append("Company: ").append(application.getCompany()).append("\n");
         message.append("Role: ").append(application.getRole()).append("\n");
         message.append("Status: ").append(application.getStatus());
+        if (application.getDeadline() != null) {
+            message.append("\nDeadline: ").append(application.getDeadline());
+        }
+        if (!application.getPortalLink().isEmpty()) {
+            message.append("\nPortal Link: ").append(application.getPortalLink());
+        }
+        if (!application.getEmail().isEmpty()) {
+            message.append("\nEmail: ").append(application.getEmail());
+        }
+        if (!application.getNotes().isEmpty()) {
+            message.append("\nNotes: ").append(application.getNotes());
+        }
         ui.showMessage(message.toString());
 
         storage.save(applications);

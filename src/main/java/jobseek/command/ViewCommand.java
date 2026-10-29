@@ -69,15 +69,27 @@ public class ViewCommand extends Command {
         Application app = applications.get(targetIndex);
         String completedText = app.isCompleted() ? "Yes" : "No";
 
-        String card = DIVIDER + "\n"
-                + "Application Details [Index: " + (targetIndex + 1) + "]\n"
-                + SUB_DIVIDER + "\n"
-                + "Company:   " + app.getCompany() + "\n"
-                + "Role:      " + app.getRole() + "\n"
-                + "Status:    " + app.getStatus() + "\n"
-                + "Completed: " + completedText + "\n"
-                + DIVIDER;
+        StringBuilder card = new StringBuilder(DIVIDER).append("\n")
+                .append("Application Details [Index: ").append(targetIndex + 1).append("]\n")
+                .append(SUB_DIVIDER).append("\n")
+                .append("Company:   ").append(app.getCompany()).append("\n")
+                .append("Role:      ").append(app.getRole()).append("\n")
+                .append("Status:    ").append(app.getStatus()).append("\n")
+                .append("Completed: ").append(completedText).append("\n");
+        if (app.getDeadline() != null) {
+            card.append("Deadline:  ").append(app.getDeadline()).append("\n");
+        }
+        if (!app.getPortalLink().isEmpty()) {
+            card.append("Portal:    ").append(app.getPortalLink()).append("\n");
+        }
+        if (!app.getEmail().isEmpty()) {
+            card.append("Email:     ").append(app.getEmail()).append("\n");
+        }
+        if (!app.getNotes().isEmpty()) {
+            card.append("Notes:     ").append(app.getNotes()).append("\n");
+        }
+        card.append(DIVIDER);
 
-        ui.showMessage(card);
+        ui.showMessage(card.toString());
     }
 }

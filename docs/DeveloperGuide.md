@@ -178,14 +178,23 @@ classDiagram
         - isCompleted: boolean
         - status: String
         - deadline: LocalDate
+        - portalLink: String
+        - email: String
+        - notes: String
         + getCompany(): String
         + getRole(): String
         + getStatus(): String
         + getDeadline(): LocalDate
+        + getPortalLink(): String
+        + getEmail(): String
+        + getNotes(): String
         + isCompleted(): boolean
         + setCompany(company: String): void
         + setRole(role: String): void
         + setStatus(status: String): void
+        + setPortalLink(portalLink: String): void
+        + setEmail(email: String): void
+        + setNotes(notes: String): void
         + setCompleted(isCompleted: boolean): void
     }
 
@@ -229,6 +238,9 @@ classDiagram
         - company: String
         - role: String
         - deadline: LocalDate
+        - portalLink: String
+        - email: String
+        - notes: String
         + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class DeleteCommand {
@@ -240,6 +252,10 @@ classDiagram
         - newCompany: String
         - newRole: String
         - newStatus: String
+        - newDeadline: LocalDate
+        - newPortalLink: String
+        - newEmail: String
+        - newNotes: String
         + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class ExitCommand {
@@ -308,11 +324,11 @@ classDiagram
 The `AddCommand` allows job seekers to add a new internship or job record with a specified company and role.
 
 - **Workflow**:
-  1. `Main.handleMenuAdd()` queries the user for non-empty company and role strings using `promptNonEmpty()`. Blank or whitespace-only inputs are rejected with informative error messages and reprompted.
-  2. Once valid strings are obtained, `Main` instantiates `AddCommand(company, role)`.
-  3. `AddCommand.execute()` instantiates a new `Application`, which initializes with completion status `false` (`[ ]`) and recruitment status `"Pending"`.
+  1. `Main.handleMenuAdd()` queries the user for non-empty company and role strings using `promptNonEmpty()`, followed by optional deadline (`promptDeadline()`), portal link, contact email, and notes (`promptOptional()`). Blank or whitespace-only inputs for required fields are rejected with informative error messages and reprompted.
+  2. Once inputs are obtained, `Main` instantiates `AddCommand(company, role, deadline, portalLink, email, notes)`.
+  3. `AddCommand.execute()` instantiates a new `Application` with all specified attributes, initializing completion status to `false` (`[ ]`) and recruitment status to `"Pending"`.
   4. The application is added to `ApplicationList`. Internal assumptions (such as list size incrementing by 1 and target non-null) are verified via Java `assert`.
-  5. The updated list is persisted to disk via `Storage.save(applications)`, and confirmation is rendered to the user via `Ui.showMessage()`.
+  5. The updated list is persisted to disk via `Storage.save(applications)`, and confirmation displaying recorded details is rendered to the user via `Ui.showMessage()`.
 
 #### Add Application Activity Diagram
 
@@ -321,8 +337,8 @@ The user input validation, prompt looping, and execution lifecycle for adding an
 ```mermaid
 flowchart LR
     Start((●)) --> MergePrompt{ }
-    MergePrompt --> Prompt["Prompt company, role,<br/>optional deadline"]
-    Prompt --> Validate{"Valid input<br/>& date?"}
+    MergePrompt --> Prompt["Prompt company, role,<br/>deadline, portal, email, notes"]
+    Prompt --> Validate{"Valid required<br/>fields & date?"}
     Validate -->|"[valid]"| Create["Create Application<br/>& add to list"]
     Validate -->|"[else]"| ShowErr["Show error<br/>message"]
     ShowErr --> MergePrompt
@@ -357,26 +373,31 @@ sequenceDiagram
     activate ui
     ui-->>main: "SWE Intern"
     deactivate ui
+    main->>ui: promptDeadline()
+    activate ui
+    ui-->>main: "2026-11-15"
+    deactivate ui
+    main->>ui: promptOptional("Company Portal Link:")
+    activate ui
+    ui-->>main: "https://careers.google.com"
+    deactivate ui
+    main->>ui: promptOptional("Contact Email:")
+    activate ui
+    ui-->>main: "recruiter@google.com"
+    deactivate ui
+    main->>ui: promptOptional("Notes:")
+    activate ui
+    ui-->>main: "OA passed"
+    deactivate ui
 
-    alt with optional deadline
-        main->>ui: promptOptionalDate("Deadline:")
-        activate ui
-        ui-->>main: "2026-11-15"
-        deactivate ui
-        main->>cmd: new AddCommand("Google", "SWE", deadline)
-        activate cmd
-        cmd-->>main: addCommand
-        deactivate cmd
-    else without deadline
-        main->>cmd: new AddCommand("Google", "SWE Intern")
-        activate cmd
-        cmd-->>main: addCommand
-        deactivate cmd
-    end
+    main->>cmd: new AddCommand(company, role, deadline, portal, email, notes)
+    activate cmd
+    cmd-->>main: addCommand
+    deactivate cmd
 
     main->>cmd: execute(applications, ui, storage)
     activate cmd
-    cmd->>app: new Application(company, role, deadline)
+    cmd->>app: new Application(company, role, false, "Pending", deadline, portal, email, notes)
     activate app
     app-->>cmd: application
     deactivate app
@@ -388,7 +409,7 @@ sequenceDiagram
     activate storage
     storage-->>cmd: ​
     deactivate storage
-    cmd->>ui: showMessage("Application added")
+    cmd->>ui: showMessage("Application added successfully...")
     activate ui
     ui-->>user: Confirmation message
     deactivate ui
@@ -753,15 +774,20 @@ sequenceDiagram
 The edit feature allows users to modify existing applications without deleting and re-entering them. The status tracking feature categorizes applications into recruitment stages (`Pending`, `Accepted`, `Rejected`).
 
 - **Design and Implementation**:
-  - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, and `newStatus`. A `null` value indicates that the corresponding field should remain unchanged.
+  - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, `newStatus`, `newDeadline`, `newPortalLink`, `newEmail`, and `newNotes`. A `null` value indicates that the corresponding field should remain unchanged.
   - `StatusCommand` provides direct, dedicated recruitment status modification for targeted application records.
-  - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by a field choice:
+  - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by a field choice (1 to 8):
     - `1`: Company only
     - `2`: Role only
     - `3`: Status only
-    - `4`: All three fields
+    - `4`: Deadline only
+    - `5`: Company Portal Link only
+    - `6`: Contact Email only
+    - `7`: Notes only
+    - `8`: All fields in sequence (Company, Role, Status, Deadline, Portal Link, Email, Notes)
   - Status input normalization in `Main.promptStatus()` accepts numeric shortcuts (`1` for Pending, `2` for Accepted, `3` for Rejected) as well as case-insensitive text strings.
-  - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty fields, updated status).
+  - Optional fields (deadline, portal link, email, notes) can be updated or cleared with blank inputs.
+  - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty required fields, updated status).
 
 #### Edit Application Activity Diagram
 
@@ -770,12 +796,16 @@ The user interaction and validation workflow for updating application fields is 
 ```mermaid
 flowchart LR
     Start((●)) --> PromptIdx["Prompt & validate<br/>index"]
-    PromptIdx --> PromptField["Prompt field choice<br/>(1-4)"]
+    PromptIdx --> PromptField["Prompt field choice<br/>(1-8)"]
     PromptField --> Branch{"Field choice"}
-    Branch -->|"[1: Company]"| UpdCo["Update company"] --> Merge{ }
+    Branch -->|"[1: Co]"| UpdCo["Update company"] --> Merge{ }
     Branch -->|"[2: Role]"| UpdRole["Update role"] --> Merge
-    Branch -->|"[3: Status]"| UpdStat["Update status"] --> Merge
-    Branch -->|"[4: All]"| UpdAll["Update all fields"] --> Merge
+    Branch -->|"[3: Stat]"| UpdStat["Update status"] --> Merge
+    Branch -->|"[4: Due]"| UpdDue["Update deadline"] --> Merge
+    Branch -->|"[5: Portal]"| UpdPort["Update portal link"] --> Merge
+    Branch -->|"[6: Email]"| UpdMail["Update email"] --> Merge
+    Branch -->|"[7: Notes]"| UpdNote["Update notes"] --> Merge
+    Branch -->|"[8: All]"| UpdAll["Update all fields"] --> Merge
     Merge --> Save["Storage.save<br/>applications"]
     Save --> Confirm["Show confirmation<br/>message"]
     Confirm --> End(((◎)))
@@ -803,15 +833,15 @@ sequenceDiagram
     activate ui
     ui-->>main: 1 (0-based: 0)
     deactivate ui
-    main->>ui: showPrompt(field choice)
+    main->>ui: showPrompt(field choice 1-8)
     activate ui
-    ui-->>main: 3 (Status)
+    ui-->>main: 5 (Portal Link)
     deactivate ui
-    main->>ui: promptStatus()
+    main->>ui: promptOptional("Enter new company portal link:")
     activate ui
-    ui-->>main: "Accepted"
+    ui-->>main: "https://careers.google.com"
     deactivate ui
-    main->>cmd: new EditCommand(0, null, null, "Accepted")
+    main->>cmd: EditCommand.editPortalLink(0, "https://careers.google.com")
     activate cmd
     cmd-->>main: editCommand
     deactivate cmd
@@ -828,17 +858,23 @@ sequenceDiagram
         cmd->>app: setRole(newRole)
     else choice == 3 (Status)
         cmd->>app: setStatus(newStatus)
-    else choice == 4 (All)
-        cmd->>app: setCompany(newCompany)
-        cmd->>app: setRole(newRole)
-        cmd->>app: setStatus(newStatus)
+    else choice == 4 (Deadline)
+        cmd->>app: setDeadline(newDeadline)
+    else choice == 5 (Portal Link)
+        cmd->>app: setPortalLink(newPortalLink)
+    else choice == 6 (Email)
+        cmd->>app: setEmail(newEmail)
+    else choice == 7 (Notes)
+        cmd->>app: setNotes(newNotes)
+    else choice == 8 (All)
+        cmd->>app: update all fields
     end
 
     cmd->>storage: save(applications)
     activate storage
     storage-->>cmd: ​
     deactivate storage
-    cmd->>ui: showMessage("Application updated")
+    cmd->>ui: showMessage("Application updated successfully...")
     activate ui
     ui-->>user: Confirmation message
     deactivate ui
@@ -1207,11 +1243,19 @@ classDiagram
         - company: String
         - role: String
         - isCompleted: boolean
+        - status: String
         - deadline: LocalDate
+        - portalLink: String
+        - email: String
+        - notes: String
         + getCompany(): String
         + getRole(): String
         + isCompleted(): boolean
+        + getStatus(): String
         + getDeadline(): LocalDate
+        + getPortalLink(): String
+        + getEmail(): String
+        + getNotes(): String
     }
 
     class Main {
@@ -1226,20 +1270,24 @@ classDiagram
 
 #### File format
 
-The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains four tab-separated fields:
+The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains eight tab-separated fields:
 
 | Field | Representation |
 |---|---|
 | Company | Escaped text |
 | Role | Escaped text |
 | Completion flag | `true` or `false` |
+| Status | Escaped text (`Pending`, `Accepted`, `Rejected`) |
 | Deadline | ISO date such as `2026-11-03`, or an empty field |
+| Company portal link | Escaped URL text, or an empty field |
+| Contact email | Escaped email address, or an empty field |
+| Notes | Escaped freeform text, or an empty field |
 
-An empty deadline field represents an application without a recorded deadline.
+An empty deadline, portal link, email, or notes field represents an application where that optional attribute has not been recorded.
 
-Backslashes, tabs, newlines and carriage returns within text fields are escaped before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company or role names from being mistaken for field or record separators.
+Backslashes, tabs, newlines and carriage returns within text fields are escaped (`\\`, `\t`, `\n`, `\r`) before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company, role, or notes from being mistaken for field or record separators.
 
-**Current limitation:** Recruitment status (`Pending`, `Accepted` or `Rejected`) is not included in the stored format. Therefore, changes to this status are not preserved by the current storage implementation.
+**Backwards compatibility:** `Storage.load()` automatically parses legacy 4-field records (`company\trole\tcompleted\tdeadline`), cleanly assigning default values for status (`Pending`), portal link (`""`), email (`""`), and notes (`""`).
 
 #### Saving applications
 
@@ -1417,18 +1465,21 @@ This section provides step-by-step instructions for manual testing of JobSeek. I
    ```text
    Error: Company cannot be empty. Please enter a valid company name:
    ```
-3. Enter `Google`. When prompted for `Role:`, enter `SWE Intern`. When prompted for `Deadline:`, press Enter to skip. Confirm confirmation message:
+3. Enter `Google`. When prompted for `Role:`, enter `SWE Intern`. When prompted for optional fields (`Deadline:`, `Company Portal Link:`, `Contact Email:`, `Notes:`), press Enter to skip each. Confirm confirmation message:
    ```text
    Application added successfully.
    Company: Google
    Role: SWE Intern
    ```
-4. Add another application with an optional deadline: enter `1`, company `Microsoft`, role `Cloud Engineer`, and deadline `2026-11-15`:
+4. Add another application with all optional fields: enter `1`, company `Microsoft`, role `Cloud Engineer`, deadline `2026-11-15`, portal link `https://careers.microsoft.com`, contact email `recruiter@microsoft.com`, and notes `First screening completed`:
    ```text
    Application added successfully.
    Company: Microsoft
    Role: Cloud Engineer
    Deadline: 2026-11-15
+   Portal Link: https://careers.microsoft.com
+   Email: recruiter@microsoft.com
+   Notes: First screening completed
    ```
 5. Choose `2` to list applications. Confirm the new records appear in the active applications table.
 
@@ -1591,10 +1642,35 @@ This section provides step-by-step instructions for manual testing of JobSeek. I
    Role: Backend Intern
    Status: Pending
    ```
-6. Choose `10` and test invalid inputs: enter non-numeric index `abc` or out-of-bounds `99`:
-   ```text
-   Error: Invalid application index: 99. Please enter a number between 1 and 1.
-   ```
+6. Choose `10`, index `1`, and field `4` (Deadline). Enter `2026-11-20`. Confirm updated deadline.
+7. Choose `10`, index `1`, and field `5` (Portal Link). Enter `https://careers.google.com`. Confirm updated portal link.
+8. Choose `10`, index `1`, and field `6` (Email). Enter `recruiter@google.com`. Confirm updated email.
+9. Choose `10`, index `1`, and field `7` (Notes). Enter `Passed interview round 1`. Confirm updated notes.
+10. Choose `10`, index `1`, and field `8` (All). Enter company `Alphabet`, role `Senior SWE Intern`, status `2` (Accepted), deadline `2026-12-15`, portal `https://abc.xyz/jobs`, email `lead@abc.xyz`, and notes `Offer accepted!`. Confirm full update output:
+    ```text
+    Application updated successfully.
+    Company: Alphabet
+    Role: Senior SWE Intern
+    Status: Accepted
+    Deadline: 2026-12-15
+    Portal Link: https://abc.xyz/jobs
+    Email: lead@abc.xyz
+    Notes: Offer accepted!
+    ```
+11. Test clearing optional fields: Choose `10`, index `1`, and field `5` (Portal Link). Press Enter without typing. Confirm the portal link is cleared and no longer appears in the confirmation message:
+    ```text
+    Application updated successfully.
+    Company: Alphabet
+    Role: Senior SWE Intern
+    Status: Accepted
+    Deadline: 2026-12-15
+    Email: lead@abc.xyz
+    Notes: Offer accepted!
+    ```
+12. Choose `10` and test invalid inputs: enter non-numeric index `abc`, out-of-bounds `99`, or invalid field choice `99`:
+    ```text
+    Error: Invalid field choice: '99'. Enter a number from 1 to 8.
+    ```
 
 ### Managing recruitment status
 
@@ -1624,13 +1700,6 @@ This section provides step-by-step instructions for manual testing of JobSeek. I
    Company: Shopee
    Role: Backend Intern
    Status: Rejected
-   ```
-6. Choose `10`, index `1`, field `4` (All). Enter company `Sea`, role `Data Analyst`, and status `1` (Pending). Confirm all fields update correctly:
-   ```text
-   Application updated successfully.
-   Company: Sea
-   Role: Data Analyst
-   Status: Pending
    ```
 
 ### Search and sort

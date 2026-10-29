@@ -18,7 +18,9 @@ import jobseek.model.ApplicationList;
 public class Storage {
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
-    private static final String COLUMN_HEADER = "company\trole\tcompleted\tdeadline";
+    private static final String LEGACY_COLUMN_HEADER = "company\trole\tcompleted\tdeadline";
+    private static final String COLUMN_HEADER =
+            "company\trole\tcompleted\tstatus\tdeadline\tportalLink\temail\tnotes";
     private static final String HEADER = TITLE_HEADER + "\n" + COLUMN_HEADER;
 
     private String filePath;
@@ -70,14 +72,21 @@ public class Storage {
         lines.add(HEADER);
         for (Application application : applications.getAll()) {
             String deadline = application.getDeadline() == null ? "" : application.getDeadline().toString();
-            lines.add(escape(application.getCompany()) + "\t" + escape(application.getRole()) + "\t"
-                    + application.isCompleted() + "\t" + deadline);
+            lines.add(escape(application.getCompany()) + "\t"
+                    + escape(application.getRole()) + "\t"
+                    + application.isCompleted() + "\t"
+                    + escape(application.getStatus()) + "\t"
+                    + deadline + "\t"
+                    + escape(application.getPortalLink()) + "\t"
+                    + escape(application.getEmail()) + "\t"
+                    + escape(application.getNotes()));
         }
         Files.write(path, lines, StandardCharsets.UTF_8);
     }
 
     /**
      * Loads the application list from local storage.
+     * Supports both modern 8-field format and backwards-compatible 4-field records.
      *
      * @return The loaded ApplicationList.
      * @throws Exception If an I/O or deserialization error occurs.
@@ -95,25 +104,42 @@ public class Storage {
             if (line.isBlank() || line.startsWith("#")) {
                 continue;
             }
-            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)) {
+            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line) || LEGACY_COLUMN_HEADER.equals(line)) {
                 continue;
             }
             List<String> fields = splitFields(line);
-            if (fields.size() != 4 || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
+            if ((fields.size() != 4 && fields.size() != 8)
+                    || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
                 throw new IOException("Invalid record on line " + (lineNumber + 1) + " in " + filePath + ".");
             }
-            LocalDate deadline = null;
-            if (!fields.get(3).isEmpty()) {
-                try {
-                    deadline = LocalDate.parse(fields.get(3));
-                } catch (DateTimeParseException e) {
-                    throw new IOException("Invalid deadline on line " + (lineNumber + 1) + " in " + filePath + ".", e);
-                }
-            }
             boolean isCompleted = Boolean.parseBoolean(fields.get(2));
-            applications.add(new Application(fields.get(0), fields.get(1), isCompleted, deadline));
+            if (fields.size() == 4) {
+                LocalDate deadline = parseDeadline(fields.get(3), lineNumber);
+                applications.add(new Application(fields.get(0), fields.get(1), isCompleted,
+                        Application.DEFAULT_STATUS, deadline, "", "", ""));
+            } else {
+                String status = !fields.get(3).isEmpty() ? fields.get(3) : Application.DEFAULT_STATUS;
+                LocalDate deadline = parseDeadline(fields.get(4), lineNumber);
+                String portalLink = fields.get(5);
+                String email = fields.get(6);
+                String notes = fields.get(7);
+                applications.add(new Application(fields.get(0), fields.get(1), isCompleted,
+                        status, deadline, portalLink, email, notes));
+            }
         }
         return applications;
+    }
+
+    /** Parses a raw date string into a LocalDate, throwing an IOException on format failure. */
+    private LocalDate parseDeadline(String rawDate, int lineNumber) throws IOException {
+        if (rawDate == null || rawDate.isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(rawDate);
+        } catch (DateTimeParseException e) {
+            throw new IOException("Invalid deadline on line " + (lineNumber + 1) + " in " + filePath + ".", e);
+        }
     }
 
     /** Escapes characters that would otherwise conflict with the tab-separated format. */

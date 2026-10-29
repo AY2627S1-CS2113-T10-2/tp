@@ -15,7 +15,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 
 | Number | Action | What it does |
 | --- | --- | --- |
-| `1` | Add application | Enter a company, role and optional deadline. Company and role must be non-empty. |
+| `1` | Add application | Enter company, role, and optional deadline, portal link, email, and notes. Company and role must be non-empty. |
 | `2` | List applications | Show active applications with their original numbers and status. |
 | `3` | List uncompleted applications | Show active applications with their original numbers. |
 | `4` | Delete application | Enter an application number to remove it. |
@@ -24,7 +24,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 | `7` | Help | Show the menu options and command shortcuts. |
 | `8` | Search applications | Find applications by company or role. |
 | `9` | Sort applications | View applications alphabetically by company, then role. |
-| `10` | Edit application | Update company, role, or recruitment status (Pending, Accepted, Rejected) of an application. |
+| `10` | Edit application | Update company, role, recruitment status, deadline, portal link, email, notes, or all fields of an application. |
 | `0` | Exit | Quit JobSeek. |
 
 ---
@@ -36,20 +36,36 @@ Choose `1` to create and track a new job or internship application.
 - **Prompt sequence**:
   1. `Company:\n> ` — Enter the name of the company or organization (e.g., `Google`, `Shopee`, `GovTech`).
   2. `Role:\n> ` — Enter the title of the role or internship (e.g., `SWE Intern`, `Backend Engineer`, `Data Analyst`).
-  3. `Deadline (YYYY-MM-DD, leave blank if none):` — Enter a deadline such as `2026-11-03`, or press Enter if no deadline is known. Invalid dates display an error and you will be prompted again.
-- **Input validation**:
-  - Both company and role are required fields and cannot be empty or whitespace-only.
-  - If an empty input is submitted, JobSeek displays an error message (e.g., `Error: Company cannot be empty.`) and reprompts until a valid input is received.
+  3. `Deadline (YYYY-MM-DD, leave blank if none):\n> ` — Enter a deadline such as `2026-11-03`, or press Enter if no deadline is known. Invalid dates display an error and you will be prompted again.
+  4. `Company Portal Link (leave blank if none):\n> ` — Enter the web link to the company's application portal (e.g., `https://careers.google.com`), or press Enter to skip.
+  5. `Contact Email (leave blank if none):\n> ` — Enter the recruiter or contact email (e.g., `recruiter@google.com`), or press Enter to skip.
+  6. `Notes (leave blank if none):\n> ` — Enter freeform notes or interview details (e.g., `Referred by Alice; OA completed`), or press Enter to skip.
+- **Input validation & Optional fields**:
+  - Both company and role are **required** and cannot be empty or whitespace-only. If an empty input is entered, JobSeek displays an error message (e.g., `Error: Company cannot be empty.`) and reprompts until valid text is received.
+  - The company portal link, recruiter contact email, notes, and deadline are **optional**:
+    - Simply press Enter without typing any text to skip any of them.
+    - If skipped, these fields remain blank and are excluded from the confirmation message and detail cards.
   - Leading and trailing whitespace is automatically trimmed.
 - **Initial attributes**:
   - The new application is assigned the next 1-based number in the list.
   - **Completion status**: Defaults to incomplete (`[ ]`).
   - **Recruitment status**: Automatically initialized to `"Pending"`.
 - **Confirmation message**:
+  When optional fields are omitted (leaving them blank):
   ```text
   Application added successfully.
   Company: Google
   Role: Software Engineering Intern
+  ```
+  When optional fields are provided:
+  ```text
+  Application added successfully.
+  Company: Google
+  Role: Software Engineering Intern
+  Deadline: 2026-11-03
+  Portal Link: https://careers.google.com
+  Email: recruiter@google.com
+  Notes: Referred by Alice; OA completed
   ```
 
 ---
@@ -89,7 +105,7 @@ No. | Status | Company   | Role           | Deadline
 
 ### Viewing application details: `view`
 
-Displays a comprehensive, structured information card for a single job application at the specified index. The card presents all recorded details including company, role, recruitment status, and completion state.
+Displays a comprehensive, structured information card for a single job application at the specified index. The card presents all recorded details including company, role, recruitment status, completion state, deadline, portal link, contact email, and notes.
 
 Format: `view <application_number>`
 
@@ -106,11 +122,16 @@ Company:   Google
 Role:      SWE Intern
 Status:    Accepted
 Completed: No
+Deadline:  2026-11-03
+Portal:    https://careers.google.com
+Email:     recruiter@google.com
+Notes:     Passed round 1 OA
 ==================================================
 ```
 
 > **Notes on viewing applications:**
 > * `<application_number>` must be a valid positive integer corresponding to an existing entry in your application list (e.g., `1`, `2`).
+> * Optional fields (`Deadline:`, `Portal:`, `Email:`, `Notes:`) only appear if recorded.
 > * If `<application_number>` is missing, non-numeric, or `<= 0`, JobSeek notifies you:
 >   `Error: Please provide a valid positive application index. Usage: view INDEX`
 > * If `<application_number>` is greater than the total number of applications, JobSeek displays:
@@ -124,15 +145,23 @@ Choose `10` to update details of an existing application in place without deleti
 
 - **Prompt sequence**:
   1. `Enter application index to edit:\n> ` — Enter the 1-based index of the application to update (as displayed in `list`).
-  2. `Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> ` — Select which field(s) you wish to modify:
+  2. `Enter field to edit (1: Company, 2: Role, 3: Status, 4: Deadline, 5: Portal Link, 6: Email, 7: Notes, 8: All):\n> ` — Select which field(s) you wish to modify:
      - `1`: Edit Company name only.
      - `2`: Edit Role title only.
      - `3`: Edit Recruitment Status only (`Pending`, `Accepted`, or `Rejected`).
-     - `4`: Edit All three fields (Company, Role, and Status).
+     - `4`: Edit Deadline only (enter date `YYYY-MM-DD` or leave blank to clear).
+     - `5`: Edit Company Portal Link only (enter URL or leave blank to clear).
+     - `6`: Edit Contact Email only (enter email or leave blank to clear).
+     - `7`: Edit Notes only (enter text or leave blank to clear).
+     - `8`: Edit All fields in sequence (Company, Role, Status, Deadline, Portal Link, Email, Notes).
   3. JobSeek will then prompt for the respective replacement value(s):
      - `Enter new company:\n> ` (if editing company or all)
      - `Enter new role:\n> ` (if editing role or all)
      - `Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ` (if editing status or all)
+     - `Deadline (YYYY-MM-DD, leave blank if none):\n> ` (if editing deadline or all)
+     - `Enter new company portal link (leave blank to clear):\n> ` (if editing portal link; or `Company Portal Link (leave blank to clear):` in all)
+     - `Enter new contact email (leave blank to clear):\n> ` (if editing email; or `Contact Email (leave blank to clear):` in all)
+     - `Enter new notes (leave blank to clear):\n> ` (if editing notes; or `Notes (leave blank to clear):` in all)
 - **Input validation & error handling**:
   - If your application list is currently empty, JobSeek notifies you with `Error: Your application list is currently empty.` and returns to the menu.
   - Blank index input is rejected with `Error: Please specify a valid application index.`.
@@ -140,15 +169,26 @@ Choose `10` to update details of an existing application in place without deleti
   - Out-of-bounds indices are rejected (`Error: Invalid application index: X. Please enter a number between 1 and Y.`).
   - Empty company or role values are rejected and reprompted.
   - Invalid status choices are rejected and reprompted (`Error: Invalid status choice: '...'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).`).
-  - Entering an invalid field choice (anything other than 1, 2, 3, or 4) displays `Error: Invalid field choice: '<choice>'. Enter 1, 2, 3, or 4.` and returns to the menu.
+  - Entering an invalid field choice (anything other than 1 through 8) displays `Error: Invalid field choice: '<choice>'. Enter a number from 1 to 8.` and returns to the menu.
   - Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
 - **Confirmation message**:
-  For field choices `1`, `2`, or `4` (Company, Role, or All):
+  For field choices updating company, role, or where optional fields are cleared / omitted:
   ```text
   Application updated successfully.
   Company: Alphabet Inc.
   Role: Senior SWE Intern
   Status: Pending
+  ```
+  When optional fields (deadline, portal link, email, notes) are set or updated:
+  ```text
+  Application updated successfully.
+  Company: Alphabet Inc.
+  Role: Senior SWE Intern
+  Status: Pending
+  Deadline: 2026-11-20
+  Portal Link: https://careers.google.com
+  Email: recruiter@google.com
+  Notes: Technical interview round completed
   ```
   For field choice `3` (Status only):
   ```text
@@ -168,7 +208,7 @@ JobSeek provides first-class recruitment stage indicators for tracking your appl
 - **`Rejected`**: Indicates the application was unsuccessful.
 
 #### Updating Status
-Under menu option `10`, selecting field `3` (Status) or `4` (All) allows you to set the status using either convenient numeric shortcuts or case-insensitive text names:
+Under menu option `10`, selecting field `3` (Status) or `8` (All) allows you to set the status using either convenient numeric shortcuts or case-insensitive text names:
 - Numeric inputs: `1` for Pending, `2` for Accepted, `3` for Rejected.
 - Text inputs: `pending`, `accepted`, `rejected` (letter case is ignored).
 - Any unrecognized input triggers `Error: Invalid status choice: '...'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).`
@@ -333,7 +373,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 
 | Action | Format | Examples / Usage |
 |---|---|---|
-| **Add application** | `1` | Choose `1`, then enter company, role, and optional deadline |
+| **Add application** | `1` | Choose `1`, then enter company, role, optional deadline, portal link, email, notes |
 | **List active applications** | `list` or `2` or `3` | `list` or choose `2` or `3` |
 | **List completed applications** | `list completed` | `list completed` |
 | **List all applications** | `list all` | `list all` |
@@ -344,5 +384,5 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **Help instructions** | `7` | `7` |
 | **Search applications** | `8` | Choose `8`, then enter search term (e.g. `Google`) |
 | **Sort applications** | `9` | Choose `9` to view applications alphabetically |
-| **Edit application** | `10` | Choose `10`, then enter index and choose field to modify |
+| **Edit application** | `10` | Choose `10`, enter index, and select field 1-8 to modify |
 | **Exit JobSeek** | `0` | `0` |

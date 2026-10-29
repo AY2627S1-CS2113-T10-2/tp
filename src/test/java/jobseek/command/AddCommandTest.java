@@ -78,4 +78,60 @@ public class AddCommandTest {
 
         assertTrue(applications.isEmpty());
     }
+
+    @Test
+    public void getters_allFields_returnConstructedValues() {
+        java.time.LocalDate deadline = java.time.LocalDate.of(2026, 12, 1);
+        AddCommand command = new AddCommand("Google", "SWE", deadline,
+                "https://portal.google.com", "jobs@google.com", "Referral link included");
+        assertEquals("Google", command.getCompany());
+        assertEquals("SWE", command.getRole());
+        assertEquals(deadline, command.getDeadline());
+        assertEquals("https://portal.google.com", command.getPortalLink());
+        assertEquals("jobs@google.com", command.getEmail());
+        assertEquals("Referral link included", command.getNotes());
+    }
+
+    @Test
+    public void execute_withOptionalFields_addsSuccessfully() throws Exception {
+        ApplicationList applications = new ApplicationList();
+        java.time.LocalDate deadline = java.time.LocalDate.of(2026, 12, 25);
+        AddCommand command = new AddCommand("ByteDance", "Backend Intern", deadline,
+                "https://jobs.bytedance.com", "hr@bytedance.com", "OA deadline soon");
+
+        command.execute(applications, new Ui(), new Storage());
+
+        assertEquals(1, applications.size());
+        Application added = applications.get(0);
+        assertEquals("ByteDance", added.getCompany());
+        assertEquals("https://jobs.bytedance.com", added.getPortalLink());
+        assertEquals("hr@bytedance.com", added.getEmail());
+        assertEquals("OA deadline soon", added.getNotes());
+    }
+
+    @Test
+    public void execute_omittedOptionalFields_defaultsToEmptyStrings() throws Exception {
+        ApplicationList applications = new ApplicationList();
+        AddCommand command = new AddCommand("GovTech", "Software Engineer", null, null, null, null);
+
+        command.execute(applications, new Ui(), new Storage());
+
+        assertEquals(1, applications.size());
+        Application added = applications.get(0);
+        assertEquals("GovTech", added.getCompany());
+        assertEquals("Software Engineer", added.getRole());
+        assertEquals("", added.getPortalLink());
+        assertEquals("", added.getEmail());
+        assertEquals("", added.getNotes());
+        assertEquals(null, added.getDeadline());
+    }
+
+    @Test
+    public void constructor_nullAndBlankOptionalFields_normalizedToEmpty() {
+        AddCommand command = new AddCommand("Amazon", "SDE", null, "   ", null, "   ");
+        assertEquals("", command.getPortalLink());
+        assertEquals("", command.getEmail());
+        assertEquals("", command.getNotes());
+        assertEquals(null, command.getDeadline());
+    }
 }

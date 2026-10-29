@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -108,6 +109,10 @@ public class ViewCommandTest {
         assertTrue(output.contains("Role:      SWE Intern"));
         assertTrue(output.contains("Status:    Pending"));
         assertTrue(output.contains("Completed: No"));
+        assertFalse(output.contains("Deadline:"));
+        assertFalse(output.contains("Portal:"));
+        assertFalse(output.contains("Email:"));
+        assertFalse(output.contains("Notes:"));
     }
 
     @Test
@@ -126,6 +131,24 @@ public class ViewCommandTest {
         assertTrue(output.contains("Role:      Backend Intern"));
         assertTrue(output.contains("Status:    Accepted"));
         assertTrue(output.contains("Completed: Yes"));
+    }
+
+    @Test
+    public void execute_withAllOptionalFields_displaysCardWithAllDetails() throws Exception {
+        ApplicationList list = new ApplicationList();
+        java.time.LocalDate deadline = java.time.LocalDate.of(2026, 12, 1);
+        Application app = new Application("Google", "SWE Intern", false, "Accepted",
+                deadline, "https://google.com/jobs", "recruiter@google.com", "First interview done");
+        list.add(app);
+
+        ViewCommand command = new ViewCommand(0);
+        command.execute(list, new Ui(), new Storage());
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Deadline:  2026-12-01"));
+        assertTrue(output.contains("Portal:    https://google.com/jobs"));
+        assertTrue(output.contains("Email:     recruiter@google.com"));
+        assertTrue(output.contains("Notes:     First interview done"));
     }
 
     @Test
