@@ -28,40 +28,28 @@ The high-level interaction between the user, UI, logic controller, domain model,
 
 ```mermaid
 flowchart TB
-    classDef uiBox fill:#ffe6cc,stroke:#d79b00,stroke-width:2px,color:#000000
-    classDef logicBox fill:#dae8fc,stroke:#6c8ebf,stroke-width:2px,color:#000000
-    classDef modelBox fill:#d5e8d4,stroke:#82b366,stroke-width:2px,color:#000000
-    classDef storageBox fill:#fff2cc,stroke:#d6b656,stroke-width:2px,color:#000000
-    classDef userBox fill:#e1d5e7,stroke:#9673a6,stroke-width:2px,color:#000000
-    classDef fileBox fill:#f5f5f5,stroke:#666666,stroke-width:2px,color:#000000
-
-    User(["User (Terminal)"]):::userBox
+    User(["User (Terminal)"])
 
     subgraph UI_Component["UI Component"]
-        UI["Ui"]:::uiBox
-        Table["ApplicationTable"]:::uiBox
+        UI["Ui"]
+        Table["ApplicationTable"]
+        Warnings["DeadlineWarnings"]
     end
 
     subgraph Logic_Component["Logic / Command Component"]
-        Main["Main (Controller & Parser)"]:::logicBox
-        Commands["Command Hierarchy<br/>(Add, Delete, Edit, List, Status, etc.)"]:::logicBox
+        Main["Main (Controller)"]
+        Commands["Command Hierarchy<br/>(Add, Delete, Edit, etc.)"]
     end
 
     subgraph Model_Component["Model Component"]
-        AppList["ApplicationList"]:::modelBox
-        App["Application"]:::modelBox
-        Warnings["DeadlineWarnings"]:::modelBox
+        AppList["ApplicationList"]
+        App["Application"]
     end
 
     subgraph Storage_Component["Storage Component"]
-        Storage["Storage"]:::storageBox
-        File[("applications.txt")]:::fileBox
+        Storage["Storage"]
+        File[("applications.txt")]
     end
-
-    style UI_Component fill:#fff8f0,stroke:#d79b00,stroke-width:2px,color:#7a4f00
-    style Logic_Component fill:#f5f9ff,stroke:#6c8ebf,stroke-width:2px,color:#1b365d
-    style Model_Component fill:#f4faf4,stroke:#82b366,stroke-width:2px,color:#274e13
-    style Storage_Component fill:#fffdf4,stroke:#d6b656,stroke-width:2px,color:#665200
 
     User <--> UI
     UI <--> Main
@@ -70,10 +58,10 @@ flowchart TB
     Commands --> AppList
     Commands --> Storage
     Commands --> Table
-    AppList --> App
-    Storage <--> File
     Warnings --> AppList
     Warnings --> UI
+    AppList --> App
+    Storage <--> File
 ```
 
 #### Application Lifecycle Activity Diagram
@@ -82,15 +70,17 @@ The control flow from startup, file loading, deadline inspection, command execut
 
 ```mermaid
 flowchart LR
-    Start((●)) --> Init[Initialize UI & Storage]
-    Init --> Load[Load applications]
-    Load --> CheckLoad{"Load success?"}
-    CheckLoad -- "[yes]" --> Warn[Check deadlines & show menu]
-    CheckLoad -- "[no]" --> Fallback[Show error & use empty list] --> Warn
-    Warn --> Read[Read & execute command]
-    Read --> CheckExit{"Exit command?"}
-    CheckExit -- "[no]" --> Read
-    CheckExit -- "[yes]" --> End(((◎)))
+    Start((●)) --> Init["Initialize UI<br/>& Storage"]
+    Init --> Load["Load applications"]
+    Load --> CheckLoad{"Load<br/>success?"}
+    CheckLoad -->|"[yes]"| Warn["Check deadlines<br/>& show menu"]
+    CheckLoad -->|"[no]"| Fallback["Show error &<br/>use empty list"]
+    Fallback --> Warn
+    Warn --> MergeRead{ }
+    MergeRead --> Read["Read & execute<br/>command"]
+    Read --> CheckExit{"Exit<br/>command?"}
+    CheckExit -->|"[no]"| MergeRead
+    CheckExit -->|"[yes]"| End(((◎)))
 ```
 
 #### Runtime Object Structure (Object Diagram)
@@ -208,12 +198,12 @@ classDiagram
 
     ApplicationList "1" *-- "0..*" Application : contains
 
-    Command ..> "1" ApplicationList : operates on
-    Command ..> "1" Ui : displays via
-    Command ..> "1" Storage : persists via
+    Command ..> "1" ApplicationList : operates
+    Command ..> "1" Ui : displays
+    Command ..> "1" Storage : persists
     DeadlineWarnings "1" ..> "1" ApplicationList : reads
-    DeadlineWarnings "1" ..> "1" Ui : displays via
-    Storage "1" ..> "1" ApplicationList : saves/loads
+    DeadlineWarnings "1" ..> "1" Ui : displays
+    Storage "1" ..> "1" ApplicationList : saves
     Storage "1" ..> "0..*" Application : serializes
 ```
 
@@ -330,12 +320,14 @@ The user input validation, prompt looping, and execution lifecycle for adding an
 
 ```mermaid
 flowchart LR
-    Start((●)) --> Prompt[Prompt company, role, optional deadline]
-    Prompt --> Validate{"Valid input & date?"}
-    Validate -- "[else]" --> ShowErr[Show error message] --> Prompt
-    Validate -- "[valid]" --> Create[Create Application & add to list]
-    Create --> Save[Storage.save applications]
-    Save --> Show[Display confirmation message]
+    Start((●)) --> MergePrompt{ }
+    MergePrompt --> Prompt["Prompt company, role,<br/>optional deadline"]
+    Prompt --> Validate{"Valid input<br/>& date?"}
+    Validate -->|"[valid]"| Create["Create Application<br/>& add to list"]
+    Validate -->|"[else]"| ShowErr["Show error<br/>message"]
+    ShowErr --> MergePrompt
+    Create --> Save["Storage.save<br/>applications"]
+    Save --> Show["Display confirmation<br/>message"]
     Show --> End(((◎)))
 ```
 
@@ -371,7 +363,7 @@ sequenceDiagram
         activate ui
         ui-->>main: "2026-11-15"
         deactivate ui
-        main->>cmd: new AddCommand("Google", "SWE Intern", 2026-11-15)
+        main->>cmd: new AddCommand("Google", "SWE", deadline)
         activate cmd
         cmd-->>main: addCommand
         deactivate cmd
@@ -396,7 +388,7 @@ sequenceDiagram
     activate storage
     storage-->>cmd: ​
     deactivate storage
-    cmd->>ui: showMessage("Application added successfully...")
+    cmd->>ui: showMessage("Application added")
     activate ui
     ui-->>user: Confirmation message
     deactivate ui
@@ -551,7 +543,7 @@ sequenceDiagram
         ui-->>user: Formatted table output
         deactivate ui
     else else
-        cmd->>ui: showMessage("No completed applications found.")
+        cmd->>ui: showMessage("No completed applications")
         activate ui
         ui-->>user: Status message
         deactivate ui
@@ -603,7 +595,7 @@ sequenceDiagram
     participant app as :Application
     participant storage as :Storage
 
-    user->>main: Select option 5 (Mark) / option 6 (Unmark)
+    user->>main: Option 5 (Mark) / Option 6 (Unmark)
     activate main
     main->>ui: promptApplicationIndex()
     activate ui
@@ -633,12 +625,12 @@ sequenceDiagram
     deactivate storage
 
     alt isCompleted == true
-        cmd->>ui: showMessage("Nice! I have marked this application as completed...")
+        cmd->>ui: showMessage("Marked as completed")
         activate ui
         ui-->>user: Marked confirmation message
         deactivate ui
     else else
-        cmd->>ui: showMessage("OK, I have marked this application as not completed yet...")
+        cmd->>ui: showMessage("Marked as incomplete")
         activate ui
         ui-->>user: Unmarked confirmation message
         deactivate ui
@@ -678,13 +670,15 @@ The decision flow, bounds validation, and deletion logic is shown in the activit
 
 ```mermaid
 flowchart LR
-    Start((●)) --> Prompt[Prompt application index]
+    Start((●)) --> Prompt["Prompt application<br/>index"]
     Prompt --> Check{"Valid index?"}
-    Check -- "[no]" --> ShowErr[Show error message] --> End(((◎)))
-    Check -- "[yes]" --> Del[Delete from ApplicationList]
-    Del --> Save[Storage.save applications]
-    Save --> Show[Display confirmation message]
-    Show --> End
+    Check -->|"[yes]"| Del["Delete from<br/>ApplicationList"]
+    Check -->|"[no]"| ShowErr["Show error<br/>message"]
+    Del --> Save["Storage.save<br/>applications"]
+    Save --> Show["Display confirmation<br/>message"]
+    Show --> MergeEnd{ }
+    ShowErr --> MergeEnd
+    MergeEnd --> End(((◎)))
 ```
 
 #### Delete Application Sequence Diagram
@@ -703,7 +697,7 @@ sequenceDiagram
     participant app as :Application
     participant storage as :Storage
 
-    user->>main: Select option 4 (Delete)
+    user->>main: Option 4 (Delete)
     activate main
     main->>ui: promptApplicationIndex()
     activate ui
@@ -738,12 +732,12 @@ sequenceDiagram
         activate storage
         storage-->>cmd: ​
         deactivate storage
-        cmd->>ui: showMessage("Noted. I have removed this application...")
+        cmd->>ui: showMessage("Application removed")
         activate ui
         ui-->>user: Confirmation message
         deactivate ui
     else else
-        cmd->>ui: showError("Invalid application index...")
+        cmd->>ui: showError("Invalid index: 4")
         activate ui
         ui-->>user: Error message
         deactivate ui
@@ -775,15 +769,15 @@ The user interaction and validation workflow for updating application fields is 
 
 ```mermaid
 flowchart LR
-    Start((●)) --> PromptIdx[Prompt & validate index]
-    PromptIdx --> PromptField[Prompt field choice 1-4]
+    Start((●)) --> PromptIdx["Prompt & validate<br/>index"]
+    PromptIdx --> PromptField["Prompt field choice<br/>(1-4)"]
     PromptField --> Branch{"Field choice"}
-    Branch -- "[1: Company]" --> UpdCo[Update company] --> Merge{ }
-    Branch -- "[2: Role]" --> UpdRole[Update role] --> Merge
-    Branch -- "[3: Status]" --> UpdStat[Update status] --> Merge
-    Branch -- "[4: All]" --> UpdAll[Update all fields] --> Merge
-    Merge --> Save[Storage.save applications]
-    Save --> Confirm[Show confirmation message]
+    Branch -->|"[1: Company]"| UpdCo["Update company"] --> Merge{ }
+    Branch -->|"[2: Role]"| UpdRole["Update role"] --> Merge
+    Branch -->|"[3: Status]"| UpdStat["Update status"] --> Merge
+    Branch -->|"[4: All]"| UpdAll["Update all fields"] --> Merge
+    Merge --> Save["Storage.save<br/>applications"]
+    Save --> Confirm["Show confirmation<br/>message"]
     Confirm --> End(((◎)))
 ```
 
@@ -803,7 +797,7 @@ sequenceDiagram
     participant app as :Application
     participant storage as :Storage
 
-    user->>main: Select option 10 (Edit)
+    user->>main: Option 10 (Edit)
     activate main
     main->>ui: promptApplicationIndex()
     activate ui
@@ -844,7 +838,7 @@ sequenceDiagram
     activate storage
     storage-->>cmd: ​
     deactivate storage
-    cmd->>ui: showMessage("Application updated successfully...")
+    cmd->>ui: showMessage("Application updated")
     activate ui
     ui-->>user: Confirmation message
     deactivate ui
@@ -870,11 +864,12 @@ The flow of user input, matching/sorting logic, and display formatting for both 
 ```mermaid
 flowchart LR
     Start((●)) --> Choice{"Option 8 or 9?"}
-    Choice -- "[8: Search]" --> Prompt[Prompt keyword & filter matches]
-    Choice -- "[9: Sort]" --> Sort[Sort index copy by company & role]
-    Prompt --> Table[Format table via ApplicationTable]
-    Sort --> Table
-    Table --> Display[Display table via Ui]
+    Choice -->|"[8: Search]"| Prompt["Prompt keyword &<br/>filter matches"]
+    Choice -->|"[9: Sort]"| Sort["Sort index copy by<br/>company & role"]
+    Prompt --> MergeTable{ }
+    Sort --> MergeTable
+    MergeTable --> Table["Format table via<br/>ApplicationTable"]
+    Table --> Display["Display table<br/>via Ui"]
     Display --> End(((◎)))
 ```
 
@@ -934,7 +929,7 @@ sequenceDiagram
         ui-->>user: Matching applications table
         deactivate ui
     else else
-        cmd->>ui: showMessage("No applications found matching 'engineer'.")
+        cmd->>ui: showMessage("No applications found")
         activate ui
         ui-->>user: No matches message
         deactivate ui
@@ -963,7 +958,7 @@ sequenceDiagram
     participant table as :ApplicationTable
     participant ui as :Ui
 
-    user->>main: Select option 9 (Sort)
+    user->>main: Option 9 (Sort)
     activate main
     main->>cmd: new SortCommand()
     activate cmd
@@ -972,7 +967,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    Note over cmd: Copy indices [0..size-1] & sort by company, then role
+    Note over cmd: Copy & sort indices<br/>by company, then role
     loop during index comparison
         cmd->>list: get(index)
         activate list
@@ -1109,7 +1104,7 @@ sequenceDiagram
 
     main->>warnings: show(applications, ui)
     activate warnings
-    Note over warnings: Obtain today's date once via LocalDate.now()
+    Note over warnings: Obtain today's date<br/>via LocalDate.now()
 
     loop for each application
         warnings->>list: get(i)
@@ -1298,7 +1293,7 @@ sequenceDiagram
         deactivate app
     end
 
-    Note over storage: Encode records & write UTF-8 lines to disk
+    Note over storage: Encode records &<br/>write UTF-8 lines to disk
     storage-->>cmd: ​
     deactivate storage
     deactivate cmd
@@ -1339,7 +1334,7 @@ sequenceDiagram
 
     loop for each valid record
         Note over storage: Decode fields and validate record
-        storage->>app: new Application(company, role, completed, deadline)
+        storage->>app: new Application(co, role, done, date)
         activate app
         app-->>storage: application
         deactivate app
@@ -1413,24 +1408,50 @@ Loading currently falls back to an empty list after an error. A future recovery 
 
 ## Instructions for manual testing
 
-{Give instructions on how to do a manual product testing e.g., how to load sample data to be used for testing}
+This section provides step-by-step instructions for manual testing of JobSeek. It includes realistic input sequences, edge cases, and exact code examples of the expected console output.
 
 ### Adding an application
 
 1. Launch JobSeek with an empty list.
-2. Select `1`. When prompted for `Company:`, press Enter without typing. Confirm error `Error: Company cannot be empty.` appears and the prompt repeats.
-3. Enter `Google`. When prompted for `Role:`, enter `SWE Intern`. Confirm confirmation message:
+2. Select `1`. When prompted for `Company:`, press Enter without typing. Confirm error appears and prompt repeats:
+   ```text
+   Error: Company cannot be empty. Please enter a valid company name:
+   ```
+3. Enter `Google`. When prompted for `Role:`, enter `SWE Intern`. When prompted for `Deadline:`, press Enter to skip. Confirm confirmation message:
    ```text
    Application added successfully.
    Company: Google
    Role: SWE Intern
    ```
-4. Choose `2` to list applications. Confirm the new record appears in the active applications table with `No.` 1, `Status` `[ ]`, `Company` `Google`, and `Role` `SWE Intern`.
+4. Add another application with an optional deadline: enter `1`, company `Microsoft`, role `Cloud Engineer`, and deadline `2026-11-15`:
+   ```text
+   Application added successfully.
+   Company: Microsoft
+   Role: Cloud Engineer
+   Deadline: 2026-11-15
+   ```
+5. Choose `2` to list applications. Confirm the new records appear in the active applications table.
 
 ### Viewing help instructions
 
 1. Enter `7` from the main menu.
-2. Verify that all menu options `[0]` through `[10]` and shortcuts `list [completed|all]` and `view INDEX` are displayed.
+2. Verify that all menu options `[0]` through `[10]` and shortcuts `list [completed|all]` and `view INDEX` are displayed:
+   ```text
+   Available menu options:
+     list [completed|all]            - List active, completed, or all applications
+     view INDEX                      - View details for application at INDEX
+     [1] Add application             - Add a new internship or job application
+     [2] List applications           - View active applications in a numbered table
+     [3] List uncompleted apps       - View active / uncompleted applications
+     [4] Delete application          - Delete an application by index
+     [5] Mark application completed  - Mark an application as completed
+     [6] Unmark application          - Mark an application as not completed
+     [7] Help                        - Show this help message
+     [8] Search applications         - Find applications by company or role
+     [9] Sort applications           - View applications alphabetically
+     [10] Edit application           - Edit an existing application's details
+     [0] Exit                        - Exit JobSeek
+   ```
 
 ### Viewing application details
 
@@ -1447,76 +1468,223 @@ Loading currently falls back to an empty list after an error. A future recovery 
    ==================================================
    ```
 3. Test invalid and boundary inputs:
-   - Enter `view` (no index). Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
-   - Enter `view 0` or `view -1`. Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
-   - Enter `view abc`. Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
-   - Enter `view 99` (out of bounds). Confirm error: `Error: Application index 99 does not exist. (Total applications: 1)`.
+   - Enter `view` (no index). Confirm error:
+     ```text
+     Error: Please provide a valid positive application index. Usage: view INDEX
+     ```
+   - Enter `view 0` or `view -1`:
+     ```text
+     Error: Please provide a valid positive application index. Usage: view INDEX
+     ```
+   - Enter `view abc`:
+     ```text
+     Error: Please provide a valid positive application index. Usage: view INDEX
+     ```
+   - Enter `view 99` (out of bounds):
+     ```text
+     Error: Application index 99 does not exist. (Total applications: 1)
+     ```
 
 ### Listing and filtering applications
 
-1. Start JobSeek with an empty list. Choose `2` or type `list`. Confirm `No applications found.` appears.
+1. Start JobSeek with an empty list. Choose `2` or type `list`. Confirm empty message appears:
+   ```text
+   No applications found.
+   ```
 2. Add three applications:
    - Application 1: `Google / SWE Intern`
    - Application 2: `Shopee / Backend Intern`
    - Application 3: `GovTech / Fullstack Developer`
 3. Mark Application 2 as completed using option `5`.
-4. Test active filter (default):
-   - Choose `2` (or option `3`, or type `list`).
-   - Confirm only Application 1 and Application 3 appear in the table with their original list numbers `1` and `3`. Application 2 is not listed.
-5. Test completed filter:
-   - Type `list completed`.
-   - Confirm only Application 2 appears in the table with `No.` `2` and `Status` `[X]`.
-6. Test all filter:
-   - Type `list all`.
-   - Confirm all three applications (1, 2, 3) are displayed in the table.
-7. Test unrecognized filter:
-   - Type `list pending`.
-   - Confirm error appears: `Error: Invalid list filter: 'pending'. Usage: list [completed|all]`.
+4. Test active filter (default): Choose `2` (or option `3`, or type `list`). Confirm only active applications appear with original numbers:
+   ```text
+   Active applications:
+   No. | Status | Company | Role
+   ----+--------+---------+---------------------
+   1   | [ ]    | Google  | SWE Intern
+   3   | [ ]    | GovTech | Fullstack Developer
+   ```
+5. Test completed filter: Type `list completed`. Confirm only Application 2 appears:
+   ```text
+   Completed applications:
+   No. | Status | Company | Role
+   ----+--------+---------+---------------
+   2   | [X]    | Shopee  | Backend Intern
+   ```
+6. Test all filter: Type `list all`. Confirm all three applications appear:
+   ```text
+   All applications:
+   No. | Status | Company | Role
+   ----+--------+---------+---------------------
+   1   | [ ]    | Google  | SWE Intern
+   2   | [X]    | Shopee  | Backend Intern
+   3   | [ ]    | GovTech | Fullstack Developer
+   ```
+7. Test unrecognized filter: Type `list pending`. Confirm error appears:
+   ```text
+   Error: Invalid list filter: 'pending'. Usage: list [completed|all]
+   ```
 
 ### Marking and unmarking applications
 
 1. Have at least one uncompleted application (e.g. Application 1 `[ ] Google`).
-2. Choose option `5` (Mark completed). Enter `1`.
-   - Confirm confirmation message:
-     ```text
-     Nice! I've marked this application as completed:
-       [X] Google | Role: SWE Intern
-     ```
+2. Choose option `5` (Mark completed). Enter `1`. Confirm confirmation message:
+   ```text
+   Nice! I've marked this application as completed:
+     [X] Google | Role: SWE Intern
+   ```
 3. Type `list`. Confirm Application 1 is no longer in the active list.
 4. Type `list completed`. Confirm Application 1 appears with status `[X]`.
-5. Choose option `6` (Unmark). Enter `1`.
-   - Confirm confirmation message:
-     ```text
-     OK, I've marked this application as not completed yet:
-       [ ] Google | Role: SWE Intern
-     ```
+5. Choose option `6` (Unmark). Enter `1`. Confirm confirmation message:
+   ```text
+   OK, I've marked this application as not completed yet:
+     [ ] Google | Role: SWE Intern
+   ```
 6. Type `list`. Confirm Application 1 reappears in the active list with `[ ]`.
 7. Test invalid inputs for marking and unmarking:
-   - Enter non-numeric input `xyz` at the index prompt. Confirm error `Error: Invalid application index. Please enter a valid number.` appears.
-   - Enter out-of-bounds index `99`. Confirm error `Error: Invalid application index: 99. Please enter a number between 1 and 3.` appears.
+   - Enter non-numeric input `xyz` at the index prompt:
+     ```text
+     Error: Invalid application index. Please enter a valid number.
+     ```
+   - Enter out-of-bounds index `99`:
+     ```text
+     Error: Invalid application index: 99. Please enter a number between 1 and 3.
+     ```
+
+### Deleting an application
+
+1. Start JobSeek with an empty application list and choose `4`. Confirm empty error:
+   ```text
+   Error: Your application list is currently empty.
+   ```
+2. Add two applications: Application 1 (`Google / SWE Intern`) and Application 2 (`Shopee / Backend Intern`).
+3. Choose `4` (Delete) and enter `1`. Confirm deletion confirmation message:
+   ```text
+   OK, I've deleted this application:
+     [ ] Google | Role: SWE Intern
+   ```
+4. Choose `2` to list applications. Confirm only Application 2 remains (now at list index 1).
+5. Choose `4` and enter out-of-bounds index `5`:
+   ```text
+   Error: Invalid application index: 5. Please enter a number between 1 and 1.
+   ```
 
 ### Editing application fields
 
-1. Start JobSeek with an empty application list and choose `10`. Confirm `Error: Your application list is currently empty.` appears.
+1. Start JobSeek with an empty application list and choose `10`. Confirm error appears:
+   ```text
+   Error: Your application list is currently empty.
+   ```
 2. Add an application using `1` with company `Googl` and role `SWE Intern`.
 3. Choose `10` and enter application index `1`.
-4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google`, `Role: SWE Intern`, and `Status: Pending`.
-5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm role is updated to `Backend Intern` while company remains `Google` and status remains `Pending`.
-6. Choose `10` and test invalid inputs: enter non-numeric index `abc` or out-of-bounds `99`. Confirm clear error messages are displayed.
+4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays updated company:
+   ```text
+   Application updated successfully.
+   Company: Google
+   Role: SWE Intern
+   Status: Pending
+   ```
+5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm updated role:
+   ```text
+   Application updated successfully.
+   Company: Google
+   Role: Backend Intern
+   Status: Pending
+   ```
+6. Choose `10` and test invalid inputs: enter non-numeric index `abc` or out-of-bounds `99`:
+   ```text
+   Error: Invalid application index: 99. Please enter a number between 1 and 1.
+   ```
 
 ### Managing recruitment status
 
 1. Add an application with company `Shopee` and role `Backend Intern`.
 2. Enter `view 1`. Verify `Status:    Pending` is displayed by default.
-3. Choose `10`, index `1`, and field `3` (Status). Enter `2` (shortcut for Accepted).
-4. Enter `view 1`. Verify `Status:    Accepted` is now displayed.
-5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify `Status:    Rejected`.
-6. Choose `10`, index `1`, field `4` (All). Enter company `Sea`, role `Data Analyst`, and status `1` (Pending). Verify all fields updated correctly.
+3. Choose `10`, index `1`, and field `3` (Status). Enter `2` (shortcut for Accepted). Confirm output:
+   ```text
+   Application updated successfully.
+   Company: Shopee
+   Role: Backend Intern
+   Status: Accepted
+   ```
+4. Enter `view 1`. Verify updated card details:
+   ```text
+   ==================================================
+   Application Details [Index: 1]
+   --------------------------------------------------
+   Company:   Shopee
+   Role:      Backend Intern
+   Status:    Accepted
+   Completed: No
+   ==================================================
+   ```
+5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify:
+   ```text
+   Application updated successfully.
+   Company: Shopee
+   Role: Backend Intern
+   Status: Rejected
+   ```
+6. Choose `10`, index `1`, field `4` (All). Enter company `Sea`, role `Data Analyst`, and status `1` (Pending). Confirm all fields update correctly:
+   ```text
+   Application updated successfully.
+   Company: Sea
+   Role: Data Analyst
+   Status: Pending
+   ```
 
 ### Search and sort
 
 1. Start JobSeek with an empty application list and add `Zulu / Engineer`, `Acme / Designer`, and `Acme / Analyst` using option `1`.
-2. Choose `8` and search for `ENG`. Confirm that only `Zulu / Engineer` appears with number `1`. Search for `acm` and confirm that both Acme applications appear with their original numbers `2` and `3`.
-3. Search for a term that does not occur in any company or role. Confirm that a no-matches message appears. Enter a blank term and confirm that the program asks again.
-4. Choose `9`. Confirm the view shows `Acme / Analyst` (`3`), `Acme / Designer` (`2`), then `Zulu / Engineer` (`1`).
-5. Type `list all`. Confirm the original order is still `Zulu`, `Acme / Designer`, `Acme / Analyst`.
+2. Choose `8` and search for `ENG`. Confirm matching results table:
+   ```text
+   Search results for 'ENG':
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   1   | [ ]    | Zulu    | Engineer
+   ```
+3. Search for `acm` and confirm that both Acme applications appear with their original numbers `2` and `3`:
+   ```text
+   Search results for 'acm':
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   2   | [ ]    | Acme    | Designer
+   3   | [ ]    | Acme    | Analyst
+   ```
+4. Search for a term that does not occur (e.g. `marketing`). Confirm no-matches message:
+   ```text
+   No applications found matching 'marketing'.
+   ```
+5. Choose `9` (Sort). Confirm alphabetical order by company, then role, while preserving original indices:
+   ```text
+   Sorted applications:
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   3   | [ ]    | Acme    | Analyst
+   2   | [ ]    | Acme    | Designer
+   1   | [ ]    | Zulu    | Engineer
+   ```
+6. Type `list all`. Confirm the original storage order is unaffected:
+   ```text
+   All applications:
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   1   | [ ]    | Zulu    | Engineer
+   2   | [ ]    | Acme    | Designer
+   3   | [ ]    | Acme    | Analyst
+   ```
+
+### Data persistence and startup deadline warnings
+
+1. Add an application with company `Google`, role `SWE Intern`, and a deadline 3 days from today.
+2. Exit JobSeek using `0`.
+3. Inspect `data/applications.txt` to verify tab-separated record persistence:
+   ```text
+   # JobSeek Application Records
+   Google	SWE Intern	false	2026-11-01
+   ```
+4. Relaunch JobSeek. Confirm deadline warnings appear automatically above the main menu:
+   ```text
+   Deadline warnings:
+   UPCOMING: Google - SWE Intern (deadline 2026-11-01)
+   ```
