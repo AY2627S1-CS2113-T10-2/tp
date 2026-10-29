@@ -27,7 +27,7 @@ public class HelpCommand extends Command {
                 + "  find c/.. r/.. s/.. b/.. a/..   - Combine filters (company, role, stage, deadline)\n"
                 + "  search KEYWORD | sort           - Search by company/role, or view alphabetically\n"
                 + "  today                           - Show overdue, due-today and upcoming deadlines\n"
-                + "  view INDEX                     - View details for application at INDEX\n"
+                + "  view INDEX                      - View details for application at INDEX\n"
                 + "  [1] Add application             - Add a new internship or job application\n"
                 + "  [2] List applications           - View active applications in a numbered table\n"
                 + "  [3] List uncompleted apps       - View active / uncompleted applications\n"
