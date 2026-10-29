@@ -13,7 +13,7 @@ import java.util.ArrayList;
  * By default, only active (uncompleted) applications are shown.
  */
 public class ListCommand extends Command {
-    private static final int STATUS_WIDTH = "Status".length();
+    private static final int COMPLETED_WIDTH = "Completed".length();
 
     /**
      * Filter criteria for displaying applications.
@@ -120,12 +120,12 @@ public class ListCommand extends Command {
             deadlineWidth = Math.max(deadlineWidth, deadlineText(application).length());
         }
 
-        String rowFormat = "%-" + numberWidth + "s | %-" + STATUS_WIDTH + "s | %-"
+        String rowFormat = "%-" + numberWidth + "s | %-" + COMPLETED_WIDTH + "s | %-"
                 + companyWidth + "s | %-" + roleWidth + "s | %-" + deadlineWidth + "s";
         StringBuilder table = new StringBuilder("Here are your applications:\n");
-        table.append(String.format(rowFormat, "No.", "Status", "Company", "Role", "Deadline"));
+        table.append(String.format(rowFormat, "No.", "Completed", "Company", "Role", "Deadline"));
         table.append('\n').append("-".repeat(numberWidth))
-                .append("-+-").append("-".repeat(STATUS_WIDTH))
+                .append("-+-").append("-".repeat(COMPLETED_WIDTH))
                 .append("-+-").append("-".repeat(companyWidth))
                 .append("-+-").append("-".repeat(roleWidth))
                 .append("-+-").append("-".repeat(deadlineWidth));
@@ -133,7 +133,7 @@ public class ListCommand extends Command {
         for (int index : matchingIndices) {
             Application application = applications.get(index);
             table.append('\n').append(String.format(rowFormat, Integer.toString(index + 1),
-                    application.getStatusIcon(), application.getCompany(), application.getRole(),
+                    application.getCompletionIcon(), application.getCompany(), application.getRole(),
                     deadlineText(application)));
         }
 

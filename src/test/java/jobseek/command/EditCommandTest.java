@@ -2,6 +2,7 @@ package jobseek.command;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.AfterEach;
@@ -167,7 +168,7 @@ public class EditCommandTest {
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: At least one field (company, role, or status) "
+        assertTrue(output.contains("Error: At least one field (company, role, or recruitment stage) "
                 + "must be specified for editing."));
     }
 
@@ -182,25 +183,25 @@ public class EditCommandTest {
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: At least one field (company, role, or status) "
+        assertTrue(output.contains("Error: At least one field (company, role, or recruitment stage) "
                 + "must be specified for editing."));
     }
 
     @Test
-    public void execute_updateStatusOnly_success() throws Exception {
+    public void execute_updateRecruitmentStageOnly_success() throws Exception {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
 
-        EditCommand command = new EditCommand(0, null, null, "Accepted");
+        EditCommand command = new EditCommand(0, null, null, RecruitmentStage.ACCEPTED);
         command.execute(applications, new Ui(), new Storage());
 
         assertEquals("Shopee", applications.get(0).getCompany());
         assertEquals("Backend Intern", applications.get(0).getRole());
-        assertEquals("Accepted", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, applications.get(0).getRecruitmentStage());
 
         String output = outputStream.toString();
         assertTrue(output.contains("Application updated successfully."));
-        assertTrue(output.contains("Status: Accepted"));
+        assertTrue(output.contains("Recruitment stage: Accepted"));
     }
 
     @Test
@@ -208,18 +209,18 @@ public class EditCommandTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
 
-        EditCommand command = new EditCommand(0, "NewCorp", "NewRole", "Rejected");
+        EditCommand command = new EditCommand(0, "NewCorp", "NewRole", RecruitmentStage.REJECTED);
         command.execute(applications, new Ui(), new Storage());
 
         assertEquals("NewCorp", applications.get(0).getCompany());
         assertEquals("NewRole", applications.get(0).getRole());
-        assertEquals("Rejected", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.REJECTED, applications.get(0).getRecruitmentStage());
 
         String output = outputStream.toString();
         assertTrue(output.contains("Application updated successfully."));
         assertTrue(output.contains("Company: NewCorp"));
         assertTrue(output.contains("Role: NewRole"));
-        assertTrue(output.contains("Status: Rejected"));
+        assertTrue(output.contains("Recruitment stage: Rejected"));
     }
 
     @Test

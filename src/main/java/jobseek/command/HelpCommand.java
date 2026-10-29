@@ -20,7 +20,7 @@ public class HelpCommand extends Command {
     public void execute(ApplicationList applications, Ui ui, Storage storage) {
         String helpMessage = "Available menu options:\n"
                 + "  list [completed|all]            - List active, completed, or all applications\n"
-                + "  undo                            - Undo the last add, delete, edit, status or mark change\n"
+                + "  undo                            - Undo the last add, delete, edit, stage or mark change\n"
                 + "  add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line\n"
                 + "  edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line\n"
                 + "  delete|mark|unmark INDEX        - Delete, complete or reopen an application\n"

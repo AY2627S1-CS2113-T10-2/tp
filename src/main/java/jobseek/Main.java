@@ -11,7 +11,7 @@ import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
-import jobseek.command.StatusCommand;
+import jobseek.command.RecruitmentStageCommand;
 import jobseek.command.TodayCommand;
 import jobseek.command.UndoCommand;
 import jobseek.command.ViewCommand;
@@ -308,8 +308,8 @@ public class Main {
             String role = promptNonEmpty("Enter new role:", "Role cannot be empty.");
             return role != null ? new EditCommand(index, null, role) : null;
         case "3":
-            String status = promptRecruitmentStage();
-            return status != null ? new StatusCommand(index, status) : null;
+            RecruitmentStage stage = promptRecruitmentStage();
+            return stage != null ? new RecruitmentStageCommand(index, stage) : null;
         case "4":
             String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
             if (allCompany == null) {
@@ -319,15 +319,15 @@ public class Main {
             if (allRole == null) {
                 return null;
             }
-            String allStatus = promptRecruitmentStage();
-            return allStatus != null ? new EditCommand(index, allCompany, allRole, allStatus) : null;
+            RecruitmentStage allStage = promptRecruitmentStage();
+            return allStage != null ? new EditCommand(index, allCompany, allRole, allStage) : null;
         default:
             ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter 1, 2, 3, or 4.");
             return null;
         }
     }
 
-    private String promptRecruitmentStage() {
+    private RecruitmentStage promptRecruitmentStage() {
         while (true) {
             ui.showPrompt("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
                     + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ");
@@ -369,7 +369,7 @@ public class Main {
                 }
                 continue;
             }
-            return stage.getLabel();
+            return stage;
         }
     }
 

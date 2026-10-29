@@ -123,8 +123,7 @@ public class StorageTest {
         storage.save(list);
 
         ApplicationList loaded = storage.load();
-        assertEquals("Accepted", loaded.get(0).getStatus());
-        assertEquals("Online Assessment", loaded.get(1).getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, loaded.get(0).getRecruitmentStage());
         assertEquals(RecruitmentStage.ONLINE_ASSESSMENT, loaded.get(1).getRecruitmentStage());
         assertEquals(LocalDate.of(2026, 11, 3), loaded.get(1).getDeadline());
     }
@@ -140,21 +139,35 @@ public class StorageTest {
         ApplicationList loaded = storage.load();
 
         assertEquals(1, loaded.size());
-        assertEquals("Applied", loaded.get(0).getStatus());
+        assertEquals(RecruitmentStage.APPLIED, loaded.get(0).getRecruitmentStage());
         assertEquals(LocalDate.of(2026, 12, 31), loaded.get(0).getDeadline());
     }
 
     @Test
-    public void load_blankStatusField_defaultsStageToApplied() throws Exception {
+    public void load_legacyStatusColumnHeader_readsRecruitmentStage() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile,
+                "JOBSEEK Applications\ncompany\trole\tcompleted\tdeadline\tstatus\n"
+                        + "Example Company\tSoftware Engineer\tfalse\t\tInterview\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(1, loaded.size());
+        assertEquals(RecruitmentStage.INTERVIEW, loaded.get(0).getRecruitmentStage());
+    }
+
+    @Test
+    public void load_blankStageField_defaultsStageToApplied() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
         Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tfalse\t\t\n");
         Storage storage = new Storage(temporaryFile.toString());
 
-        assertEquals("Applied", storage.load().get(0).getStatus());
+        assertEquals(RecruitmentStage.APPLIED, storage.load().get(0).getRecruitmentStage());
     }
 
     @Test
-    public void load_legacyPendingStatus_migratesToAppliedStage() throws Exception {
+    public void load_legacyPendingStage_migratesToAppliedStage() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
         Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tfalse\t\tPending\n");
         Storage storage = new Storage(temporaryFile.toString());

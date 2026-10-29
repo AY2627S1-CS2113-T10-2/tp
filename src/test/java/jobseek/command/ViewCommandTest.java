@@ -3,6 +3,7 @@ package jobseek.command;
 import jobseek.exception.JobSeekException;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.AfterEach;
@@ -106,12 +107,12 @@ public class ViewCommandTest {
         assertTrue(output.contains("--------------------------------------------------"));
         assertTrue(output.contains("Company:   Google"));
         assertTrue(output.contains("Role:      SWE Intern"));
-        assertTrue(output.contains("Status:    Applied"));
+        assertTrue(output.contains("Recruitment stage: Applied"));
         assertTrue(output.contains("Completed: No"));
     }
 
     @Test
-    public void execute_validIndexCustomStatusAndCompleted_displaysCardCorrectly() throws Exception {
+    public void execute_validIndexCustomStageAndCompleted_displaysCardCorrectly() throws Exception {
         ApplicationList list = new ApplicationList();
         Application app = new Application("Shopee", "Backend Intern", true, "Accepted");
         list.add(app);
@@ -124,7 +125,7 @@ public class ViewCommandTest {
         assertTrue(output.contains("--------------------------------------------------"));
         assertTrue(output.contains("Company:   Shopee"));
         assertTrue(output.contains("Role:      Backend Intern"));
-        assertTrue(output.contains("Status:    Accepted"));
+        assertTrue(output.contains("Recruitment stage: Accepted"));
         assertTrue(output.contains("Completed: Yes"));
     }
 
@@ -135,7 +136,7 @@ public class ViewCommandTest {
 
         new ViewCommand(0).execute(list, new Ui(), new Storage());
 
-        assertTrue(outputStream.toString().contains("Status:    Online Assessment"));
+        assertTrue(outputStream.toString().contains("Recruitment stage: Online Assessment"));
     }
 
     @Test

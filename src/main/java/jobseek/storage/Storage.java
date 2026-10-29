@@ -19,8 +19,10 @@ import jobseek.model.RecruitmentStage;
 public class Storage {
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
-    private static final String COLUMN_HEADER = "company\trole\tcompleted\tdeadline\tstatus";
-    /** Column header written by earlier versions, which did not save the recruitment status. */
+    private static final String COLUMN_HEADER = "company\trole\tcompleted\tdeadline\tstage";
+    /** Column header used by earlier versions for the recruitment stage field. */
+    private static final String LEGACY_STATUS_COLUMN_HEADER = "company\trole\tcompleted\tdeadline\tstatus";
+    /** Column header written by older versions, which did not save the recruitment stage. */
     private static final String LEGACY_COLUMN_HEADER = "company\trole\tcompleted\tdeadline";
     private static final String HEADER = TITLE_HEADER + "\n" + COLUMN_HEADER;
     private static final int LEGACY_FIELD_COUNT = 4;
@@ -113,7 +115,8 @@ public class Storage {
             if (line.isBlank() || line.startsWith("#")) {
                 continue;
             }
-            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line) || LEGACY_COLUMN_HEADER.equals(line)) {
+            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)
+                    || LEGACY_STATUS_COLUMN_HEADER.equals(line) || LEGACY_COLUMN_HEADER.equals(line)) {
                 continue;
             }
 
@@ -126,7 +129,7 @@ public class Storage {
                 continue;
             }
 
-            // Files saved before status was persisted have only four fields; they load as "Applied".
+            // Files saved before a recruitment stage was persisted have only four fields; they load as "Applied".
             boolean hasValidFieldCount = fields.size() == FIELD_COUNT || fields.size() == LEGACY_FIELD_COUNT;
             if (!hasValidFieldCount || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
                 loadWarnings.add("Skipping invalid record on line " + lineIndex + " in " + filePath + ".");
@@ -154,11 +157,11 @@ public class Storage {
 
             boolean isCompleted = Boolean.parseBoolean(fields.get(2));
             // Missing or blank stages are assigned the default "Applied" stage.
-            String status = fields.size() == FIELD_COUNT ? fields.get(4) : null;
+            String stageLabel = fields.size() == FIELD_COUNT ? fields.get(4) : null;
             RecruitmentStage stage;
             try {
-                stage = status == null || status.isBlank()
-                        ? Application.DEFAULT_STAGE : RecruitmentStage.fromLabel(status);
+                stage = stageLabel == null || stageLabel.isBlank()
+                        ? Application.DEFAULT_STAGE : RecruitmentStage.fromLabel(stageLabel);
             } catch (IllegalArgumentException e) {
                 loadWarnings.add("Skipping record with unknown recruitment stage on line " + lineIndex
                         + " in " + filePath + ".");

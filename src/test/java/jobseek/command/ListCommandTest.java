@@ -39,7 +39,7 @@ public class ListCommandTest {
         assertEquals(5, lines.length);
         assertEquals("Here are your applications:", lines[0]);
         assertTrue(lines[1].contains("No."));
-        assertTrue(lines[1].contains("Status"));
+        assertTrue(lines[1].contains("Completed"));
         assertTrue(lines[1].contains("Company"));
         assertTrue(lines[1].contains("Role"));
         assertTrue(lines[1].contains("Deadline"));

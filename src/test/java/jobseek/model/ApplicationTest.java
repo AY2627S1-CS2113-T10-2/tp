@@ -17,7 +17,7 @@ public class ApplicationTest {
         assertEquals("Google", application.getCompany());
         assertEquals("Software Engineer Intern", application.getRole());
         assertFalse(application.isCompleted());
-        assertEquals("[ ]", application.getStatusIcon());
+        assertEquals("[ ]", application.getCompletionIcon());
     }
 
     @Test
@@ -26,7 +26,7 @@ public class ApplicationTest {
         assertEquals("Shopee", completedApp.getCompany());
         assertEquals("Backend Intern", completedApp.getRole());
         assertTrue(completedApp.isCompleted());
-        assertEquals("[X]", completedApp.getStatusIcon());
+        assertEquals("[X]", completedApp.getCompletionIcon());
     }
 
     @Test
@@ -50,11 +50,11 @@ public class ApplicationTest {
 
         application.setCompleted(true);
         assertTrue(application.isCompleted());
-        assertEquals("[X]", application.getStatusIcon());
+        assertEquals("[X]", application.getCompletionIcon());
 
         application.setCompleted(false);
         assertFalse(application.isCompleted());
-        assertEquals("[ ]", application.getStatusIcon());
+        assertEquals("[ ]", application.getCompletionIcon());
     }
 
     @Test
@@ -67,9 +67,8 @@ public class ApplicationTest {
     }
 
     @Test
-    public void getStatus_defaultsToApplied() {
+    public void getRecruitmentStage_defaultsToApplied() {
         Application application = new Application("Google", "SWE Intern");
-        assertEquals("Applied", application.getStatus());
         assertEquals(RecruitmentStage.APPLIED, application.getRecruitmentStage());
     }
 
@@ -77,36 +76,34 @@ public class ApplicationTest {
     public void constructor_legacyPendingLabel_mapsToApplied() {
         Application application = new Application("Google", "SWE Intern", "Pending");
 
-        assertEquals("Applied", application.getStatus());
         assertEquals(RecruitmentStage.APPLIED, application.getRecruitmentStage());
     }
 
     @Test
-    public void setStatus_updatesStatusCorrectly() {
+    public void setRecruitmentStage_updatesStageCorrectly() {
         Application application = new Application("Google", "SWE Intern");
-        application.setStatus("Accepted");
-        assertEquals("Accepted", application.getStatus());
+        application.setRecruitmentStage(RecruitmentStage.ACCEPTED);
+        assertEquals(RecruitmentStage.ACCEPTED, application.getRecruitmentStage());
 
-        application.setStatus("Rejected");
-        assertEquals("Rejected", application.getStatus());
+        application.setRecruitmentStage(RecruitmentStage.REJECTED);
+        assertEquals(RecruitmentStage.REJECTED, application.getRecruitmentStage());
 
-        application.setStatus("Online Assessment");
+        application.setRecruitmentStage(RecruitmentStage.ONLINE_ASSESSMENT);
         assertEquals(RecruitmentStage.ONLINE_ASSESSMENT, application.getRecruitmentStage());
     }
 
     @Test
-    public void constructor_withStatus_initializesCorrectly() {
+    public void constructor_withRecruitmentStage_initializesCorrectly() {
         Application application = new Application("Google", "SWE Intern", false, "Accepted");
-        assertEquals("Accepted", application.getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, application.getRecruitmentStage());
 
         Application app2 = new Application("Shopee", "Backend", "Rejected");
-        assertEquals("Rejected", app2.getStatus());
+        assertEquals(RecruitmentStage.REJECTED, app2.getRecruitmentStage());
     }
 
     @Test
     public void constructor_legacyOfferAcceptedLabel_mapsToAcceptedStage() {
         Application application = new Application("Microsoft", "Security Intern", true, "Offer Accepted");
-        assertEquals("Accepted", application.getStatus());
         assertEquals(RecruitmentStage.ACCEPTED, application.getRecruitmentStage());
         assertTrue(application.isCompleted());
     }
