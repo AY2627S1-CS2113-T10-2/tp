@@ -8,9 +8,11 @@ import jobseek.ui.Ui;
 /**
  * Handles marking an application as completed or uncompleted.
  */
-public class MarkCommand extends Command {
+public class MarkCommand extends UndoableCommand {
     private final int targetIndex;
     private final boolean isCompleted;
+    private Application markedApplication;
+    private boolean previousCompleted;
 
     /**
      * Constructs a MarkCommand with the target 0-based index and desired completion status.
@@ -53,7 +55,10 @@ public class MarkCommand extends Command {
         }
 
         Application application = applications.get(targetIndex);
+        markedApplication = application;
+        previousCompleted = application.isCompleted();
         application.setCompleted(isCompleted);
+        markChanged();
 
         String message = isCompleted
                 ? "Nice! I've marked this application as completed:\n  " + application
@@ -61,5 +66,12 @@ public class MarkCommand extends Command {
 
         ui.showMessage(message);
         storage.save(applications);
+    }
+
+    /** Restores the completion flag the application had before this command ran. */
+    @Override
+    public String undo(ApplicationList applications) {
+        markedApplication.setCompleted(previousCompleted);
+        return (isCompleted ? "marked " : "unmarked ") + markedApplication;
     }
 }

@@ -10,9 +10,11 @@ import jobseek.ui.Ui;
  * Handles setting or updating the recruitment stage (e.g., Applied, Interview, Accepted)
  * for an existing application.
  */
-public class StatusCommand extends Command {
+public class StatusCommand extends UndoableCommand {
     private final int targetIndex;
     private final String status;
+    private Application updatedApplication;
+    private String previousStatus;
 
     /**
      * Constructs a StatusCommand with the target index and desired recruitment status.
@@ -67,9 +69,13 @@ public class StatusCommand extends Command {
         Application application = applications.get(targetIndex);
         assert application != null : "Application at valid index should not be null";
 
+        updatedApplication = application;
+        previousStatus = application.getStatus();
         application.setStatus(status);
         assert application.getRecruitmentStage() == RecruitmentStage.fromLabel(status)
                 : "Application stage should match the updated stage";
+        markChanged();
+        assert application.getStatus().equals(status) : "Application status should match the updated status";
 
         String message = "Application status updated successfully.\n"
                 + "Company: " + application.getCompany() + "\n"
@@ -78,5 +84,12 @@ public class StatusCommand extends Command {
         ui.showMessage(message);
 
         storage.save(applications);
+    }
+
+    /** Restores the status the application had before this command ran. */
+    @Override
+    public String undo(ApplicationList applications) {
+        updatedApplication.setStatus(previousStatus);
+        return "status change of " + updatedApplication;
     }
 }

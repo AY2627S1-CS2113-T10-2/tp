@@ -388,6 +388,114 @@ sequenceDiagram
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
 
+### Delete confirmation and undo
+
+#### Overview
+
+`DeleteCommand` asks the user to confirm before removing an application, and `undo` reverses the most recent change. Both exist to protect the user from slips: the data file is overwritten on every save, so a mistaken delete would otherwise be permanent.
+### Typed command parser
+
+#### Overview
+
+Besides the numbered menu, users can type a full command on one line, such as `add c/Google r/SWE Intern d/2026-11-30` or `delete 2`. This matches the target user, who types quickly and prefers the keyboard.
+
+#### Design and implementation
+
+`CommandParser` (package `jobseek.parser`) is a utility class with one public method, `parse(String)`. It reads the first word and builds the matching `Command`:
+
+| Input | Command created |
+|---|---|
+| `add c/.. r/.. [d/..]` | `AddCommand` |
+| `edit INDEX [c/..] [r/..] [s/..]` | `EditCommand` |
+| `delete INDEX` | `DeleteCommand` |
+| `mark INDEX`, `unmark INDEX` | `MarkCommand` |
+| `search KEYWORD` | `SearchCommand` |
+| `sort`, `help`, `exit` | `SortCommand`, `HelpCommand`, `ExitCommand` |
+
+`Main.parseCommand` calls `CommandParser.parse` after the `list`, `view` and `today` checks and before the numbered `switch`. The parser returns `null` when the first word is not a typed command (for example `1`), so the menu keeps working unchanged. If the first word is a typed command but its arguments are wrong, the parser throws a `JobSeekException` whose message contains the correct usage, and `Main` shows it as an error.
+
+Fields are found with the regular expression `(?:^|\s)([a-z])/`, which matches a single letter and a slash at the start of the text or after whitespace. Everything between one prefix and the next is that field's value, so values can contain spaces. Text before the first prefix is kept separately; `edit` treats it as the index, and `add` rejects it. Because the prefix must follow whitespace, slashes inside words such as `AT&T/Intel` are ordinary text. The parser also rejects unknown prefixes, repeated prefixes and empty values.
+
+User-typed indexes are one-based, and the parser converts them to the zero-based indexes that commands expect. A stage typed after `s/` is validated with `RecruitmentStage.fromLabel` so a typo is reported as a normal error before any command runs.
+
+#### Design considerations
+
+* **Separate class vs. more code in `Main`:** `Main` already held all the menu prompting. Putting parsing in its own class keeps `Main` smaller and lets the parser be unit-tested without simulating console input (`CommandParserTest`).
+* **Prefix syntax vs. positional arguments:** with `add Google SWE Intern` it is impossible to tell where the company name ends. Prefixes allow multi-word values and any field order.
+* **Limitation:** a value cannot contain a space followed by a single letter and a slash (for example ` r/`).
+
+### Combined filters (`find`)
+
+#### Overview
+
+`find` lets the user combine several conditions, for example `find c/google s/interview a/2026-11-01`. The existing `search` command only matches one keyword against company or role, which is not enough once there are dozens of applications.
+
+#### Design and implementation
+
+| Class | Responsibility |
+|---|---|
+| `UndoableCommand` | Abstract subclass of `Command` that adds `undo(ApplicationList)` and a `hasChanged()` flag. |
+| `AddCommand`, `DeleteCommand`, `EditCommand`, `StatusCommand`, `MarkCommand` | Extend `UndoableCommand`. Each remembers what it needs (the affected `Application` and its old values) while executing. |
+| `CommandHistory` | A stack (`ArrayDeque`) of undoable commands that actually changed the list. |
+| `UndoCommand` | Pops the newest command, calls its `undo`, shows what was undone and saves. |
+| `Main` | Owns the `CommandHistory`, records each executed command, and creates `UndoCommand` for the text command `undo`. |
+
+```mermaid
+classDiagram
+    Command <|-- UndoableCommand
+    Command <|-- UndoCommand
+    UndoableCommand <|-- AddCommand
+    UndoableCommand <|-- DeleteCommand
+    UndoableCommand <|-- EditCommand
+    UndoableCommand <|-- StatusCommand
+    UndoableCommand <|-- MarkCommand
+    CommandHistory o-- UndoableCommand
+    UndoCommand --> CommandHistory
+    class UndoableCommand {
+        <<abstract>>
+        +undo(applications) String
+        +hasChanged() boolean
+    }
+```
+
+Confirmation happens inside `DeleteCommand.execute` by calling `ui.readCommand()`, so it applies however the command was created (menu option or a future typed command). Only `y` or `yes` (case-insensitive) confirms; anything else, including end of input, cancels.
+
+Undo works on the same `Application` objects that were changed. Commands keep a reference plus the previous values, so an undo is exact even when two applications look identical (`AddCommand.undo` compares by identity, not `equals`). `DeleteCommand.undo` uses the new `ApplicationList.insert(index, app)` to restore the original position.
+
+#### Design considerations
+
+* **Command history vs. snapshots:** storing a copy of the whole list after each change is simpler but wastes memory and would hide which change was undone. Per-command undo gives a precise message and fits the existing Command pattern.
+* **`hasChanged()`:** rejected commands (invalid index, cancelled delete) call `markChanged()` never, so they are not recorded and `undo` never reverts something that did not happen.
+* **Limitations:** history is in memory only and there is no redo.
+| `ApplicationFilters` (`model`) | Static factory methods such as `companyContains`, `inStage` and `deadlineOnOrBefore`. Each returns a `Predicate<Application>`. |
+| `CommandParser` (`parser`) | `parseFind` turns each prefix (`c/ r/ s/ b/ a/ m/`) into a predicate and joins them with `Predicate.and`. It also builds a readable description of the conditions. |
+| `FindCommand` (`command`) | Holds one combined `Predicate<Application>` and a description. It tests every application, then shows the matches through `ApplicationTable`. |
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Main
+    participant CommandParser
+    participant FindCommand
+    participant ApplicationTable
+    User->>Main: find c/google s/interview
+    Main->>CommandParser: parse(input)
+    CommandParser-->>Main: FindCommand(company AND stage)
+    Main->>FindCommand: execute(applications, ui, storage)
+    FindCommand->>FindCommand: filter.test(application) for each
+    FindCommand->>ApplicationTable: format(applications, matchIndices, heading)
+    FindCommand-->>User: matching rows with original numbers
+```
+
+`FindCommand` never needs to know which filters were chosen, because the parser has already combined them into a single predicate. Adding a new filter therefore means adding one factory method to `ApplicationFilters` and one prefix to `parseFind`; `FindCommand` stays unchanged. This is the strategy pattern, using Java's functional interface `Predicate` instead of a hand-written interface.
+
+#### Design considerations
+
+* **Predicates vs. one method with many `if` statements:** a single method checking six optional parameters grows with every new filter and is hard to test. Small predicates are tested one by one (`FindCommandTest`) and combined freely.
+* **`and` only:** all filters must match. Supporting `or` would need a more complex syntax, so it is left out.
+* **Applications without a deadline** never match `b/` or `a/`, because "unknown" is not before or after any date.
+* **Original numbering:** results use the index in the full list (like `search` and `sort`), so numbers stay valid for `edit` and `delete`.
+
 ### Today dashboard
 
 `TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per status). `Main.parseCommand` creates it for the text command `today`.
