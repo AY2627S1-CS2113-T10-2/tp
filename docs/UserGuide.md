@@ -7,7 +7,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 1. Install Java 25 or later.
 2. Download the latest `jobseek.jar` and place it in a folder where you have write permission.
 3. Open a terminal in that folder and run `java -jar jobseek.jar`.
-4. Enter a number from the menu and follow the prompts. You can also type the `list` and `view` commands described below. Enter `0` to exit.
+4. Enter a number from the menu and follow the prompts, or type a one-line command such as `add c/Google r/SWE Intern` (see [Typed commands](#typed-commands-one-line-shortcuts)). Enter `0` or type `exit` to quit.
 
 **Note:** Double-clicking the JAR may not open a usable terminal window. JobSeek needs write permission in the launch folder to create and update its data file.
 
@@ -42,6 +42,10 @@ Instead of answering prompts one by one, you can type a whole command on one lin
 | Search | `search KEYWORD` | `search google` |
 | Find (combined filters) | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/..]` | `find c/google s/interview` |
 | Sort | `sort` | `sort` |
+| List | `list [completed\|all]` | `list all` |
+| View details | `view INDEX` | `view 2` |
+| Today dashboard | `today` | `today` |
+| Undo | `undo` | `undo` |
 | Help / exit | `help`, `exit` | `exit` |
 
 - `c/` is company, `r/` is role, `d/` is deadline and `s/` is recruitment stage (for example `Interview`, or the shortcut `OA`).
@@ -95,12 +99,14 @@ Choose `1` to create and track a new job or internship application.
   - The new application is assigned the next 1-based number in the list.
   - **Completion status**: Defaults to incomplete (`[ ]`).
   - **Recruitment stage**: Automatically initialized to `Applied`.
-- **Confirmation message**:
+- **Confirmation message** (a `Deadline:` line is added when you entered a deadline):
   ```text
   Application added successfully.
   Company: Google
   Role: Software Engineering Intern
+  Deadline: 2026-11-30
   ```
+- **Typed alternative**: `add c/Google r/Software Engineering Intern d/2026-11-30` does the same in one line.
 
 ---
 
@@ -178,7 +184,7 @@ Choose `10` to update details of an existing application in place without deleti
      - `1`: Edit Company name only.
      - `2`: Edit Role title only.
      - `3`: Edit recruitment stage only.
-     - `4`: Edit All three fields (Company, Role, and Status).
+     - `4`: Edit all three fields (Company, Role, and Recruitment stage).
   3. JobSeek will then prompt for the respective replacement value(s):
      - `Enter new company:\n> ` (if editing company or all)
      - `Enter new role:\n> ` (if editing role or all)
@@ -191,7 +197,8 @@ Choose `10` to update details of an existing application in place without deleti
   - Empty company or role values are rejected and reprompted.
   - Invalid stage choices are rejected and reprompted. Enter a stage name or its number.
   - Entering an invalid field choice (anything other than 1, 2, 3, or 4) displays `Error: Invalid field choice: '<choice>'. Enter 1, 2, 3, or 4.` and returns to the menu.
-  - Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
+  Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
+- **Typed alternative**: `edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE]` changes only the fields you give, for example `edit 2 r/Backend Intern s/Interview`.
 - **Confirmation message**:
   For field choices `1`, `2`, or `4` (Company, Role, or All):
   ```text
@@ -200,7 +207,7 @@ Choose `10` to update details of an existing application in place without deleti
   Role: Senior SWE Intern
   Status: Applied
   ```
-  For field choice `3` (Status only):
+  For field choice `3` (Recruitment stage only):
   ```text
   Application status updated successfully.
   Company: Alphabet Inc.
@@ -215,7 +222,7 @@ Choose `10` to update details of an existing application in place without deleti
 Each application has one of these stages: `Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`. `Accepted`, `Rejected`, and `Withdrawn` are terminal stages. You can still edit a stage at any time to correct a mistake or reflect a company process; stages do not enforce a fixed transition order.
 
 #### Updating a stage
-Under menu option `10`, select field `3` (Recruitment stage) or `4` (All). Enter one of the numbered choices shown by the prompt, or type a stage name such as `Interview`. The shortcut `OA` is also accepted for `Online Assessment`. Inputs are case-insensitive.
+Under menu option `10`, select field `3` (Recruitment stage) or `4` (All). Enter one of the numbered choices shown by the prompt, or type a stage name such as `Interview`. The shortcut `OA` is also accepted for `Online Assessment`. Inputs are case-insensitive. You can also type `edit INDEX s/STAGE`, for example `edit 1 s/oa`.
 
 #### Inspecting an application stage
 Use the `view INDEX` command to view the comprehensive card for any application, including its recruitment stage:
@@ -238,10 +245,12 @@ Completed: No
 #### Search applications
 Choose `8`, then enter part of a company name or role. Search ignores letter case. For example, `eng` matches both `Engineer` in a role and `Engineering Co` in a company name. An empty search term is rejected and you will be prompted again. If nothing matches, JobSeek tells you so.
 
+You can also type `search KEYWORD` (for example `search eng`) or, to combine several conditions, `find` (see [Finding with combined filters](#finding-with-combined-filters-find)).
+
 Search results show the same application numbers as the normal list. For example, if the matching record is application `3`, you can still enter `3` when marking or deleting it. Search does not change or save application order.
 
 #### Sort applications alphabetically
-Choose `9` to view applications ordered by company name, then by role when company names match. Sorting ignores letter case. The number beside each application is its original number in the normal list. This is a display-only view: it does not rearrange the saved applications. If you later type `list all`, the original order is shown again.
+Choose `9` or type `sort` to view applications ordered by company name, then by role when company names match. Sorting ignores letter case. The number beside each application is its original number in the normal list. This is a display-only view: it does not rearrange the saved applications. If you later type `list all`, the original order is shown again.
 
 ---
 
@@ -251,7 +260,7 @@ Choose `4` to remove an application. JobSeek asks you to confirm first, and you 
 
 1. Enter `list all` to find the number of the application you want to delete.
 2. Enter `4` at the main menu.
-3. Enter the application number when prompted.
+3. Enter the application number when prompted. (Or type `delete INDEX`, for example `delete 2`, to skip the prompt for the number.)
 4. JobSeek shows the application and asks `Delete ... ? (y/n)`. Enter `y` or `yes` to delete it. Any other answer cancels the deletion and nothing changes.
 
 For example, entering `2` at the deletion prompt and `y` at the confirmation prompt removes application number `2`.
@@ -286,15 +295,16 @@ ____________________________________________________________
 
 Marks the application at the specified index as completed (`[X]`). Completed applications represent concluded application pipelines (such as accepted offers or finalized cycles) and are hidden from the default active list view to keep your workspace clutter-free.
 
-Format: Choose `5` from the menu, then enter `<application_number>`.
+Format: Choose `5` from the menu, then enter `<application_number>`, or type `mark <application_number>`.
 
 Examples:
 * Choose `5`, then enter `1` – Marks application number 1 as completed.
+* `mark 1` – Does the same in one line.
 
 Example output:
 ```text
 Nice! I've marked this application as completed:
-  [X] Google | Role: SWE Intern
+  [X] Google | SWE Intern
 ```
 
 > **Notes on marking applications:**
@@ -310,15 +320,16 @@ Nice! I've marked this application as completed:
 
 Reverts the completion status of the application at the specified index back to incomplete (`[ ]`). The application is reactivated and will appear in active application listings.
 
-Format: Choose `6` from the menu, then enter `<application_number>`.
+Format: Choose `6` from the menu, then enter `<application_number>`, or type `unmark <application_number>`.
 
 Examples:
 * Choose `6`, then enter `1` – Reverts application number 1 back to incomplete.
+* `unmark 1` – Does the same in one line.
 
 Example output:
 ```text
 OK, I've marked this application as not completed yet:
-  [ ] Google | Role: SWE Intern
+  [ ] Google | SWE Intern
 ```
 
 > **Notes on unmarking applications:**
@@ -351,7 +362,7 @@ DUE TODAY: Shopee - Backend Intern (deadline 2026-10-28)
 UPCOMING: GovTech - Data Analyst (deadline 2026-11-03)
 ```
 
-If no applications require attention, no warning summary appears. Warnings are checked once at startup and do not automatically refresh while JobSeek remains open.
+If no applications require attention, no warning summary appears. Warnings are checked once at startup and do not automatically refresh while JobSeek remains open. To see the same information at any time, use the [`today` dashboard](#today-dashboard-today).
 
 ---
 
@@ -391,7 +402,8 @@ JobSeek automatically saves application data to `data/applications.txt` when com
 - If the data file does not exist, JobSeek starts with an empty application list.
 - **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records.
 - If loading completely fails due to an unrecoverable system I/O error, JobSeek displays an error and starts with an empty list.
-- Search, sort, list and help only display information and do not modify saved data.
+- `search`, `find`, `sort`, `list`, `view`, `today` and `help` only display information and do not modify saved data.
+- `undo` history is not saved: it is cleared when you exit JobSeek.
 
 The data file location is relative to the folder from which you launch JobSeek. Launch the application from the same folder each time to access the same saved records.
 
@@ -438,13 +450,14 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **List completed applications** | `list completed` | `list completed` |
 | **List all applications** | `list all` | `list all` |
 | **View application details** | `view <application_number>` | `view 1` |
-| **Delete application** | `4` | Choose `4`, enter application index (e.g. `2`), then confirm with `y` |
+| **Delete application** | `4` or `delete INDEX` | Choose `4`, or `delete 2`; then confirm with `y` |
 | **Undo last change** | `undo` | `undo` |
-| **Mark application completed** | `5` | Choose `5`, then enter application index (e.g. `1`) |
-| **Unmark application** | `6` | Choose `6`, then enter application index (e.g. `1`) |
+| **Mark application completed** | `5` or `mark INDEX` | Choose `5`, then enter application index (e.g. `1`), or `mark 1` |
+| **Unmark application** | `6` or `unmark INDEX` | Choose `6`, then enter application index (e.g. `1`), or `unmark 1` |
 | **Today dashboard** | `today` | `today` |
-| **Help instructions** | `7` | `7` |
-| **Search applications** | `8` | Choose `8`, then enter search term (e.g. `Google`) |
-| **Sort applications** | `9` | Choose `9` to view applications alphabetically |
+| **Help instructions** | `7` or `help` | `7` or `help` |
+| **Search applications** | `8` or `search KEYWORD` | Choose `8`, then enter search term (e.g. `Google`), or `search google` |
+| **Find with combined filters** | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/yes\|no]` | `find c/google s/interview` |
+| **Sort applications** | `9` or `sort` | Choose `9`, or `sort`, to view applications alphabetically |
 | **Edit application** | `10` or `edit INDEX [c/..] [r/..] [s/..]` | Choose `10`, or `edit 2 s/Interview` |
-| **Exit JobSeek** | `0` | `0` |
+| **Exit JobSeek** | `0` or `exit` | `0` or `exit` |
