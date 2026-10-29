@@ -12,12 +12,169 @@
 
 ## Design & implementation
 
+### Architecture Overview
+
+JobSeek is a command-line desktop application for managing internship and job applications. The application architecture is organized into five primary components:
+
+* **`Main`**: Acts as the central coordinator and entry point. It initializes core dependencies, checks deadline alerts, parses user input into commands, and manages the execution loop.
+* **`UI`**: Consists of `Ui` and `ApplicationTable`. It reads console inputs, renders formatted tables, application cards, deadline warning banners, and error notifications.
+* **`Logic / Command`**: Built upon the Command pattern. Encapsulates all executable actions (`AddCommand`, `DeleteCommand`, `EditCommand`, `ListCommand`, etc.) inheriting from the common abstract `Command` base class.
+* **`Model`**: Comprises `ApplicationList`, `Application`, and `DeadlineWarnings`. Represents in-memory domain entities, their validation rules, and lifecycle states (`Pending`, `Accepted`, `Rejected`, and completion flags).
+* **`Storage`**: Encapsulated by `Storage`. Handles file encoding/decoding and persistent reading/writing to `data/applications.txt`.
+
+#### Architecture Diagram
+
+The high-level interaction between the user, UI, logic controller, domain model, and storage subsystem is shown below:
+
+```mermaid
+flowchart TB
+    subgraph UI_Component["UI Component"]
+        UI["Ui"]
+        Table["ApplicationTable"]
+    end
+
+    subgraph Logic_Component["Logic / Command Component"]
+        Main["Main (Parser & Controller)"]
+        Commands["Command Hierarchy<br/>(Add, Delete, Edit, List, Status, etc.)"]
+    end
+
+    subgraph Model_Component["Model Component"]
+        AppList["ApplicationList"]
+        App["Application"]
+        Warnings["DeadlineWarnings"]
+    end
+
+    subgraph Storage_Component["Storage Component"]
+        Storage["Storage"]
+        File[("applications.txt")]
+    end
+
+    User(["User (Terminal)"]) <--> UI
+    UI <--> Main
+    Main --> Commands
+    Commands --> Model_Component
+    Commands --> UI_Component
+    Commands --> Storage_Component
+    Storage_Component <--> File
+    Main --> Warnings
+    Warnings --> Model_Component
+    Warnings --> UI_Component
+```
+
+#### Application Lifecycle Activity Diagram
+
+The control flow from startup, file loading, deadline inspection, command execution, and termination is illustrated in the activity diagram below:
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Init[Initialize UI and Storage]
+    Init --> Load[Storage.load applications]
+    Load --> CheckLoad{File load<br/>successful?}
+    CheckLoad -- Yes --> Populate[Populate ApplicationList]
+    CheckLoad -- No --> Fallback[Show error & use empty list]
+    Populate --> Warnings[DeadlineWarnings.show]
+    Fallback --> Warnings
+    Warnings --> Welcome[Show Welcome Banner & Menu]
+    Welcome --> ReadCmd[/Read User Command/]
+    ReadCmd --> CheckEOF{EOF reached?}
+    CheckEOF -- Yes --> Goodbye[Show Goodbye Message]
+    CheckEOF -- No --> ParseCmd[Parse command input]
+    ParseCmd --> ValidCmd{Valid command?}
+    ValidCmd -- No --> ShowErr[Show error message] --> ReadCmd
+    ValidCmd -- Yes --> ExecCmd[Execute command]
+    ExecCmd --> CheckExit{Is ExitCommand?}
+    CheckExit -- Yes --> Goodbye
+    CheckExit -- No --> ReadCmd
+    Goodbye --> End([End])
+```
+
+#### Runtime Object Structure (Object Diagram)
+
+The following object diagram illustrates a concrete runtime snapshot of JobSeek after two applications have been loaded and tracked in memory:
+
+```mermaid
+classDiagram
+    class main {
+        <<object>>
+        :Main
+    }
+    class ui {
+        <<object>>
+        :Ui
+    }
+    class storage {
+        <<object>>
+        :Storage
+        filePath = "data/applications.txt"
+    }
+    class applications {
+        <<object>>
+        :ApplicationList
+    }
+    class app1 {
+        <<object>>
+        :Application
+        company = "Google"
+        role = "SWE Intern"
+        isCompleted = false
+        status = "Pending"
+        deadline = 2026-11-15
+    }
+    class app2 {
+        <<object>>
+        :Application
+        company = "Shopee"
+        role = "Backend Intern"
+        isCompleted = true
+        status = "Accepted"
+        deadline = null
+    }
+
+    main --> ui
+    main --> storage
+    main --> applications
+    applications --> app1
+    applications --> app2
+```
+
 ### Architecture and Command pattern
 
 JobSeek employs the Command pattern to decouple command dispatching (`Main`) from command execution and domain model manipulation. All actions inherit from the abstract `Command` class and implement the polymorphic `execute(ApplicationList, Ui, Storage)` method.
 
+The class diagram below reflects the architecture across all components and packages, including explicit UML multiplicities:
+
 ```mermaid
 classDiagram
+    class Main {
+        -Ui ui
+        -Storage storage
+        -ApplicationList applications
+        +run() void
+        +parseCommand(option) Command
+    }
+    class Ui {
+        +showWelcome() void
+        +showMenu(applications) void
+        +showMessage(message) void
+        +showError(errorMessage) void
+        +showPrompt(prompt) void
+        +readCommand() String
+        +showGoodbye() void
+    }
+    class Storage {
+        -String filePath
+        +save(applications) void
+        +load() ApplicationList
+    }
+    class DeadlineWarnings {
+        +show(applications, ui)$ void
+    }
+    class ApplicationTable {
+        +format(applications, indices)$ String
+    }
+    class JobSeekException {
+        +JobSeekException(message)
+    }
     class Command {
         <<abstract>>
         -boolean isExit
@@ -29,22 +186,10 @@ classDiagram
         -String role
         -LocalDate deadline
         +execute(applications, ui, storage) void
-        +getCompany() String
-        +getRole() String
-        +getDeadline() LocalDate
     }
-    class ViewCommand {
+    class DeleteCommand {
         -int targetIndex
         +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +parse(args)$ ViewCommand
-    }
-    class MarkCommand {
-        -int targetIndex
-        -boolean isCompleted
-        +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +isCompleted() boolean
     }
     class EditCommand {
         -int targetIndex
@@ -52,17 +197,9 @@ classDiagram
         -String newRole
         -String newStatus
         +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +getNewCompany() String
-        +getNewRole() String
-        +getNewStatus() String
     }
-    class StatusCommand {
-        -int targetIndex
-        -String newStatus
+    class ExitCommand {
         +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +getNewStatus() String
     }
     class HelpCommand {
         +execute(applications, ui, storage) void
@@ -70,8 +207,35 @@ classDiagram
     class ListCommand {
         -FilterType filterType
         +execute(applications, ui, storage) void
-        +getFilterType() FilterType
         +parse(args)$ ListCommand
+    }
+    class FilterType {
+        <<enumeration>>
+        ACTIVE
+        COMPLETED
+        ALL
+    }
+    class MarkCommand {
+        -int targetIndex
+        -boolean isCompleted
+        +execute(applications, ui, storage) void
+    }
+    class SearchCommand {
+        -String keyword
+        +execute(applications, ui, storage) void
+    }
+    class SortCommand {
+        +execute(applications, ui, storage) void
+    }
+    class StatusCommand {
+        -int targetIndex
+        -String newStatus
+        +execute(applications, ui, storage) void
+    }
+    class ViewCommand {
+        -int targetIndex
+        +execute(applications, ui, storage) void
+        +parse(args)$ ViewCommand
     }
     class ApplicationList {
         -ArrayList~Application~ applications
@@ -98,20 +262,41 @@ classDiagram
         +setStatus(status) void
         +setCompleted(isCompleted) void
     }
+
+    Main "1" --> "1" Ui : uses
+    Main "1" --> "1" Storage : uses
+    Main "1" --> "1" ApplicationList : manages
+    Main "1" ..> "0..*" Command : creates
+    Main "1" ..> "1" DeadlineWarnings : invokes
+    Main "1" ..> "0..*" JobSeekException : catches
+
     Command <|-- AddCommand
-    Command <|-- ViewCommand
-    Command <|-- MarkCommand
+    Command <|-- DeleteCommand
     Command <|-- EditCommand
-    Command <|-- StatusCommand
+    Command <|-- ExitCommand
     Command <|-- HelpCommand
     Command <|-- ListCommand
-    ApplicationList --> Application
-    AddCommand ..> ApplicationList
-    ViewCommand ..> ApplicationList
-    MarkCommand ..> ApplicationList
-    EditCommand ..> ApplicationList
-    StatusCommand ..> ApplicationList
-    ListCommand ..> ApplicationList
+    Command <|-- MarkCommand
+    Command <|-- SearchCommand
+    Command <|-- SortCommand
+    Command <|-- StatusCommand
+    Command <|-- ViewCommand
+
+    ListCommand "1" --> "1" FilterType : uses
+    ApplicationList "1" *-- "0..*" Application : contains
+
+    Command ..> "1" ApplicationList : operates on
+    Command ..> "1" Ui : displays via
+    Command ..> "1" Storage : persists via
+    SearchCommand ..> "1" ApplicationTable : formats via
+    SortCommand ..> "1" ApplicationTable : formats via
+    ListCommand ..> "1" ApplicationTable : formats via
+    ViewCommand ..> "0..1" JobSeekException : throws
+    ListCommand ..> "0..1" JobSeekException : throws
+    DeadlineWarnings "1" ..> "1" ApplicationList : reads
+    DeadlineWarnings "1" ..> "1" Ui : displays via
+    Storage "1" ..> "1" ApplicationList : saves/loads
+    Storage "1" ..> "0..*" Application : serializes
 ```
 
 ### Add application feature
@@ -125,28 +310,90 @@ The `AddCommand` allows job seekers to add a new internship or job record with a
   4. The application is added to `ApplicationList`. Internal assumptions (such as list size incrementing by 1 and target non-null) are verified via Java `assert`.
   5. The updated list is persisted to disk via `Storage.save(applications)`, and confirmation is rendered to the user via `Ui.showMessage()`.
 
+#### Add Application Activity Diagram
+
+The user input validation, prompt looping, and execution lifecycle for adding an application is illustrated in the activity diagram below:
+
 ```mermaid
-sequenceDiagram
-    actor User
-    participant Main
-    participant AddCommand
-    participant ApplicationList
-    participant Application
-    participant Storage
-    participant Ui
-    User->>Main: Enter 1
-    Main->>Ui: promptNonEmpty("Company:")
-    Ui-->>Main: "Google"
-    Main->>Ui: promptNonEmpty("Role:")
-    Ui-->>Main: "SWE Intern"
-    Main->>AddCommand: new AddCommand("Google", "SWE Intern")
-    Main->>AddCommand: execute(applications, ui, storage)
-    AddCommand->>Application: new Application("Google", "SWE Intern")
-    Application-->>AddCommand: application
-    AddCommand->>ApplicationList: add(application)
-    AddCommand->>Storage: save(applications)
-    AddCommand->>Ui: showMessage("Application added successfully...")
-    Ui-->>User: Confirmation message
+flowchart TD
+    Start([Start Add Application]) --> PromptCompany[/Prompt Company name/]
+    PromptCompany --> ValidCompany{Non-empty?}
+    ValidCompany -- No --> ShowCompErr[Show empty company error] --> PromptCompany
+    ValidCompany -- Yes --> PromptRole[/Prompt Role title/]
+    PromptRole --> ValidRole{Non-empty?}
+    ValidRole -- No --> ShowRoleErr[Show empty role error] --> PromptRole
+    ValidRole -- Yes --> PromptDeadline[/Prompt optional deadline YYYY-MM-DD/]
+    PromptDeadline --> CheckEmptyDate{Empty input?}
+    CheckEmptyDate -- Yes --> CreateWithoutDate[Create AddCommand with null deadline]
+    CheckEmptyDate -- No --> ParseDate{Valid YYYY-MM-DD?}
+    ParseDate -- No --> ShowDateErr[Show invalid date error] --> PromptDeadline
+    ParseDate -- Yes --> CreateWithDate[Create AddCommand with parsed deadline]
+    CreateWithoutDate --> ExecuteAdd[AddCommand.execute]
+    CreateWithDate --> ExecuteAdd
+    ExecuteAdd --> CreateApp[Instantiate Application Pending, false]
+    CreateApp --> AddToList[Add to ApplicationList]
+    AddToList --> SaveStorage[Storage.save applications]
+    SaveStorage --> ShowConfirm[Ui.showMessage success banner]
+    ShowConfirm --> End([End])
+```
+
+#### Add Application Sequence Diagram
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :AddCommand
+    participant app as :Application
+    participant list as :ApplicationList
+    participant storage as :Storage
+
+    user->>main: Enter 1
+    activate main
+    main->>ui: promptNonEmpty("Company:")
+    activate ui
+    ui-->>main: "Google"
+    deactivate ui
+    main->>ui: promptNonEmpty("Role:")
+    activate ui
+    ui-->>main: "SWE Intern"
+    deactivate ui
+
+    alt With optional deadline
+        main->>ui: promptOptionalDate("Deadline:")
+        activate ui
+        ui-->>main: "2026-11-15"
+        deactivate ui
+        main->>cmd: new AddCommand("Google", "SWE Intern", 2026-11-15)
+        activate cmd
+        cmd-->>main: addCommand
+        deactivate cmd
+    else Without deadline
+        main->>cmd: new AddCommand("Google", "SWE Intern")
+        activate cmd
+        cmd-->>main: addCommand
+        deactivate cmd
+    end
+
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd->>app: new Application(company, role, deadline)
+    activate app
+    app-->>cmd: application
+    deactivate app
+    cmd->>list: add(application)
+    activate list
+    list-->>cmd: 
+    deactivate list
+    cmd->>storage: save(applications)
+    activate storage
+    storage-->>cmd: 
+    deactivate storage
+    cmd->>ui: showMessage("Application added successfully...")
+    activate ui
+    ui-->>user: Confirmation message
+    deactivate ui
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
 ```
 
 ### View application feature
@@ -166,34 +413,54 @@ The `ViewCommand` displays all recorded information for an individual applicatio
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Main
-    participant ViewCommand
-    participant ApplicationList
-    participant Application
-    participant Ui
-    User->>Main: Enter "view 1"
-    Main->>ViewCommand: ViewCommand.parse("1")
-    activate ViewCommand
-    ViewCommand-->>Main: viewCommand
-    deactivate ViewCommand
-    Main->>ViewCommand: execute(applications, ui, storage)
-    activate ViewCommand
-    ViewCommand->>ApplicationList: size()
-    ApplicationList-->>ViewCommand: size
-    ViewCommand->>ApplicationList: get(0)
-    ApplicationList-->>ViewCommand: application
-    ViewCommand->>Application: getCompany()
-    Application-->>ViewCommand: "Google"
-    ViewCommand->>Application: getRole()
-    Application-->>ViewCommand: "SWE Intern"
-    ViewCommand->>Application: getStatus()
-    Application-->>ViewCommand: "Accepted"
-    ViewCommand->>Application: isCompleted()
-    Application-->>ViewCommand: false
-    ViewCommand->>Ui: showMessage(card)
-    Ui-->>User: Structured card display
-    deactivate ViewCommand
+    actor user as User
+    participant main as :Main
+    participant cmd as :ViewCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant ui as :Ui
+
+    user->>main: Enter "view 1"
+    activate main
+    main->>cmd: ViewCommand.parse("1")
+    activate cmd
+    cmd-->>main: viewCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    alt Index is valid (0 <= targetIndex < size)
+        cmd->>list: get(0)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: "Google"
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: "SWE Intern"
+        deactivate app
+        cmd->>app: getStatus()
+        activate app
+        app-->>cmd: "Accepted"
+        deactivate app
+        cmd->>app: isCompleted()
+        activate app
+        app-->>cmd: false
+        deactivate app
+        cmd->>ui: showMessage(card)
+        activate ui
+        ui-->>user: Structured card display
+        deactivate ui
+    else Index out of bounds
+        cmd-->>main: throw JobSeekException
+    end
+
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
 ```
 
 #### Design considerations
@@ -229,29 +496,53 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Main
-    participant ListCommand
-    participant ApplicationList
-    participant Application
-    participant Ui
-    User->>Main: Enter "list completed" (or menu option 2/3)
-    Main->>ListCommand: ListCommand.parse("completed")
-    activate ListCommand
-    ListCommand-->>Main: listCommand
-    deactivate ListCommand
-    Main->>ListCommand: execute(applications, ui, storage)
-    activate ListCommand
+    actor user as User
+    participant main as :Main
+    participant cmd as :ListCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+    participant ui as :Ui
+
+    user->>main: Enter "list completed" (or option 2/3)
+    activate main
+    main->>cmd: ListCommand.parse("completed")
+    activate cmd
+    cmd-->>main: listCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
     loop For each application in list
-        ListCommand->>ApplicationList: get(i)
-        ApplicationList-->>ListCommand: application
-        ListCommand->>Application: isCompleted()
-        Application-->>ListCommand: status
+        cmd->>list: get(i)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: isCompleted()
+        activate app
+        app-->>cmd: isCompleted
+        deactivate app
     end
-    Note over ListCommand: Collect matching indices and build formatted table with original numbers
-    ListCommand->>Ui: showMessage(table)
-    Ui-->>User: Formatted table output
-    deactivate ListCommand
+
+    alt Filter has matching entries
+        cmd->>table: format(applications, matchingIndices)
+        activate table
+        table-->>cmd: formattedTable
+        deactivate table
+        cmd->>ui: showMessage(formattedTable)
+        activate ui
+        ui-->>user: Formatted table output
+        deactivate ui
+    else No entries match filter
+        cmd->>ui: showMessage("No completed applications found.")
+        activate ui
+        ui-->>user: Status message
+        deactivate ui
+    end
+
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
 ```
 
 #### Design considerations
@@ -283,28 +574,58 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Main
-    participant MarkCommand
-    participant ApplicationList
-    participant Application
-    participant Storage
-    participant Ui
-    User->>Main: Select option 5 (Mark)
-    Main->>Ui: promptApplicationIndex()
-    Ui-->>Main: 1 (0-based: 0)
-    Main->>MarkCommand: new MarkCommand(0, true)
-    Main->>MarkCommand: execute(applications, ui, storage)
-    activate MarkCommand
-    MarkCommand->>ApplicationList: isValidIndex(0)
-    ApplicationList-->>MarkCommand: true
-    MarkCommand->>ApplicationList: get(0)
-    ApplicationList-->>MarkCommand: application
-    MarkCommand->>Application: setCompleted(true)
-    MarkCommand->>Storage: save(applications)
-    MarkCommand->>Ui: showMessage("Nice! I've marked this application...")
-    Ui-->>User: Confirmation message
-    deactivate MarkCommand
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :MarkCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Select option 5 (Mark) / option 6 (Unmark)
+    activate main
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>cmd: new MarkCommand(0, true)
+    activate cmd
+    cmd-->>main: markCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd->>list: isValidIndex(0)
+    activate list
+    list-->>cmd: true
+    deactivate list
+    cmd->>list: get(0)
+    activate list
+    list-->>cmd: application
+    deactivate list
+    cmd->>app: setCompleted(true)
+    activate app
+    app-->>cmd: 
+    deactivate app
+    cmd->>storage: save(applications)
+    activate storage
+    storage-->>cmd: 
+    deactivate storage
+
+    alt Mark completed (isCompleted == true)
+        cmd->>ui: showMessage("Nice! I have marked this application as completed...")
+        activate ui
+        ui-->>user: Marked confirmation message
+        deactivate ui
+    else Unmark (isCompleted == false)
+        cmd->>ui: showMessage("OK, I have marked this application as not completed yet...")
+        activate ui
+        ui-->>user: Unmarked confirmation message
+        deactivate ui
+    end
+
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
 ```
 
 #### Design considerations
@@ -313,6 +634,103 @@ sequenceDiagram
   - *Alternative*: Separate `MarkCommand` and `UnmarkCommand` classes. This was rejected to avoid redundant boilerplate and maintenance overhead.
 - **Immediate disk persistence**:
   - Changes to completion status immediately invoke `Storage.save(applications)` to guarantee that completion progress is preserved across application crashes or restarts.
+
+### Delete application feature
+
+#### Overview
+The `DeleteCommand` allows users to permanently remove an application by its 1-based index number (as shown in the list table). Removing an application triggers immediate list re-indexing and disk synchronization.
+
+#### Design and implementation
+- **Trigger**: Menu option `4` invokes `Main.handleMenuDelete()`.
+- **Workflow**:
+  1. `Main.promptApplicationIndex()` checks whether `applications.isEmpty()`. If empty, an error is displayed and execution terminates.
+  2. Prompts the user for the 1-based index and converts it to a 0-based integer.
+  3. `DeleteCommand.execute()` validates index bounds via `applications.isValidIndex(targetIndex)`.
+  4. Calls `applications.delete(targetIndex)`, which removes the `Application` from the underlying `ArrayList` and renumbers following elements.
+  5. The removed application object is destroyed from in-memory tracking (represented by the UML destruction cross `X` on its lifeline).
+  6. The modified list is immediately saved to disk via `Storage.save(applications)`.
+  7. A confirmation message displaying the removed entry is shown via `Ui.showMessage()`.
+
+#### Delete Application Activity Diagram
+
+The decision flow, bounds validation, and deletion logic is shown in the activity diagram below:
+
+```mermaid
+flowchart TD
+    Start([Start Delete Application]) --> CheckEmpty{ApplicationList<br/>empty?}
+    CheckEmpty -- Yes --> ShowEmptyErr[Show empty list error] --> End([End])
+    CheckEmpty -- No --> PromptIndex[/Prompt application index/]
+    PromptIndex --> ValidIndex{Valid integer &<br/>1 <= index <= size?}
+    ValidIndex -- No --> ShowIndexErr[Show invalid index error] --> End
+    ValidIndex -- Yes --> CallDelete[ApplicationList.delete 0-based index]
+    CallDelete --> DestroyApp[Remove & dereference Application]
+    DestroyApp --> SaveStorage[Storage.save applications]
+    SaveStorage --> ShowConfirm[Ui.showMessage confirmation]
+    ShowConfirm --> End
+```
+
+#### Delete Application Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :DeleteCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Select option 4 (Delete)
+    activate main
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>cmd: new DeleteCommand(0)
+    activate cmd
+    cmd-->>main: deleteCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    alt Index is valid (0 <= targetIndex < size)
+        cmd->>list: isValidIndex(0)
+        activate list
+        list-->>cmd: true
+        deactivate list
+        cmd->>list: delete(0)
+        activate list
+        list->>app: remove(0)
+        activate app
+        app-->>list: application
+        deactivate app
+        list-->>cmd: deletedApplication
+        deactivate list
+        cmd->>app: delete()
+        activate app
+        destroy app
+        app-->>cmd: 
+        deactivate app
+        cmd->>storage: save(applications)
+        activate storage
+        storage-->>cmd: 
+        deactivate storage
+        cmd->>ui: showMessage("Noted. I have removed this application...")
+        activate ui
+        ui-->>user: Confirmation message
+        deactivate ui
+    else Index out of bounds
+        cmd->>ui: showError("Invalid application index...")
+        activate ui
+        ui-->>user: Error message
+        deactivate ui
+    end
+
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
+```
 
 ### Edit application and recruitment status tracking
 
@@ -329,30 +747,102 @@ The edit feature allows users to modify existing applications without deleting a
   - Status input normalization in `Main.promptStatus()` accepts numeric shortcuts (`1` for Pending, `2` for Accepted, `3` for Rejected) as well as case-insensitive text strings.
   - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty fields, updated status).
 
+#### Edit Application Activity Diagram
+
+The user interaction and validation workflow for updating application fields is illustrated in the activity diagram below:
+
+```mermaid
+flowchart TD
+    Start([Start Edit]) --> CheckEmpty{ApplicationList<br/>empty?}
+    CheckEmpty -- Yes --> ShowEmptyErr[Show empty list error] --> End([End])
+    CheckEmpty -- No --> PromptIndex[/Prompt application index/]
+    PromptIndex --> ValidIndex{Valid index?}
+    ValidIndex -- No --> ShowIndexErr[Show invalid index error] --> End
+    ValidIndex -- Yes --> PromptField[/Prompt field choice 1-4/]
+    PromptField --> BranchField{Field choice}
+    BranchField -- 1: Company --> PromptCo[/Prompt new company/]
+    PromptCo --> ValidCo{Non-empty?}
+    ValidCo -- No --> PromptCo
+    ValidCo -- Yes --> UpdateCo[Update application company]
+    BranchField -- 2: Role --> PromptRole[/Prompt new role/]
+    PromptRole --> ValidRole{Non-empty?}
+    ValidRole -- No --> PromptRole
+    ValidRole -- Yes --> UpdateRole[Update application role]
+    BranchField -- 3: Status --> PromptStatus[/Prompt status 1-3 or text/]
+    PromptStatus --> ValidStatus{Valid status?}
+    ValidStatus -- No --> PromptStatus
+    ValidStatus -- Yes --> UpdateStatus[Update application status]
+    BranchField -- 4: All --> PromptAllCo[/Prompt company, role, status/]
+    PromptAllCo --> UpdateAll[Update all fields]
+    BranchField -- Other --> ShowFieldErr[Show invalid field error] --> End
+    UpdateCo --> Save[Storage.save applications]
+    UpdateRole --> Save
+    UpdateStatus --> Save
+    UpdateAll --> Save
+    Save --> Confirm[Show confirmation message]
+    Confirm --> End
+```
+
+#### Edit Application Sequence Diagram
+
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Main
-    participant EditCommand
-    participant ApplicationList
-    participant Application
-    participant Storage
-    participant Ui
-    User->>Main: Enter 10
-    Main->>Ui: promptApplicationIndex()
-    Ui-->>Main: 1 (0-based index: 0)
-    Main->>Ui: showPrompt(field choice)
-    Ui-->>Main: 3 (Status)
-    Main->>Ui: promptStatus()
-    Ui-->>Main: "Accepted"
-    Main->>EditCommand: new EditCommand(0, null, null, "Accepted")
-    Main->>EditCommand: execute(applications, ui, storage)
-    EditCommand->>ApplicationList: get(0)
-    ApplicationList-->>EditCommand: application
-    EditCommand->>Application: setStatus("Accepted")
-    EditCommand->>Storage: save(applications)
-    EditCommand->>Ui: showMessage("Application updated successfully...")
-    Ui-->>User: Confirmation message
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :EditCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Select option 10 (Edit)
+    activate main
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>ui: showPrompt(field choice)
+    activate ui
+    ui-->>main: 3 (Status)
+    deactivate ui
+    main->>ui: promptStatus()
+    activate ui
+    ui-->>main: "Accepted"
+    deactivate ui
+    main->>cmd: new EditCommand(0, null, null, "Accepted")
+    activate cmd
+    cmd-->>main: editCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd->>list: get(0)
+    activate list
+    list-->>cmd: application
+    deactivate list
+
+    alt Field 1: Company only
+        cmd->>app: setCompany(newCompany)
+    else Field 2: Role only
+        cmd->>app: setRole(newRole)
+    else Field 3: Status only
+        cmd->>app: setStatus(newStatus)
+    else Field 4: All fields
+        cmd->>app: setCompany(newCompany)
+        cmd->>app: setRole(newRole)
+        cmd->>app: setStatus(newStatus)
+    end
+
+    cmd->>storage: save(applications)
+    activate storage
+    storage-->>cmd: 
+    deactivate storage
+    cmd->>ui: showMessage("Application updated successfully...")
+    activate ui
+    ui-->>user: Confirmation message
+    deactivate ui
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
 ```
 
 ### Help feature
@@ -365,24 +855,141 @@ sequenceDiagram
 
 The commands collect zero-based indices of matching applications. `SearchCommand` matches a case-insensitive substring against both company and role. `SortCommand` sorts a copy of the indices by company, then role, using a case-insensitive comparator; original index breaks ties. `ApplicationTable` formats either view with one-based numbers derived from the original indices. This keeps subsequent mark and delete commands unambiguous, even when the display order differs from storage order.
 
+#### Search and Sort Activity Diagram
+
+The flow of user input, matching/sorting logic, and display formatting for both search and sort operations is shown below:
+
+```mermaid
+flowchart TD
+    Start([User selects Option 8 or 9]) --> CheckCmd{"Option 8 (Search)<br/>or 9 (Sort)?"}
+    CheckCmd -- Option 8: Search --> PromptKeyword[/Prompt non-empty search keyword/]
+    PromptKeyword --> CheckEmptyList{"ApplicationList<br/>empty?"}
+    CheckEmptyList -- Yes --> ShowNoApp["Ui.showMessage: 'No applications found.'"] --> End([End])
+    CheckEmptyList -- No --> FilterLoop["Case-insensitive match<br/>against company & role"]
+    FilterLoop --> CheckMatches{"Matches<br/>found?"}
+    CheckMatches -- No --> ShowNoMatch["Ui.showMessage: 'No applications found matching keyword.'"] --> End
+    CheckMatches -- Yes --> FormatTable[ApplicationTable.format matching indices] --> DisplayTable[Ui.showMessage table] --> End
+
+    CheckCmd -- Option 9: Sort --> CheckEmptySort{"ApplicationList<br/>empty?"}
+    CheckEmptySort -- Yes --> ShowNoAppSort["Ui.showMessage: 'No applications found.'"] --> End
+    CheckEmptySort -- No --> SortIndices["Sort copy of indices by<br/>company, then role"]
+    SortIndices --> FormatSortTable[ApplicationTable.format sorted indices] --> DisplaySortTable[Ui.showMessage table] --> End
+```
+
+#### Search Sequence Diagram
+
+The interaction sequence for searching applications is shown below:
+
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Main
-    participant SearchCommand
-    participant ApplicationList
-    participant ApplicationTable
-    participant Ui
-    User->>Main: Select 8 and enter search term
-    Main->>SearchCommand: execute(applications, ui, storage)
-    loop Every application
-        SearchCommand->>ApplicationList: get(index)
-        ApplicationList-->>SearchCommand: application
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :SearchCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+
+    user->>main: Select option 8 (Search)
+    activate main
+    main->>ui: promptNonEmpty("Enter search term:")
+    activate ui
+    ui-->>main: "engineer"
+    deactivate ui
+    main->>cmd: new SearchCommand("engineer")
+    activate cmd
+    cmd-->>main: searchCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    loop For each application in list
+        cmd->>list: get(i)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: "Google"
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: "Software Engineer"
+        deactivate app
     end
-    SearchCommand->>ApplicationTable: format(applications, matching indices)
-    ApplicationTable-->>SearchCommand: table with original numbers
-    SearchCommand->>Ui: showMessage(table)
-    Ui-->>User: Matching applications
+
+    alt Matches found
+        cmd->>table: format(applications, matches, header)
+        activate table
+        table-->>cmd: formattedTable
+        deactivate table
+        cmd->>ui: showMessage(formattedTable)
+        activate ui
+        ui-->>user: Matching applications table
+        deactivate ui
+    else No matches found
+        cmd->>ui: showMessage("No applications found matching 'engineer'.")
+        activate ui
+        ui-->>user: No matches message
+        deactivate ui
+    end
+
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
+```
+
+#### Sort Sequence Diagram
+
+The alphabetical view follows a comparable execution path using `SortCommand`. It sorts a copy of the index array rather than mutating storage or the underlying `ApplicationList`:
+
+```mermaid
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant cmd as :SortCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+    participant ui as :Ui
+
+    user->>main: Select option 9 (Sort)
+    activate main
+    main->>cmd: new SortCommand()
+    activate cmd
+    cmd-->>main: sortCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    Note over cmd: Copy indices [0..size-1] & sort by company, then role
+    loop During index comparison
+        cmd->>list: get(index)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: company
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: role
+        deactivate app
+    end
+
+    cmd->>table: format(applications, sortedIndices, header)
+    activate table
+    table-->>cmd: formattedTable
+    deactivate table
+    cmd->>ui: showMessage(formattedTable)
+    activate ui
+    ui-->>user: Sorted applications table
+    deactivate ui
+
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main
 ```
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
@@ -439,11 +1046,11 @@ classDiagram
         +showMessage(message) void
     }
 
-    Main --> DeadlineWarnings : invokes
-    DeadlineWarnings ..> ApplicationList : reads
-    ApplicationList --> Application : contains
-    DeadlineWarnings ..> Application : inspects
-    DeadlineWarnings ..> Ui : displays summary
+    Main "1" --> "1" DeadlineWarnings : invokes
+    DeadlineWarnings "1" ..> "1" ApplicationList : reads
+    ApplicationList "1" *-- "0..*" Application : contains
+    DeadlineWarnings "1" ..> "0..*" Application : inspects
+    DeadlineWarnings "1" ..> "1" Ui : displays summary
 ```
 
 Each application's deadline is represented using `LocalDate`. A `null` deadline indicates that no deadline has been recorded. `LocalDate` supports comparisons between calendar dates without requiring a time of day.
@@ -474,24 +1081,35 @@ The following sequence diagram illustrates the deadline check after saved applic
 
 ```mermaid
 sequenceDiagram
-    participant main as main:Main
-    participant warnings as deadlineWarnings:DeadlineWarnings
-    participant list as applications:ApplicationList
-    participant app as application:Application
-    participant ui as ui:Ui
+    participant main as :Main
+    participant ui as :Ui
+    participant warnings as :DeadlineWarnings
+    participant list as :ApplicationList
+    participant app as :Application
 
+    activate main
     main->>ui: showWelcome()
+    activate ui
+    ui-->>main: 
+    deactivate ui
+
     main->>warnings: show(applications, ui)
     activate warnings
-    Note over warnings: Obtain today's date once
+    Note over warnings: Obtain today's date once via LocalDate.now()
 
     loop Each application
         warnings->>list: get(i)
+        activate list
         list-->>warnings: application
+        deactivate list
         warnings->>app: getDeadline()
+        activate app
         app-->>warnings: deadline
+        deactivate app
         warnings->>app: isCompleted()
+        activate app
         app-->>warnings: completed
+        deactivate app
 
         opt Incomplete and deadline exists and deadline <= today + 7 days
             Note over warnings: Classify deadline and append warning
@@ -500,11 +1118,18 @@ sequenceDiagram
 
     opt Warning summary is not empty
         warnings->>ui: showMessage(summary)
+        activate ui
+        ui-->>warnings: 
+        deactivate ui
     end
 
-    warnings-->>main: return
+    warnings-->>main: 
     deactivate warnings
     main->>ui: showMenu(applications)
+    activate ui
+    ui-->>main: 
+    deactivate ui
+    deactivate main
 ```
 
 #### Design considerations
@@ -547,6 +1172,49 @@ The feature involves the following classes:
 
 `Storage` uses `data/applications.txt` by default. Its constructor also accepts a custom file path, allowing tests to use temporary files without modifying the user's saved data.
 
+The class relationships within the storage subsystem are illustrated below:
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Storage {
+        -String filePath
+        -String TITLE_HEADER$
+        -String COLUMN_HEADER$
+        +save(applications) void
+        +load() ApplicationList
+        -escape(value)$ String
+        -splitFields(line)$ List~String~
+    }
+
+    class ApplicationList {
+        -ArrayList~Application~ applications
+        +getAll() List~Application~
+        +add(application) void
+    }
+
+    class Application {
+        -String company
+        -String role
+        -boolean isCompleted
+        -LocalDate deadline
+        +getCompany() String
+        +getRole() String
+        +isCompleted() boolean
+        +getDeadline() LocalDate
+    }
+
+    class Main {
+        +loadApplications() ApplicationList
+    }
+
+    Main "1" --> "1" Storage : uses
+    Storage "1" ..> "1" ApplicationList : saves / loads
+    ApplicationList "1" *-- "0..*" Application : contains
+    Storage "1" ..> "0..*" Application : serializes / parses
+```
+
 #### File format
 
 The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains four tab-separated fields:
@@ -576,6 +1244,48 @@ The save operation performs the following steps:
 4. Converts each application into a tab-separated record.
 5. Writes the complete contents using UTF-8 encoding.
 
+The sequence of interactions during a save operation is shown below:
+
+```mermaid
+sequenceDiagram
+    participant cmd as :Command
+    participant storage as :Storage
+    participant list as :ApplicationList
+    participant app as :Application
+
+    activate cmd
+    cmd->>storage: save(applications)
+    activate storage
+    storage->>list: getAll()
+    activate list
+    list-->>storage: applicationList
+    deactivate list
+
+    loop Each application in list
+        storage->>app: getCompany()
+        activate app
+        app-->>storage: company
+        deactivate app
+        storage->>app: getRole()
+        activate app
+        app-->>storage: role
+        deactivate app
+        storage->>app: isCompleted()
+        activate app
+        app-->>storage: isCompleted
+        deactivate app
+        storage->>app: getDeadline()
+        activate app
+        app-->>storage: deadline
+        deactivate app
+    end
+
+    Note over storage: Encode records & write UTF-8 lines to disk
+    storage-->>cmd: 
+    deactivate storage
+    deactivate cmd
+```
+
 The operation rewrites the file using the current list. Consequently, applications removed from the list are also removed from the saved data.
 
 #### Loading applications
@@ -586,30 +1296,40 @@ If the file does not exist, `load()` returns an empty `ApplicationList`. Otherwi
 
 For each application record, `Storage` checks that there are exactly four fields and that the completion flag is either `true` or `false`. A non-empty deadline is parsed using `LocalDate.parse()`. Valid records are reconstructed as `Application` objects and added to the list.
 
-The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note.
+The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note:
 
 ```mermaid
 sequenceDiagram
-    participant main as Main
-    participant storage as storage:Storage
-    participant list as applications:ApplicationList
-    participant app as application:Application
+    participant main as :Main
+    participant storage as :Storage
+    participant list as :ApplicationList
+    participant app as :Application
 
+    activate main
     main->>storage: load()
     activate storage
     Note over storage: Read UTF-8 file if it exists
-    create participant list
+
     storage->>list: new ApplicationList()
+    activate list
+    list-->>storage: applications
+    deactivate list
 
     loop Each application record
         Note over storage: Decode fields and validate record
-        create participant app
         storage->>app: new Application(company, role, completed, deadline)
+        activate app
+        app-->>storage: application
+        deactivate app
         storage->>list: add(application)
+        activate list
+        list-->>storage: 
+        deactivate list
     end
 
     storage-->>main: applications
     deactivate storage
+    deactivate main
 ```
 
 #### Error handling
