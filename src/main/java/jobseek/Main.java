@@ -72,7 +72,11 @@ public class Main {
      */
     private static ApplicationList loadApplications(Ui ui, Storage storage) {
         try {
-            return storage.load();
+            ApplicationList loaded = storage.load();
+            for (String warning : storage.getLoadWarnings()) {
+                ui.showError(warning);
+            }
+            return loaded;
         } catch (Exception e) {
             ui.showError("Failed to load applications: " + e.getMessage());
             return new ApplicationList();

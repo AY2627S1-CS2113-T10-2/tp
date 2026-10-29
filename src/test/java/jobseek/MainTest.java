@@ -992,4 +992,23 @@ public class MainTest {
         assertEquals("Google LLC", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
     }
+
+    @Test
+    public void main_loadApplicationsWithCorruptedLine_showsWarningAndLoadsValidRecords() throws Exception {
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempDirectory("jobseek-main-test")
+                .resolve("applications.txt");
+        java.nio.file.Files.writeString(tempFile,
+                "Bad Company Line\nValid Company\tSoftware Engineer\tfalse\t2026-12-31\tPending\n");
+        Storage storage = new Storage(tempFile.toString());
+        Scanner scanner = new Scanner("0\n");
+        Ui ui = new Ui(scanner);
+
+        Main main = new Main(ui, storage);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Skipping invalid record on line 1"));
+        assertEquals(1, main.getApplications().size());
+        assertEquals("Valid Company", main.getApplications().get(0).getCompany());
+    }
 }
