@@ -10,7 +10,7 @@ import java.util.List;
  * Search and sorted views use these numbers so other commands still address the same records.
  */
 final class ApplicationTable {
-    private static final int STATUS_WIDTH = "Status".length();
+    private static final int COMPLETED_WIDTH = "Completed".length();
 
     private ApplicationTable() {
     }
@@ -34,19 +34,19 @@ final class ApplicationTable {
             roleWidth = Math.max(roleWidth, application.getRole().length());
         }
 
-        String rowFormat = "%-" + numberWidth + "s | %-" + STATUS_WIDTH + "s | %-"
+        String rowFormat = "%-" + numberWidth + "s | %-" + COMPLETED_WIDTH + "s | %-"
                 + companyWidth + "s | %s";
         StringBuilder table = new StringBuilder(heading).append('\n');
-        table.append(String.format(rowFormat, "No.", "Status", "Company", "Role"));
+        table.append(String.format(rowFormat, "No.", "Completed", "Company", "Role"));
         table.append('\n').append("-".repeat(numberWidth))
-                .append("-+-").append("-".repeat(STATUS_WIDTH))
+                .append("-+-").append("-".repeat(COMPLETED_WIDTH))
                 .append("-+-").append("-".repeat(companyWidth))
                 .append("-+-").append("-".repeat(roleWidth));
 
         for (int index : indices) {
             Application application = applications.get(index);
             table.append('\n').append(String.format(rowFormat, Integer.toString(index + 1),
-                    application.getStatusIcon(), application.getCompany(), application.getRole()));
+                    application.getCompletionIcon(), application.getCompany(), application.getRole()));
         }
         return table.toString();
     }

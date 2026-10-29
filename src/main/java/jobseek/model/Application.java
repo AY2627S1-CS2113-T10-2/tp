@@ -6,7 +6,6 @@ import java.time.LocalDate;
  * Represents a single job or internship application record.
  */
 public class Application {
-    public static final String DEFAULT_STATUS = "Applied";
     public static final RecruitmentStage DEFAULT_STAGE = RecruitmentStage.APPLIED;
 
     private String company;
@@ -41,26 +40,36 @@ public class Application {
     }
 
     /**
-     * Constructs an Application with the specified company, role, completion status, and recruitment status.
+     * Constructs an Application with the specified company, role, completion state, and recruitment stage.
      *
      * @param company Name of the company applied to.
      * @param role Title of the job or internship role.
      * @param isCompleted True if the application process is completed, false otherwise.
-     * @param status Recruitment stage label (e.g. "Applied", "Interview", "Accepted").
+     * @param recruitmentStage Current recruitment stage.
      */
-    public Application(String company, String role, boolean isCompleted, String status) {
-        this(company, role, isCompleted, parseStageOrDefault(status), null, "", "", "");
+    public Application(String company, String role, boolean isCompleted, RecruitmentStage recruitmentStage) {
+        this(company, role, isCompleted, recruitmentStage, null, "", "", "");
+    }
+
+    /** Creates an application from a user-facing recruitment stage label. */
+    public Application(String company, String role, boolean isCompleted, String recruitmentStageLabel) {
+        this(company, role, isCompleted, parseStageOrDefault(recruitmentStageLabel), null, "", "", "");
     }
 
     /**
-     * Constructs an Application with the specified company, role, and recruitment status.
+     * Constructs an Application with the specified company, role, and recruitment stage.
      *
      * @param company Name of the company applied to.
      * @param role Title of the job or internship role.
-     * @param status Recruitment stage label.
+     * @param recruitmentStage Current recruitment stage.
      */
-    public Application(String company, String role, String status) {
-        this(company, role, false, parseStageOrDefault(status), null, "", "", "");
+    public Application(String company, String role, RecruitmentStage recruitmentStage) {
+        this(company, role, false, recruitmentStage, null, "", "", "");
+    }
+
+    /** Creates an application from a user-facing recruitment stage label. */
+    public Application(String company, String role, String recruitmentStageLabel) {
+        this(company, role, false, parseStageOrDefault(recruitmentStageLabel), null, "", "", "");
     }
 
     /**
@@ -76,24 +85,25 @@ public class Application {
     }
 
     /**
-     * Constructs an Application with company, role, completion status, recruitment status, and deadline.
+     * Constructs an Application with company, role, completion state, recruitment stage label, and deadline.
      *
      * @param company Name of the company applied to.
      * @param role Title of the job or internship role.
      * @param isCompleted Whether the application is completed.
-     * @param status Recruitment stage label.
+     * @param recruitmentStageLabel Current recruitment stage label.
      * @param deadline Deadline for the next required action, or null when none is known.
      */
-    public Application(String company, String role, boolean isCompleted, String status, LocalDate deadline) {
-        this(company, role, isCompleted, parseStageOrDefault(status), deadline, "", "", "");
+    public Application(String company, String role, boolean isCompleted, String recruitmentStageLabel,
+                       LocalDate deadline) {
+        this(company, role, isCompleted, parseStageOrDefault(recruitmentStageLabel), deadline, "", "", "");
     }
 
     /**
-     * Constructs an application with a typed recruitment stage.
+     * Constructs an Application with company, role, completion state, recruitment stage, and deadline.
      *
      * @param company Name of the company applied to.
      * @param role Title of the job or internship role.
-     * @param isCompleted Whether the application process is complete.
+     * @param isCompleted Whether the application is completed.
      * @param recruitmentStage Current recruitment stage.
      * @param deadline Deadline for the next required action, or null when none is known.
      */
@@ -145,9 +155,10 @@ public class Application {
         this.notes = notes != null ? notes.trim() : "";
     }
 
-    /** Converts a saved or user-provided label into a stage, using Applied for blank legacy fields. */
-    private static RecruitmentStage parseStageOrDefault(String status) {
-        return status == null || status.isBlank() ? DEFAULT_STAGE : RecruitmentStage.fromLabel(status);
+    /** Converts a stage label to its enum value, using Applied for blank legacy fields. */
+    private static RecruitmentStage parseStageOrDefault(String recruitmentStageLabel) {
+        return recruitmentStageLabel == null || recruitmentStageLabel.isBlank()
+                ? DEFAULT_STAGE : RecruitmentStage.fromLabel(recruitmentStageLabel);
     }
 
     /** Returns the company name for this application. */
@@ -194,11 +205,6 @@ public class Application {
         this.isCompleted = isCompleted;
     }
 
-    /** Returns the human-readable recruitment stage for status-based callers. */
-    public String getStatus() {
-        return recruitmentStage.getLabel();
-    }
-
     /** Returns the typed recruitment stage for this application. */
     public RecruitmentStage getRecruitmentStage() {
         return recruitmentStage;
@@ -208,12 +214,6 @@ public class Application {
     public void setRecruitmentStage(RecruitmentStage recruitmentStage) {
         assert recruitmentStage != null : "Recruitment stage cannot be null";
         this.recruitmentStage = recruitmentStage != null ? recruitmentStage : DEFAULT_STAGE;
-    }
-
-    /** Sets the recruitment stage from a label, retaining compatibility with status-based callers. */
-    public void setStatus(String status) {
-        assert status != null && !status.trim().isEmpty() : "Status cannot be null or empty";
-        this.recruitmentStage = parseStageOrDefault(status);
     }
 
     /**
@@ -289,22 +289,50 @@ public class Application {
     }
 
     /**
-     * Returns the status icon indicating whether the application is completed.
+     * Returns the human-readable recruitment stage for status-based callers.
+     *
+     * @return Label of the current recruitment stage.
+     */
+    public String getStatus() {
+        return recruitmentStage.getLabel();
+    }
+
+    /**
+     * Sets the recruitment stage from a label, retaining compatibility with status-based callers.
+     *
+     * @param status Recruitment stage label.
+     */
+    public void setStatus(String status) {
+        assert status != null && !status.trim().isEmpty() : "Status cannot be null or empty";
+        this.recruitmentStage = parseStageOrDefault(status);
+    }
+
+    /**
+     * Returns the completion icon indicating whether the application is completed.
      *
      * @return "[X]" if completed, "[ ]" otherwise.
      */
     public String getStatusIcon() {
+        return getCompletionIcon();
+    }
+
+    /**
+     * Returns the completion icon indicating whether the application is completed.
+     *
+     * @return "[X]" if completed, "[ ]" otherwise.
+     */
+    public String getCompletionIcon() {
         return isCompleted ? "[X]" : "[ ]";
     }
 
     /**
      * Returns a formatted string representation of the application.
-     * Format: [status] Company | Role
+     * Format: [completion icon] Company | Role
      *
      * @return Formatted application string (e.g. "[ ] Acme | SWE Intern").
      */
     @Override
     public String toString() {
-        return getStatusIcon() + " " + company + " | " + role;
+        return getCompletionIcon() + " " + company + " | " + role;
     }
 }

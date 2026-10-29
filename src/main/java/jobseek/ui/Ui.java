@@ -9,6 +9,7 @@ import java.util.Scanner;
  */
 public class Ui {
     private static final String DIVIDER = "____________________________________________________________";
+    private static final String VERSION = "2.0.0";
     private static final String LOGO = "     _       _    ____            _\n"
             + "    | | ___ | |__/ ___|  ___  ___| | __\n"
             + " _  | |/ _ \\| '_ \\___ \\ / _ \\/ _ \\ |/ /\n"
@@ -91,6 +92,7 @@ public class Ui {
     public void showWelcome() {
         showLine();
         System.out.println(LOGO);
+        System.out.println("Version " + VERSION);
         System.out.println("Welcome to JobSeek - Personal Job & Internship Application Tracker!");
         showLine();
     }

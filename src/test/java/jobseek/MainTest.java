@@ -13,6 +13,7 @@ import jobseek.command.SortCommand;
 import jobseek.command.ViewCommand;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.AfterEach;
@@ -691,7 +692,7 @@ public class MainTest {
     }
 
     @Test
-    public void run_menuEditStatusOnly_updatesSuccessfully() {
+    public void run_menuEditRecruitmentStageOnly_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Shopee", "Backend Intern", false, "Applied"));
 
@@ -699,16 +700,16 @@ public class MainTest {
         Main main = createMainWithInput(input, applications);
         main.run();
 
-        assertEquals("Accepted", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, applications.get(0).getRecruitmentStage());
         String output = outputStream.toString();
         assertTrue(output.contains("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
                 + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> "));
-        assertTrue(output.contains("Application status updated successfully."));
-        assertTrue(output.contains("Status: Accepted"));
+        assertTrue(output.contains("Application recruitment stage updated successfully."));
+        assertTrue(output.contains("Recruitment stage: Accepted"));
     }
 
     @Test
-    public void run_menuEditStatusRejected_updatesSuccessfully() {
+    public void run_menuEditRecruitmentStageRejected_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Grab", "Data Analyst", false, "Applied"));
 
@@ -716,14 +717,14 @@ public class MainTest {
         Main main = createMainWithInput(input, applications);
         main.run();
 
-        assertEquals("Rejected", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.REJECTED, applications.get(0).getRecruitmentStage());
         String output = outputStream.toString();
-        assertTrue(output.contains("Application status updated successfully."));
-        assertTrue(output.contains("Status: Rejected"));
+        assertTrue(output.contains("Application recruitment stage updated successfully."));
+        assertTrue(output.contains("Recruitment stage: Rejected"));
     }
 
     @Test
-    public void run_menuEditStatusText_updatesSuccessfully() {
+    public void run_menuEditRecruitmentStageText_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false, "Applied"));
 
@@ -731,11 +732,11 @@ public class MainTest {
         Main main = createMainWithInput(input, applications);
         main.run();
 
-        assertEquals("Accepted", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, applications.get(0).getRecruitmentStage());
     }
 
     @Test
-    public void run_menuEditStatusInvalid_showsError() {
+    public void run_menuEditRecruitmentStageInvalid_showsError() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
@@ -748,7 +749,7 @@ public class MainTest {
     }
 
     @Test
-    public void run_menuEditStatusReprompts_updatesSuccessfully() {
+    public void run_menuEditRecruitmentStageReprompts_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
@@ -756,11 +757,11 @@ public class MainTest {
         Main main = createMainWithInput(input, applications);
         main.run();
 
-        assertEquals("Accepted", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, applications.get(0).getRecruitmentStage());
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
-        assertTrue(output.contains("Application status updated successfully."));
-        assertTrue(output.contains("Status: Accepted"));
+        assertTrue(output.contains("Application recruitment stage updated successfully."));
+        assertTrue(output.contains("Recruitment stage: Accepted"));
     }
 
     @Test
@@ -774,12 +775,12 @@ public class MainTest {
 
         assertEquals("NewCorp", applications.get(0).getCompany());
         assertEquals("NewRole", applications.get(0).getRole());
-        assertEquals("Accepted", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, applications.get(0).getRecruitmentStage());
         String output = outputStream.toString();
         assertTrue(output.contains("Application updated successfully."));
         assertTrue(output.contains("Company: NewCorp"));
         assertTrue(output.contains("Role: NewRole"));
-        assertTrue(output.contains("Status: Accepted"));
+        assertTrue(output.contains("Recruitment stage: Accepted"));
     }
 
     @Test
@@ -987,7 +988,7 @@ public class MainTest {
     }
 
     @Test
-    public void run_menuEditStatusRepeatedInvalid_repromptsAndUpdates() {
+    public void run_menuEditRecruitmentStageRepeatedInvalid_repromptsAndUpdates() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
@@ -995,11 +996,11 @@ public class MainTest {
         Main main = createMainWithInput(input, applications);
         main.run();
 
-        assertEquals("Accepted", applications.get(0).getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, applications.get(0).getRecruitmentStage());
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Invalid recruitment stage: 'invalid'."));
         assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
-        assertTrue(output.contains("Application status updated successfully."));
+        assertTrue(output.contains("Application recruitment stage updated successfully."));
     }
 
     @Test

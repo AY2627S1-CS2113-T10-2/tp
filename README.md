@@ -10,12 +10,12 @@ Designed for keyboard-driven efficiency, JobSeek helps students keep all applica
 
 ## Key Features
 
-- **Application Tracking (`Add`)**: Record opportunities by company and role with mandatory input validation. New entries automatically initialize with completion status `[ ]` and recruitment status `Pending`.
+- **Application Tracking (`Add`)**: Record opportunities by company and role with mandatory input validation. New entries start incomplete (`[ ]`) at the `Applied` recruitment stage.
 - **List & Card Views (`List`, `View`)**: Display active, completed, or all applications in clean numbered tables, or inspect comprehensive detail cards for any application using `view INDEX`.
-- **In-Place Field Updates (`Edit`)**: Correct typos or update details (Company, Role, Status, or All) directly in place without deleting and recreating records.
-- **Recruitment Lifecycle Management (`Status`)**: Track application progress across standard recruitment stages (`Pending`, `Accepted`, `Rejected`) using intuitive numeric shortcuts (`1`, `2`, `3`) or text inputs.
+- **In-Place Field Updates (`Edit`)**: Correct typos or update details (Company, Role, recruitment stage, or all fields) directly in place without deleting and recreating records.
+- **Recruitment Stage Tracking**: Track application progress across standard recruitment stages (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`).
 - **Search & Sort**: Find applications instantly by partial company name or role (case-insensitive), or display entries alphabetically without disturbing the underlying storage order.
-- **Completion Tracking (`Mark`, `Unmark`)**: Toggle applications between completed and active status.
+- **Completion Tracking (`Mark`, `Unmark`)**: Toggle whether an application is complete, independently of its recruitment stage.
 - **Numbers-Only Menu Interface**: An intuitive, structured CLI menu where options are executed with single numbers (`[0]` to `[10]`) with reprompt loops for invalid inputs.
 
 ---

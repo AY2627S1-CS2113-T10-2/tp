@@ -11,7 +11,7 @@ import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
-import jobseek.command.StatusCommand;
+import jobseek.command.RecruitmentStageCommand;
 import jobseek.command.TodayCommand;
 import jobseek.command.UndoCommand;
 import jobseek.command.ViewCommand;
@@ -322,8 +322,8 @@ public class Main {
             String role = promptNonEmpty("Enter new role:", "Role cannot be empty.");
             return role != null ? EditCommand.editRole(index, role) : null;
         case "3":
-            String status = promptRecruitmentStage();
-            return status != null ? new StatusCommand(index, status) : null;
+            RecruitmentStage stage = promptRecruitmentStage();
+            return stage != null ? new RecruitmentStageCommand(index, stage) : null;
         case "4":
             LocalDate deadline = promptDeadline();
             return EditCommand.editDeadline(index, deadline);
@@ -345,15 +345,15 @@ public class Main {
             if (allRole == null) {
                 return null;
             }
-            String allStatus = promptRecruitmentStage();
-            if (allStatus == null) {
+            RecruitmentStage allStage = promptRecruitmentStage();
+            if (allStage == null) {
                 return null;
             }
             LocalDate allDeadline = promptDeadline();
             String allPortalLink = promptOptional("Company Portal Link (leave blank to clear):");
             String allEmail = promptOptional("Contact Email (leave blank to clear):");
             String allNotes = promptOptional("Notes (leave blank to clear):");
-            return EditCommand.editAll(index, allCompany, allRole, allStatus,
+            return EditCommand.editAll(index, allCompany, allRole, allStage,
                     allDeadline, allPortalLink, allEmail, allNotes);
         default:
             ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter a number from 1 to 8.");
@@ -361,7 +361,7 @@ public class Main {
         }
     }
 
-    private String promptRecruitmentStage() {
+    private RecruitmentStage promptRecruitmentStage() {
         while (true) {
             ui.showPrompt("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
                     + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ");
@@ -403,7 +403,7 @@ public class Main {
                 }
                 continue;
             }
-            return stage.getLabel();
+            return stage;
         }
     }
 

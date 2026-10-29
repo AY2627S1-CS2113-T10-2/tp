@@ -74,7 +74,7 @@ public class ViewCommand extends Command {
                 .append(SUB_DIVIDER).append("\n")
                 .append("Company:   ").append(app.getCompany()).append("\n")
                 .append("Role:      ").append(app.getRole()).append("\n")
-                .append("Status:    ").append(app.getStatus()).append("\n")
+                .append("Recruitment stage: ").append(app.getRecruitmentStage().getLabel()).append("\n")
                 .append("Completed: ").append(completedText).append("\n");
         if (app.getDeadline() != null) {
             card.append("Deadline:  ").append(app.getDeadline()).append("\n");

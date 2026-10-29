@@ -2,6 +2,7 @@ package jobseek.command;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
@@ -68,32 +69,32 @@ public class UndoCommandTest {
     }
 
     @Test
-    public void undo_afterStatusChange_restoresPreviousStatus() throws Exception {
+    public void undo_afterStatusChange_restoresPreviousStage() throws Exception {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE", false));
-        String original = applications.get(0).getStatus();
+        RecruitmentStage original = applications.get(0).getRecruitmentStage();
         CommandHistory history = new CommandHistory();
 
-        run(new StatusCommand(0, "Interview"), applications, history);
-        assertEquals("Interview", applications.get(0).getStatus());
+        run(new RecruitmentStageCommand(0, RecruitmentStage.INTERVIEW), applications, history);
+        assertEquals(RecruitmentStage.INTERVIEW, applications.get(0).getRecruitmentStage());
         run(new UndoCommand(history), applications, history);
 
-        assertEquals(original, applications.get(0).getStatus());
+        assertEquals(original, applications.get(0).getRecruitmentStage());
     }
 
     @Test
-    public void undo_afterEdit_restoresCompanyRoleAndStatus() throws Exception {
+    public void undo_afterEdit_restoresCompanyRoleAndStage() throws Exception {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE", false));
-        String originalStatus = applications.get(0).getStatus();
+        RecruitmentStage originalStage = applications.get(0).getRecruitmentStage();
         CommandHistory history = new CommandHistory();
 
-        run(new EditCommand(0, "Shopee", "Backend", "Interview"), applications, history);
+        run(new EditCommand(0, "Shopee", "Backend", RecruitmentStage.INTERVIEW), applications, history);
         run(new UndoCommand(history), applications, history);
 
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE", applications.get(0).getRole());
-        assertEquals(originalStatus, applications.get(0).getStatus());
+        assertEquals(originalStage, applications.get(0).getRecruitmentStage());
     }
 
     @Test

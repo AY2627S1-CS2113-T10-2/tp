@@ -10,6 +10,7 @@ import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
 import jobseek.exception.JobSeekException;
+import jobseek.model.RecruitmentStage;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -118,14 +119,14 @@ public class CommandParserTest {
         assertEquals(2, command.getTargetIndex());
         assertEquals("Shopee", command.getNewCompany());
         assertEquals("Backend", command.getNewRole());
-        assertEquals("Interview", command.getNewStatus());
+        assertEquals(RecruitmentStage.INTERVIEW, command.getNewStage());
     }
 
     @Test
     public void parse_editStageShortcut_isNormalisedToLabel() throws Exception {
         EditCommand command = assertInstanceOf(EditCommand.class, CommandParser.parse("edit 1 s/oa"));
 
-        assertEquals("Online Assessment", command.getNewStatus());
+        assertEquals(RecruitmentStage.ONLINE_ASSESSMENT, command.getNewStage());
         assertNull(command.getNewCompany());
     }
 

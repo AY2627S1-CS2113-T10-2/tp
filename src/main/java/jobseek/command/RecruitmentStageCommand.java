@@ -10,33 +10,33 @@ import jobseek.ui.Ui;
  * Handles setting or updating the recruitment stage (e.g., Applied, Interview, Accepted)
  * for an existing application.
  */
-public class StatusCommand extends UndoableCommand {
+public class RecruitmentStageCommand extends UndoableCommand {
     private final int targetIndex;
-    private final String status;
+    private final RecruitmentStage stage;
     private Application updatedApplication;
-    private String previousStatus;
+    private RecruitmentStage previousStage;
 
     /**
-     * Constructs a StatusCommand with the target index and desired recruitment status.
+     * Constructs a command with the target index and desired recruitment stage.
      *
      * @param targetIndex 0-based index of the application in the application list.
-     * @param status Recruitment stage label to assign (e.g. "Applied", "Interview", "Accepted").
+     * @param stage Recruitment stage to assign.
      */
-    public StatusCommand(int targetIndex, String status) {
+    public RecruitmentStageCommand(int targetIndex, RecruitmentStage stage) {
         this.targetIndex = targetIndex;
-        this.status = status != null ? status.trim() : "";
+        this.stage = stage;
     }
 
     public int getTargetIndex() {
         return targetIndex;
     }
 
-    public String getStatus() {
-        return status;
+    public RecruitmentStage getStage() {
+        return stage;
     }
 
     /**
-     * Executes the status command by validating the target index, setting the new recruitment status,
+     * Executes the command by validating the target index, setting the recruitment stage,
      * printing a confirmation message, and saving the updated list.
      *
      * @param applications In-memory list of applications.
@@ -61,8 +61,8 @@ public class StatusCommand extends UndoableCommand {
             return;
         }
 
-        if (status.isEmpty()) {
-            ui.showError("Status cannot be empty.");
+        if (stage == null) {
+            ui.showError("Recruitment stage cannot be empty.");
             return;
         }
 
@@ -70,27 +70,25 @@ public class StatusCommand extends UndoableCommand {
         assert application != null : "Application at valid index should not be null";
 
         updatedApplication = application;
-        previousStatus = application.getStatus();
-        application.setStatus(status);
-        assert application.getRecruitmentStage() == RecruitmentStage.fromLabel(status)
+        previousStage = application.getRecruitmentStage();
+        application.setRecruitmentStage(stage);
+        assert application.getRecruitmentStage() == stage
                 : "Application stage should match the updated stage";
         markChanged();
-        assert application.getStatus().equals(application.getRecruitmentStage().getLabel())
-                : "Application status should match the updated status";
 
-        String message = "Application status updated successfully.\n"
+        String message = "Application recruitment stage updated successfully.\n"
                 + "Company: " + application.getCompany() + "\n"
                 + "Role: " + application.getRole() + "\n"
-                + "Status: " + application.getStatus();
+                + "Recruitment stage: " + application.getRecruitmentStage().getLabel();
         ui.showMessage(message);
 
         storage.save(applications);
     }
 
-    /** Restores the status the application had before this command ran. */
+    /** Restores the recruitment stage the application had before this command ran. */
     @Override
     public String undo(ApplicationList applications) {
-        updatedApplication.setStatus(previousStatus);
-        return "status change of " + updatedApplication;
+        updatedApplication.setRecruitmentStage(previousStage);
+        return "recruitment stage change of " + updatedApplication;
     }
 }

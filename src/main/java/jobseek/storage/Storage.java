@@ -19,10 +19,16 @@ import jobseek.model.RecruitmentStage;
 public class Storage {
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
-    private static final String LEGACY_COLUMN_HEADER_4 = "company\trole\tcompleted\tdeadline";
-    private static final String LEGACY_COLUMN_HEADER_5 = "company\trole\tcompleted\tdeadline\tstatus";
     private static final String COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline\tstage\tportalLink\temail\tnotes";
+    private static final String LEGACY_STATUS_8_COLUMN_HEADER =
             "company\trole\tcompleted\tdeadline\tstatus\tportalLink\temail\tnotes";
+    private static final String LEGACY_STAGE_5_COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline\tstage";
+    private static final String LEGACY_STATUS_5_COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline\tstatus";
+    private static final String LEGACY_4_COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline";
     private static final String HEADER = TITLE_HEADER + "\n" + COLUMN_HEADER;
     private static final int LEGACY_FIELD_COUNT_4 = 4;
     private static final int LEGACY_FIELD_COUNT_5 = 5;
@@ -122,7 +128,10 @@ public class Storage {
                 continue;
             }
             if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)
-                    || LEGACY_COLUMN_HEADER_5.equals(line) || LEGACY_COLUMN_HEADER_4.equals(line)) {
+                    || LEGACY_STATUS_8_COLUMN_HEADER.equals(line)
+                    || LEGACY_STAGE_5_COLUMN_HEADER.equals(line)
+                    || LEGACY_STATUS_5_COLUMN_HEADER.equals(line)
+                    || LEGACY_4_COLUMN_HEADER.equals(line)) {
                 continue;
             }
 
@@ -163,11 +172,11 @@ public class Storage {
             }
 
             boolean isCompleted = Boolean.parseBoolean(fields.get(2));
-            String status = fields.size() >= 5 ? fields.get(4) : null;
+            String stageLabel = fields.size() >= 5 ? fields.get(4) : null;
             RecruitmentStage stage;
             try {
-                stage = status == null || status.isBlank()
-                        ? Application.DEFAULT_STAGE : RecruitmentStage.fromLabel(status);
+                stage = stageLabel == null || stageLabel.isBlank()
+                        ? Application.DEFAULT_STAGE : RecruitmentStage.fromLabel(stageLabel);
             } catch (IllegalArgumentException e) {
                 loadWarnings.add("Skipping record with unknown recruitment stage on line " + lineIndex
                         + " in " + filePath + ".");

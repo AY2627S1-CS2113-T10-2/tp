@@ -5,7 +5,7 @@ import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
 /**
- * Reverses the most recent change made by an add, delete, edit, status or mark/unmark command.
+ * Reverses the most recent change made by an add, delete, edit, recruitment-stage or mark/unmark command.
  * The command itself is not undoable, so repeating {@code undo} walks further back in history.
  */
 public class UndoCommand extends Command {
