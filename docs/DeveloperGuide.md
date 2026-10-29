@@ -49,12 +49,54 @@ classDiagram
         +execute(applications, ui, storage)* void
         +isExit() boolean
     }
-    class UndoableCommand {
-        <<abstract>>
-        -boolean hasChanged
-        #markChanged() void
-        +hasChanged() boolean
-        +undo(applications)* String
+    class AddCommand {
+        -String company
+        -String role
+        -LocalDate deadline
+        +execute(applications, ui, storage) void
+        +getCompany() String
+        +getRole() String
+        +getDeadline() LocalDate
+    }
+    class ViewCommand {
+        -int targetIndex
+        +execute(applications, ui, storage) void
+        +getTargetIndex() int
+        +parse(args)$ ViewCommand
+    }
+    class MarkCommand {
+        -int targetIndex
+        -boolean isCompleted
+        +execute(applications, ui, storage) void
+        +getTargetIndex() int
+        +isCompleted() boolean
+    }
+    class EditCommand {
+        -int targetIndex
+        -String newCompany
+        -String newRole
+        -RecruitmentStage newStage
+        +execute(applications, ui, storage) void
+        +getTargetIndex() int
+        +getNewCompany() String
+        +getNewRole() String
+        +getNewStage() RecruitmentStage
+    }
+    class RecruitmentStageCommand {
+        -int targetIndex
+        -RecruitmentStage stage
+        +execute(applications, ui, storage) void
+        +getTargetIndex() int
+        +getStage() RecruitmentStage
+    }
+    class HelpCommand {
+        +execute(applications, ui, storage) void
+    }
+    class ListCommand {
+        -FilterType filterType
+        +execute(applications, ui, storage) void
+        +getFilterType() FilterType
+        +parse(args)$ ListCommand
     }
     Command <|-- UndoableCommand
     UndoableCommand <|-- AddCommand
@@ -94,27 +136,31 @@ classDiagram
         -boolean isCompleted
         -RecruitmentStage recruitmentStage
         -LocalDate deadline
-        +getStatus() String
+        +getCompany() String
+        +getRole() String
         +getRecruitmentStage() RecruitmentStage
-        +setStatus(status) void
+        +getDeadline() LocalDate
+        +isCompleted() boolean
+        +setCompany(company) void
+        +setRole(role) void
+        +setRecruitmentStage(stage) void
         +setCompleted(isCompleted) void
         +getDeadline() LocalDate
     }
-    class RecruitmentStage {
-        <<enumeration>>
-        APPLIED
-        ONLINE_ASSESSMENT
-        INTERVIEW
-        OFFER
-        ACCEPTED
-        REJECTED
-        WITHDRAWN
-        +getLabel() String
-        +isTerminal() boolean
-        +fromLabel(value)$ RecruitmentStage
-    }
-    ApplicationList "1" o-- "*" Application
-    Application --> RecruitmentStage
+    Command <|-- AddCommand
+    Command <|-- ViewCommand
+    Command <|-- MarkCommand
+    Command <|-- EditCommand
+    Command <|-- RecruitmentStageCommand
+    Command <|-- HelpCommand
+    Command <|-- ListCommand
+    ApplicationList --> Application
+    AddCommand ..> ApplicationList
+    ViewCommand ..> ApplicationList
+    MarkCommand ..> ApplicationList
+    EditCommand ..> ApplicationList
+    RecruitmentStageCommand ..> ApplicationList
+    ListCommand ..> ApplicationList
 ```
 
 ### Add application feature
@@ -192,8 +238,8 @@ sequenceDiagram
     Application-->>ViewCommand: "Google"
     ViewCommand->>Application: getRole()
     Application-->>ViewCommand: "SWE Intern"
-    ViewCommand->>Application: getStatus()
-    Application-->>ViewCommand: "Accepted"
+    ViewCommand->>Application: getRecruitmentStage()
+    Application-->>ViewCommand: RecruitmentStage (displayed as "Accepted")
     ViewCommand->>Application: isCompleted()
     Application-->>ViewCommand: false
     ViewCommand->>Ui: showMessage(card)
@@ -203,7 +249,7 @@ sequenceDiagram
 
 #### Design considerations
 - **Card view vs tabular view**:
-  - *Current choice*: A structured card view focuses on one record at a time, providing space to cleanly display all recorded attributes (including recruitment status and completion status) without line truncation or horizontal overflow.
+  - *Current choice*: A structured card view focuses on one record at a time, providing space to cleanly display all recorded attributes (including recruitment stage and completion status) without line truncation or horizontal overflow.
   - *Alternative*: Adding more columns to the standard list table. This was rejected because widening the table reduces readability on smaller terminal windows and clutters the overview.
 - **Read-only decoupling**:
   - `ViewCommand` adheres to the Command pattern without calling `Storage.save()`, ensuring zero disk I/O overhead.
@@ -228,7 +274,7 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
      - `COMPLETED`: `"No completed applications found."`
      - `ACTIVE`: `"No active applications found."`
      - `ALL`: `"No applications found."`
-  4. Dynamically calculates column widths for `No.`, `Status`, `Company`, `Role`, and `Deadline` based on the longest values among matching entries, guaranteeing clean tabular alignment.
+  4. Dynamically calculates column widths for `No.`, `Completed`, `Company`, `Role`, and `Deadline` based on the longest values among matching entries, guaranteeing clean tabular alignment.
   5. Renders each matching row, preserving the application's original 1-based index (`index + 1`).
   6. Displays the formatted table via `Ui.showMessage()`.
 
@@ -251,7 +297,7 @@ sequenceDiagram
         ListCommand->>ApplicationList: get(i)
         ApplicationList-->>ListCommand: application
         ListCommand->>Application: isCompleted()
-        Application-->>ListCommand: status
+        Application-->>ListCommand: completion icon
     end
     Note over ListCommand: Collect matching indices and build formatted table with original numbers
     ListCommand->>Ui: showMessage(table)
@@ -319,22 +365,20 @@ sequenceDiagram
 - **Immediate disk persistence**:
   - Changes to completion status immediately invoke `Storage.save(applications)` to guarantee that completion progress is preserved across application crashes or restarts.
 
-### Edit application and recruitment status tracking
+### Edit application and recruitment stage tracking
 
 The edit feature allows users to modify existing applications without deleting and re-entering them. Recruitment progress is represented by the `RecruitmentStage` enum (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`). The enum owns each display label and whether a stage is terminal. Users may edit a stage freely to handle corrections and different company processes.
 
 - **Design and Implementation**:
-  - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, and `newStatus`. A `null` value indicates that the corresponding field should remain unchanged.
-  - `StatusCommand` provides direct, dedicated recruitment stage modification for one application. The menu uses it when only the stage is edited.
+  - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, and `newStage`. A `null` value indicates that the corresponding field should remain unchanged.
+  - `RecruitmentStageCommand` provides direct, dedicated recruitment stage modification for targeted application records.
   - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by a field choice:
-    - `1`: Company only (`EditCommand`)
-    - `2`: Role only (`EditCommand`)
-    - `3`: Recruitment stage only (`StatusCommand`)
-    - `4`: All three fields (`EditCommand`)
-  - The typed command `edit INDEX [c/..] [r/..] [s/..]` is parsed by `CommandParser.parseEdit()` and always creates an `EditCommand`.
+    - `1`: Company only
+    - `2`: Role only
+    - `3`: Recruitment stage only
+    - `4`: All three fields
   - Stage input normalization in `Main.promptRecruitmentStage()` accepts numbered choices and case-insensitive stage names. The legacy label `Pending` is read as `Applied`.
-  - Both commands extend `UndoableCommand` and remember the previous values, so `undo` can restore them.
-  - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty fields, updated status).
+  - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty fields, updated stage).
 
 ```mermaid
 sequenceDiagram
@@ -351,14 +395,14 @@ sequenceDiagram
     Main->>Ui: showPrompt(field choice)
     Ui-->>Main: 3 (Recruitment stage)
     Main->>Ui: promptRecruitmentStage()
-    Ui-->>Main: "Accepted"
-    Main->>StatusCommand: new StatusCommand(0, "Accepted")
-    Main->>StatusCommand: execute(applications, ui, storage)
-    StatusCommand->>ApplicationList: get(0)
-    ApplicationList-->>StatusCommand: application
-    StatusCommand->>Application: setStatus("Accepted")
-    StatusCommand->>Ui: showMessage("Application status updated successfully...")
-    StatusCommand->>Storage: save(applications)
+    Ui-->>Main: RecruitmentStage.ACCEPTED
+    Main->>EditCommand: new EditCommand(0, null, null, RecruitmentStage.ACCEPTED)
+    Main->>EditCommand: execute(applications, ui, storage)
+    EditCommand->>ApplicationList: get(0)
+    ApplicationList-->>EditCommand: application
+    EditCommand->>Application: setRecruitmentStage(RecruitmentStage.ACCEPTED)
+    EditCommand->>Storage: save(applications)
+    EditCommand->>Ui: showMessage("Application updated successfully...")
     Ui-->>User: Confirmation message
 ```
 
@@ -493,7 +537,7 @@ sequenceDiagram
 | Class | Responsibility |
 |---|---|
 | `UndoableCommand` | Abstract subclass of `Command` that adds `undo(ApplicationList)` and a `hasChanged()` flag. |
-| `AddCommand`, `DeleteCommand`, `EditCommand`, `StatusCommand`, `MarkCommand` | Extend `UndoableCommand`. Each remembers what it needs (the affected `Application` and its old values) while executing. |
+| `AddCommand`, `DeleteCommand`, `EditCommand`, `RecruitmentStageCommand`, `MarkCommand` | Extend `UndoableCommand`. Each remembers what it needs (the affected `Application` and its old values) while executing. |
 | `CommandHistory` | A stack (`ArrayDeque`) of undoable commands that actually changed the list. |
 | `UndoCommand` | Pops the newest command, calls its `undo`, shows what was undone and saves. |
 | `Main` | Owns the `CommandHistory`, records each executed command, and creates `UndoCommand` for the text command `undo`. |
@@ -505,7 +549,7 @@ classDiagram
     UndoableCommand <|-- AddCommand
     UndoableCommand <|-- DeleteCommand
     UndoableCommand <|-- EditCommand
-    UndoableCommand <|-- StatusCommand
+    UndoableCommand <|-- RecruitmentStageCommand
     UndoableCommand <|-- MarkCommand
     CommandHistory o-- UndoableCommand
     UndoCommand --> CommandHistory
@@ -738,7 +782,7 @@ An empty deadline field represents an application without a recorded deadline.
 
 Backslashes, tabs, newlines and carriage returns within text fields are escaped before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company or role names from being mistaken for field or record separators.
 
-**Backward compatibility:** Files written by earlier versions have only four fields (no status). `load()` accepts both four- and five-field records and gives four-field records the default `Applied` stage. Existing `Pending` values also migrate to `Applied`. The next save rewrites the file in the five-field format. Recruitment stage is the last column so that old records are a prefix of new ones.
+**Backward compatibility:** Files written before recruitment stages were persisted have only four fields (no stage). `load()` accepts both four- and five-field records and gives four-field records the default `Applied` stage. Existing legacy `Pending` values also migrate to `Applied`. It also accepts the older `status` column header. The next save writes the five-field format with `stage` as the final column.
 
 #### Saving applications
 
@@ -817,7 +861,7 @@ Commands request a save without implementing file encoding or parsing themselves
 
 #### Possible improvements
 
-Saving could use a temporary file followed by an atomic replacement to reduce the risk of an interrupted write damaging the existing data file.
+Recruitment stages are persisted in the final column. The loader also accepts legacy files whose column header is `status`. Saving could use a temporary file followed by an atomic replacement to reduce the risk of an interrupted write damaging the existing data file.
 
 When lines are skipped during loading, the next save permanently removes them from the file. A future version could keep a backup of the original file (for example `applications.txt.bak`) before the first save after a recovery.
 
@@ -841,7 +885,7 @@ Application information is usually spread across company portals, emails, notes 
 |---|---|---|---|
 | v1.0 | student beginning to track applications | add a new job application | keep an opportunity in one central record |
 | v1.0 | new user | see usage instructions | refer to them when I forget how to use the application |
-| v1.0 | job seeker | view detailed information of a specific application | inspect all fields including recruitment stage and completion state in a structured card |
+| v1.0 | job seeker | view detailed information of a specific application | inspect all fields including recruitment stage and deadlines in a structured card |
 | v1.0 | job seeker | mark an application as completed | track which applications have concluded their recruitment cycle |
 | v1.0 | job seeker | unmark a completed application | reopen an application if the recruitment process resumes or if marked by mistake |
 | v2.0 | job seeker | find applications by company or role | locate an application without scanning the full list |
@@ -893,7 +937,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    Company: Google
    Role: SWE Intern
    ```
-4. Choose `2` to list applications. Confirm the new record appears in the active applications table with `No.` 1, `Status` `[ ]`, `Company` `Google`, and `Role` `SWE Intern`.
+4. Choose `2` to list applications. Confirm the new record appears in the active applications table with `No.` 1, `Completed` `[ ]`, `Company` `Google`, and `Role` `SWE Intern`.
 
 ### Viewing help instructions
 
@@ -911,7 +955,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    --------------------------------------------------
    Company:   Google
    Role:      SWE Intern
-   Status:    Applied
+   Recruitment stage: Applied
    Completed: No
    ==================================================
    ```
@@ -934,7 +978,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    - Confirm only Application 1 and Application 3 appear in the table with their original list numbers `1` and `3`. Application 2 is not listed.
 5. Test completed filter:
    - Type `list completed`.
-   - Confirm only Application 2 appears in the table with `No.` `2` and `Status` `[X]`.
+   - Confirm only Application 2 appears in the table with `No.` `2` and `recruitment stage` `[X]`.
 6. Test all filter:
    - Type `list all`.
    - Confirm all three applications (1, 2, 3) are displayed in the table.
@@ -952,7 +996,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
        [X] Google | SWE Intern
      ```
 3. Type `list`. Confirm Application 1 is no longer in the active list.
-4. Type `list completed`. Confirm Application 1 appears with status `[X]`.
+4. Type `list completed`. Confirm Application 1 appears with completion icon `[X]`.
 5. Choose option `6` (Unmark). Enter `1`.
    - Confirm confirmation message:
      ```text
@@ -969,17 +1013,17 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 1. Start JobSeek with an empty application list and choose `10`. Confirm `Error: Your application list is currently empty.` appears.
 2. Add an application using `1` with company `Googl` and role `SWE Intern`.
 3. Choose `10` and enter application index `1`.
-4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google`, `Role: SWE Intern`, and `Status: Applied`.
+4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google`, `Role: SWE Intern`, and `Recruitment stage: Applied`.
 5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm role is updated to `Backend Intern` while company remains `Google` and stage remains `Applied`.
 6. Choose `10` and test invalid inputs: enter non-numeric index `abc` or out-of-bounds `99`. Confirm clear error messages are displayed.
 
 ### Managing recruitment stage
 
 1. Add an application with company `Shopee` and role `Backend Intern`.
-2. Enter `view 1`. Verify `Status:    Applied` is displayed by default.
+2. Enter `view 1`. Verify `Recruitment stage: Applied` is displayed by default.
 3. Choose `10`, index `1`, and field `3` (Recruitment stage). Enter `2` (Online Assessment).
-4. Enter `view 1`. Verify `Status:    Online Assessment` is now displayed.
-5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify `Status:    Rejected`.
+4. Enter `view 1`. Verify `Recruitment stage: Online Assessment` is now displayed.
+5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify `Recruitment stage: Rejected`.
 6. Choose `10`, index `1`, field `4` (All). Enter company `Sea`, role `Data Analyst`, and stage `1` (Applied). Verify all fields updated correctly.
 
 ### Search and sort

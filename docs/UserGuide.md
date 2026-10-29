@@ -128,10 +128,10 @@ Examples:
 Example output:
 ```text
 Here are your applications:
-No. | Status | Company   | Role           | Deadline  
+No. | Completed | Company   | Role           | Deadline
 ----+--------+-----------+----------------+-----------
 1   | [ ]    | Google    | SWE Intern     | 2026-11-03
-3   | [ ]    | Shopee    | Backend Intern | -         
+3   | [ ]    | Shopee    | Backend Intern | -
 ```
 
 > **Notes on list filtering:**
@@ -145,7 +145,7 @@ No. | Status | Company   | Role           | Deadline
 
 ### Viewing application details: `view`
 
-Displays a comprehensive, structured information card for a single job application at the specified index. The card presents all recorded details including company, role, recruitment status, and completion state.
+Displays a comprehensive, structured information card for a single job application at the specified index. The card presents all recorded details including company, role, recruitment stage, and completion state.
 
 Format: `view <application_number>`
 
@@ -160,7 +160,7 @@ Application Details [Index: 1]
 --------------------------------------------------
 Company:   Google
 Role:      SWE Intern
-Status:    Accepted
+Recruitment stage: Accepted
 Completed: No
 ==================================================
 ```
@@ -205,14 +205,14 @@ Choose `10` to update details of an existing application in place without deleti
   Application updated successfully.
   Company: Alphabet Inc.
   Role: Senior SWE Intern
-  Status: Applied
+  Recruitment stage: Applied
   ```
   For field choice `3` (Recruitment stage only):
   ```text
-  Application status updated successfully.
+  Application recruitment stage updated successfully.
   Company: Alphabet Inc.
   Role: Senior SWE Intern
-  Status: Accepted
+  Recruitment stage: Accepted
   ```
 
 ---
@@ -233,7 +233,7 @@ Application Details [Index: 1]
 --------------------------------------------------
 Company:   Google
 Role:      SWE Intern
-Status:    Accepted
+Recruitment stage: Accepted
 Completed: No
 ==================================================
 ```
@@ -276,7 +276,7 @@ If the list is empty or the application number is invalid, JobSeek displays an e
 Reverses the most recent change to your applications, such as an accidental deletion.
 
 - **Usage**: Enter `undo` at the main menu prompt.
-- **What can be undone**: adding, deleting, editing, changing the status of, and marking or unmarking an application.
+- **What can be undone**: adding, deleting, editing a recruitment stage, and marking or unmarking an application.
 - Enter `undo` again to step further back, newest change first.
 - Commands that only display information (`list`, `view`, `search`, `today`) and cancelled or failed commands are not recorded.
 - The history is kept in memory only, so it is cleared when you exit JobSeek.
@@ -371,7 +371,7 @@ If no applications require attention, no warning summary appears. Warnings are c
 Shows what needs your attention right now, without restarting JobSeek.
 
 - **Usage**: Enter `today` at the main menu prompt.
-- **Sections**: `OVERDUE`, `DUE TODAY` and `UPCOMING` (deadlines within the next seven days), followed by a `SUMMARY` of active and completed applications and a count of active applications per status.
+- **Sections**: `OVERDUE`, `DUE TODAY` and `UPCOMING` (deadlines within the next seven days), followed by a `SUMMARY` of active and completed applications and a count of active applications per recruitment stage.
 - Only applications that are not marked as completed appear in the deadline sections. Each entry keeps the number you use with `view`, `edit` and `delete`.
 
 ```text
@@ -418,7 +418,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
   ```text
   Available menu options:
     list [completed|all]            - List active, completed, or all applications
-    undo                            - Undo the last add, delete, edit, status or mark change
+    undo                            - Undo the last add, delete, edit, stage or completion change
     add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
     edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
     delete|mark|unmark INDEX        - Delete, complete or reopen an application

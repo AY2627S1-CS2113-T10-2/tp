@@ -2,6 +2,7 @@ package jobseek.command;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
@@ -12,11 +13,11 @@ public class EditCommand extends UndoableCommand {
     private final int targetIndex;
     private final String newCompany;
     private final String newRole;
-    private final String newStatus;
+    private final RecruitmentStage newStage;
     private Application editedApplication;
     private String previousCompany;
     private String previousRole;
-    private String previousStatus;
+    private RecruitmentStage previousStage;
 
     /**
      * Constructs an EditCommand with the specified target index and new field values for company and role.
@@ -30,18 +31,18 @@ public class EditCommand extends UndoableCommand {
     }
 
     /**
-     * Constructs an EditCommand with the target index and new field values including recruitment status.
+     * Constructs an EditCommand with the target index and optional recruitment stage.
      *
      * @param targetIndex 0-based index of the application to edit.
      * @param newCompany New company name, or null if company is not being updated.
      * @param newRole New role title, or null if role is not being updated.
-     * @param newStatus New recruitment stage label, or null if the stage is not being updated.
+     * @param newStage New recruitment stage, or null if the stage is not being updated.
      */
-    public EditCommand(int targetIndex, String newCompany, String newRole, String newStatus) {
+    public EditCommand(int targetIndex, String newCompany, String newRole, RecruitmentStage newStage) {
         this.targetIndex = targetIndex;
         this.newCompany = (newCompany != null && !newCompany.trim().isEmpty()) ? newCompany.trim() : null;
         this.newRole = (newRole != null && !newRole.trim().isEmpty()) ? newRole.trim() : null;
-        this.newStatus = (newStatus != null && !newStatus.trim().isEmpty()) ? newStatus.trim() : null;
+        this.newStage = newStage;
     }
 
     public int getTargetIndex() {
@@ -56,8 +57,8 @@ public class EditCommand extends UndoableCommand {
         return newRole;
     }
 
-    public String getNewStatus() {
-        return newStatus;
+    public RecruitmentStage getNewStage() {
+        return newStage;
     }
 
     /**
@@ -86,8 +87,8 @@ public class EditCommand extends UndoableCommand {
             return;
         }
 
-        if (newCompany == null && newRole == null && newStatus == null) {
-            ui.showError("At least one field (company, role, or status) must be specified for editing.");
+        if (newCompany == null && newRole == null && newStage == null) {
+            ui.showError("At least one field (company, role, or recruitment stage) must be specified for editing.");
             return;
         }
 
@@ -98,7 +99,7 @@ public class EditCommand extends UndoableCommand {
         editedApplication = application;
         previousCompany = application.getCompany();
         previousRole = application.getRole();
-        previousStatus = application.getStatus();
+        previousStage = application.getRecruitmentStage();
         markChanged();
 
         if (newCompany != null) {
@@ -107,8 +108,8 @@ public class EditCommand extends UndoableCommand {
         if (newRole != null) {
             application.setRole(newRole);
         }
-        if (newStatus != null) {
-            application.setStatus(newStatus);
+        if (newStage != null) {
+            application.setRecruitmentStage(newStage);
         }
 
         assert !application.getCompany().isEmpty() : "Company should not be empty after edit";
@@ -117,18 +118,18 @@ public class EditCommand extends UndoableCommand {
         StringBuilder message = new StringBuilder("Application updated successfully.\n");
         message.append("Company: ").append(application.getCompany()).append("\n");
         message.append("Role: ").append(application.getRole()).append("\n");
-        message.append("Status: ").append(application.getStatus());
+        message.append("Recruitment stage: ").append(application.getRecruitmentStage().getLabel());
         ui.showMessage(message.toString());
 
         storage.save(applications);
     }
 
-    /** Restores the company, role and status the application had before this command ran. */
+    /** Restores the company, role and recruitment stage from before this command ran. */
     @Override
     public String undo(ApplicationList applications) {
         editedApplication.setCompany(previousCompany);
         editedApplication.setRole(previousRole);
-        editedApplication.setStatus(previousStatus);
+        editedApplication.setRecruitmentStage(previousStage);
         return "edit of " + editedApplication;
     }
 }

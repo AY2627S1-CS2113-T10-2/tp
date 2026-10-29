@@ -74,7 +74,7 @@ public class ViewCommand extends Command {
                 + SUB_DIVIDER + "\n"
                 + "Company:   " + app.getCompany() + "\n"
                 + "Role:      " + app.getRole() + "\n"
-                + "Status:    " + app.getStatus() + "\n"
+                + "Recruitment stage: " + app.getRecruitmentStage().getLabel() + "\n"
                 + "Completed: " + completedText + "\n"
                 + DIVIDER;
 

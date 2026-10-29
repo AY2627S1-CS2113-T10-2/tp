@@ -122,11 +122,11 @@ public class CommandParser {
         int index = parseIndex(fields.leadingText, EDIT_USAGE);
         String company = fields.values.get('c');
         String role = fields.values.get('r');
-        String stage = fields.values.get('s');
-        if (company == null && role == null && stage == null) {
+        String stageLabel = fields.values.get('s');
+        if (company == null && role == null && stageLabel == null) {
             throw new JobSeekException("Nothing to edit. " + EDIT_USAGE);
         }
-        return new EditCommand(index, company, role, stage == null ? null : parseStage(stage));
+        return new EditCommand(index, company, role, stageLabel == null ? null : parseStage(stageLabel));
     }
 
     /**
@@ -156,9 +156,9 @@ public class CommandParser {
                 conditions.add("role contains '" + value + "'");
                 break;
             case 's':
-                String stage = parseStage(value);
-                filter = filter.and(ApplicationFilters.inStage(RecruitmentStage.fromLabel(stage)));
-                conditions.add("stage is " + stage);
+                RecruitmentStage stage = parseStage(value);
+                filter = filter.and(ApplicationFilters.inStage(stage));
+                conditions.add("stage is " + stage.getLabel());
                 break;
             case 'b':
                 LocalDate before = parseDeadline(value);
@@ -224,9 +224,9 @@ public class CommandParser {
     }
 
     /** Validates the stage here so a typo is reported as a normal error instead of failing later. */
-    private static String parseStage(String text) throws JobSeekException {
+    private static RecruitmentStage parseStage(String text) throws JobSeekException {
         try {
-            return RecruitmentStage.fromLabel(text).getLabel();
+            return RecruitmentStage.fromLabel(text);
         } catch (IllegalArgumentException e) {
             throw new JobSeekException("Invalid stage: '" + text + "'. Valid stages: Applied, "
                     + "Online Assessment (OA), Interview, Offer, Accepted, Rejected, Withdrawn.");
