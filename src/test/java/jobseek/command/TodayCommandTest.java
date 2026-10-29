@@ -58,11 +58,11 @@ public class TodayCommandTest {
 
         assertTrue(ui.lastMessage.contains("OVERDUE (0)"));
         assertTrue(ui.lastMessage.contains("1 active, 1 completed, 1 active without a deadline"));
-        assertTrue(ui.lastMessage.contains("Active by status - Pending: 1"));
+        assertTrue(ui.lastMessage.contains("Active by recruitment stage - Applied: 1"));
     }
 
     @Test
-    public void execute_activeApplications_groupedByStatusInSummary() {
+    public void execute_activeApplications_groupedByRecruitmentStageInSummary() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("A", "R", false, "Accepted", null));
         applications.add(new Application("B", "R", false, "Pending", null));
@@ -71,7 +71,7 @@ public class TodayCommandTest {
 
         new TodayCommand(TODAY).execute(applications, ui, new Storage());
 
-        assertTrue(ui.lastMessage.contains("Active by status - Accepted: 1, Pending: 2"));
+        assertTrue(ui.lastMessage.contains("Active by recruitment stage - Accepted: 1, Applied: 2"));
     }
 
     @Test

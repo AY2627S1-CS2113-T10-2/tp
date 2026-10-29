@@ -2,6 +2,7 @@ package jobseek.storage;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -112,23 +113,24 @@ public class StorageTest {
     }
 
     @Test
-    public void saveThenLoad_preservesRecruitmentStatus() throws Exception {
+    public void saveThenLoad_preservesRecruitmentStages() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
         Storage storage = new Storage(temporaryFile.toString());
         ApplicationList list = new ApplicationList();
         list.add(new Application("Google", "SWE", false, "Accepted", null));
-        list.add(new Application("Shopee", "Backend", true, "Rejected", LocalDate.of(2026, 11, 3)));
+        list.add(new Application("Shopee", "Backend", true, "Online Assessment", LocalDate.of(2026, 11, 3)));
 
         storage.save(list);
 
         ApplicationList loaded = storage.load();
         assertEquals("Accepted", loaded.get(0).getStatus());
-        assertEquals("Rejected", loaded.get(1).getStatus());
+        assertEquals("Online Assessment", loaded.get(1).getStatus());
+        assertEquals(RecruitmentStage.ONLINE_ASSESSMENT, loaded.get(1).getRecruitmentStage());
         assertEquals(LocalDate.of(2026, 11, 3), loaded.get(1).getDeadline());
     }
 
     @Test
-    public void load_legacyFourFieldFile_defaultsStatusToPending() throws Exception {
+    public void load_legacyFourFieldFile_defaultsStageToApplied() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
         Files.writeString(temporaryFile,
                 "JOBSEEK Applications\ncompany\trole\tcompleted\tdeadline\n"
@@ -138,17 +140,45 @@ public class StorageTest {
         ApplicationList loaded = storage.load();
 
         assertEquals(1, loaded.size());
-        assertEquals("Pending", loaded.get(0).getStatus());
+        assertEquals("Applied", loaded.get(0).getStatus());
         assertEquals(LocalDate.of(2026, 12, 31), loaded.get(0).getDeadline());
     }
 
     @Test
-    public void load_blankStatusField_defaultsStatusToPending() throws Exception {
+    public void load_blankStatusField_defaultsStageToApplied() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
         Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tfalse\t\t\n");
         Storage storage = new Storage(temporaryFile.toString());
 
-        assertEquals("Pending", storage.load().get(0).getStatus());
+        assertEquals("Applied", storage.load().get(0).getStatus());
+    }
+
+    @Test
+    public void load_legacyPendingStatus_migratesToAppliedStage() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tfalse\t\tPending\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(1, loaded.size());
+        assertEquals(RecruitmentStage.APPLIED, loaded.get(0).getRecruitmentStage());
+    }
+
+    @Test
+    public void load_unknownRecruitmentStage_skipsRecordAndReportsWarning() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile,
+                "Unknown Stage Co\tEngineer\tfalse\t\tScreening\n"
+                        + "Valid Company\tEngineer\tfalse\t\tInterview\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(1, loaded.size());
+        assertEquals("Valid Company", loaded.get(0).getCompany());
+        assertEquals(RecruitmentStage.INTERVIEW, loaded.get(0).getRecruitmentStage());
+        assertTrue(storage.getLoadWarnings().get(0).contains("unknown recruitment stage on line 1"));
     }
 
     @Test

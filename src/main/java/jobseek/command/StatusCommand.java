@@ -2,6 +2,7 @@ package jobseek.command;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
@@ -71,6 +72,8 @@ public class StatusCommand extends UndoableCommand {
         updatedApplication = application;
         previousStatus = application.getStatus();
         application.setStatus(status);
+        assert application.getRecruitmentStage() == RecruitmentStage.fromLabel(status)
+                : "Application stage should match the updated stage";
         markChanged();
         assert application.getStatus().equals(status) : "Application status should match the updated status";
 
