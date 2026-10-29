@@ -2,72 +2,84 @@
 
 ## Overview
 
-JobSeek is a command-line application that helps university students keep track of their internship and graduate-role applications. Users record each application's company, role, recruitment stage and deadline, see at a glance what needs attention, and find applications quickly as the list grows.
+JobSeek is a command-line desktop application (CLI) designed for undergraduate students and job seekers to track and manage their internship and graduate-role applications. Users record each application's company, role, recruitment stage, and deadline, see at a glance what needs attention, and find applications quickly as the list grows.
 
-I worked across the whole product: the initial code skeleton, most of the commands that change or display data, the one-line command parser, persistence fixes, and a full audit of the User Guide and Developer Guide.
+I contributed across the full product lifecycle: bootstrapped the initial code skeleton and base OOP architecture that the team built upon, implemented the one-line typed command parser, designed the multi-criteria `find` filter and undoable command history architecture, resolved critical storage persistence bugs with corrupted-data recovery, developed application view/list/mark commands, and conducted a comprehensive audit of the User Guide and Developer Guide.
 
 ## Summary of Contributions
 
 ### Code contributed
 
-[RepoSense link](https://nus-cs2113-ay2627-s1.github.io/tp-dashboard/?search=bohao12&breakdown=true)
+[RepoSense Dashboard](https://nus-cs2113-ay2627-s1.github.io/tp-dashboard/?search=bohao12&breakdown=true)
 
 ### Enhancements implemented
 
-**Typed command parser** ([#50](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/50))
-- Added `CommandParser`, so users can type a whole command on one line (`add c/Google r/SWE Intern d/2026-11-30`, `edit 2 s/oa`, `delete 3`) instead of answering several prompts. The numbered menu still works as a fallback.
-- Fields use prefixes (`c/`, `r/`, `d/`, `s/`) and can be given in any order, with spaces inside values. A regular expression only treats a letter and slash *after whitespace* as a prefix, so names such as `AT&T/Intel` are read correctly.
-- Rejects unknown, repeated and empty fields, invalid dates and unknown stages with a message that shows the correct usage, so a bad command never changes data.
-- Kept parsing out of `Main` so it can be unit-tested without simulating console input (24 new tests).
+**Base skeleton and foundational architecture** ([#13](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/13), [#14](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/14))
+- *What it does*: Bootstrapped the initial JobSeek codebase from scratch, transitioning away from the generic Duke starter template. Implemented the core domain models (`Application`, `ApplicationList`), command pattern hierarchy (`Command`), console interface (`Ui`), and persistence layer (`Storage`), and configured `build.gradle` for Java 25.
+- *Justification*: Established the foundational OOP architecture and package structure (`jobseek.model`, `jobseek.command`, `jobseek.storage`, `jobseek.ui`) early in the project, enabling all four team members to build their respective features concurrently without merge bottlenecks or structural conflicts.
+- *Highlights*: Designed clean separation of concerns decoupling business logic from I/O and storage, encapsulated list operations and index bounds checks inside `ApplicationList`, and purged template legacy files.
 
-**Combined filters: `find`** ([#51](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/51))
-- `find c/google s/interview a/2026-11-01 b/2026-11-30 m/no` shows applications that match *every* condition (company, role, stage, deadline range, completion).
-- Designed with the strategy pattern: `ApplicationFilters` returns one `Predicate<Application>` per condition, and the parser joins them with `and`. Adding a new filter only needs one factory method and one prefix; `FindCommand` itself does not change.
-- Results keep the original list numbers, so they can be used directly with `edit` and `delete`.
+**One-line typed command parser** ([#50](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/50))
+- *What it does*: Implemented `CommandParser` enabling users to type full commands on a single line (`add c/Google r/SWE Intern d/2026-11-30`, `edit 2 s/oa`, `delete 3`, `mark 1`, `find ...`) alongside the menu fallback.
+- *Justification*: Eliminates tedious multi-step prompts for power users while preserving backwards compatibility.
+- *Highlights*: Utilized regex prefix tokenization (`c/`, `r/`, `d/`, `s/`, etc.) that identifies prefixes only when preceded by whitespace, preventing false-positive splits on names containing slashes (e.g. `AT&T/Intel`, `C/C++`). Rejects unknown flags, duplicated fields, empty values, invalid dates, and out-of-range indexes with instructive error messages without corrupting application state. Kept parsing decoupled from `Main` and console I/O (backed by 24 unit tests).
 
-**Delete confirmation and undo** ([#52](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/52))
-- `delete` now asks for confirmation. A new `undo` command reverses the last add, delete, edit, stage change or mark/unmark, and can be repeated to step further back.
-- Introduced an abstract `UndoableCommand` layer in the command hierarchy and a stack-based `CommandHistory`. Each command stores only what it needs to reverse itself (the affected object and its old values), so undo is exact even when two applications look identical. Deleted applications return to their original position.
-- Cancelled or invalid commands are never recorded, so `undo` cannot reverse something that did not happen. This touched 5 existing commands; 18 new tests.
+**Multi-criteria filter engine: `find`** ([#51](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/51))
+- *What it does*: `find c/google s/interview a/2026-11-01 b/2026-11-30 m/no` filters applications matching company, role, stage, deadline range (`a/` after, `b/` before), and completion status simultaneously.
+- *Justification*: Empowers students tracking dozens of applications to pinpoint specific subsets instantly.
+- *Highlights*: Applied the Strategy pattern via `ApplicationFilters` producing composable `Predicate<Application>` lambdas joined via logical `AND`. Adding future filter criteria requires only a new predicate factory method and prefix mapping without modifying `FindCommand` execution (Open-Closed Principle). Filtered results retain their master list 1-based indexes for direct use with `edit`, `delete`, or `view`.
 
-**Today dashboard and storage fixes** ([#45](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/45))
-- Added `today`, which shows overdue, due-today and next-7-day deadlines plus a pipeline summary at any time, instead of only at startup. The date can be injected so the boundaries are tested deterministically.
-- Fixed two data-loss bugs: deadlines entered when adding were silently discarded, and recruitment status was never saved, so it reset after every restart. Added a status column while keeping older four-column data files loadable.
+**Delete confirmation and reversible undo architecture** ([#52](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/52))
+- *What it does*: Added an interactive deletion confirmation prompt and built the `undo` command to iteratively revert mutating actions (`add`, `delete`, `edit`, `status`, `mark`, `unmark`).
+- *Justification*: Protects against accidental data loss and provides a safety net when users make typos or unintended operations.
+- *Highlights*: Architected an abstract `UndoableCommand` layer and a stack-based `CommandHistory`. Each command encapsulates the minimal state delta needed to invert itself (e.g., deleted applications are restored with exact fields to their original list position). Cancelled or invalid commands are never recorded, preventing history corruption. Re-engineered 5 existing commands; backed by 18 unit tests.
 
-**Corrupted-file recovery** ([#47](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/47))
-- Previously one bad line in the data file made the whole file fail to load. Loading now skips only the corrupted record (bad format, flag, date, empty field or unknown stage), reports the line number, and keeps every valid record.
+**Today dashboard and storage reliability fixes** ([#45](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/45))
+- *What it does*: Built `today` to display overdue, due-today, and 7-day upcoming deadlines alongside recruitment pipeline totals at any time.
+- *Highlights*: Resolved two silent data-loss bugs where deadlines entered during addition were discarded and recruitment stages were not saved across restarts. Added backwards compatibility to load older 4-column files while saving updated 5-column records. Designed with clock injection for deterministic date-boundary testing.
 
-**Earlier features**
+**Corrupted-file recovery & defensive storage parsing** ([#47](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/47))
+- *What it does*: Hardened `Storage` loading so that invalid data lines (bad format, illegal date, missing fields, unknown stage) are safely skipped with an informative warning and line number, loading all valid records instead of crashing or discarding the entire save file.
+
+**Earlier features and UI improvements**
 - `view INDEX` details card with input validation ([#32](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/32), tests in [#36](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/36)).
-- `list [completed|all]` filtering that keeps original numbering ([#34](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/34)).
-- `mark` / `unmark` completion ([#15](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/15)).
-- Fixed the UI reprinting the title and full list after every command ([#35](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/35)).
+- `list [completed|all]` filtering maintaining original index numbering ([#34](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/34)).
+- `mark` / `unmark` application completion status ([#15](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/15)).
+- Fixed UI defect where the title logo and full application list repeatedly reprinted after every command ([#35](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/35)).
 
 ### Contributions to the User Guide
 
-- Wrote: Typed commands, Finding with combined filters, Undoing a change, Today dashboard, Listing applications, Viewing application details, Marking/Unmarking, and the Command Summary.
-- Updated: Deleting (confirmation), Data (status saving, corrupted-line recovery), Adding (deadline).
-- Audited the whole guide against the code ([#53](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/53)) and fixed outdated outputs and missing command forms.
+- **Authored feature sections**: One-line typed command syntax and prefix rules, Finding with combined filters, Undoing changes and delete confirmation, Today dashboard, Listing applications, Viewing application details, Marking/unmarking applications, and the Command Summary quick reference table.
+- **Updated sections**: Adding applications (deadline support), Deleting applications (confirmation prompt), Data persistence (status saving and corrupted-line isolation).
+- **Full documentation audit** ([#53](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/53)): Audited the entire User Guide against code behavior, correcting outdated output snippets and syntax discrepancies.
 
 ### Contributions to the Developer Guide
 
-- Wrote the sections on the Typed command parser, Combined filters, Delete confirmation and undo, Today dashboard, View, Filtered listing, and Mark/Unmark, each with design considerations and alternatives.
-- UML diagrams added: architecture overview, command hierarchy and data-model class diagrams; undo class diagram; sequence diagrams for View, List, Mark, typed parsing, `find`, and delete-then-undo.
-- UML diagrams updated: Add sequence diagram (deadline), Edit sequence diagram (stage edits go through `StatusCommand`), Storage loading sequence diagram (corrupted-line recovery).
-- Repaired a section that earlier merges had mixed up (undo text inside the `find` section), and filled in product scope, non-functional requirements, glossary, user stories and manual-testing steps for the newer features ([#53](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/53)).
+- **Authored design sections**: Typed command parser, Multi-criteria filter engine, Delete confirmation and undo architecture, Today dashboard, View command, Filtered listing, and Mark/unmark features, each with design considerations and alternatives.
+- **UML diagrams added**: Architecture overview, Domain model and command hierarchy class diagrams, Undo architecture class diagram, and Sequence diagrams for Typed command parsing, Multi-criteria `find`, Delete-with-undo, `ViewCommand`, `ListCommand`, and `MarkCommand`.
+- **UML diagrams updated**: Add sequence diagram (deadline handling), Edit sequence diagram (`StatusCommand` integration), and Storage loading sequence diagram (corrupted line isolation).
+- **Documentation restructuring & sections filled**: Repaired corrupted sections from earlier merges (undo text misplaced in `find`), and authored product scope, non-functional requirements (NFRs), glossary, user stories, and manual testing procedures ([#53](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/53)).
 
 ### Contributions to team-based tasks
 
-- Set up the initial code skeleton (`Application`, `Command`, `Ui`, `Storage`) that the team built on, cleaned up the template's legacy `seedu.duke` files, and updated `build.gradle` ([#13](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/13), [#14](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/14)).
-- Renamed the product in the README and updated the About Us page.
-- Opened and tracked issues for my features and a UI bug ([#8](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/8), [#25](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/25), [#27](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/27), [#33](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/33), [#46](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/46)).
-- Checked documentation written by all members against the code, including acknowledgements, the edit flow and storage sections.
+- Set up the initial code skeleton (`Application`, `Command`, `Ui`, `Storage`, `ApplicationList`, `Main`) and configured `build.gradle` for Java 25 ([#13](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/13), [#14](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/14)).
+- Updated project branding across README and configured team member portfolio links in `AboutUs.md`.
+- Opened, tracked, and resolved GitHub issues for features and bug fixes ([#8](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/8), [#25](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/25), [#27](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/27), [#33](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/33), [#46](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/46)).
+- Reviewed all documentation written by teammates against actual code implementation (acknowledgements, edit flows, storage format).
 
 ### Review/mentoring contributions
 
-- Merged a teammate's PR ([#1](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/1)).
-- *To be added: PRs reviewed, with links.*
+- Reviewed and merged teammates' pull requests, including [PR #1](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/1) (Delete application feature).
+- Assisted teammates in resolving git merge conflicts across feature branches and aligning command-model interfaces.
+- Reviewed and audited team PRs for code consistency, Checkstyle compliance, and test coverage.
 
 ### Contributions beyond the project team
 
-- *To be added: e.g. bugs reported in other teams' products during the PE dry run, forum posts.*
+- **Cross-Team Developer Guide & UML Review**:
+  - Provided extensive, detailed review feedback on the Developer Guide and UML diagrams of Team TutorLedger (CS2113-W12-2) on the central cohort repository ([PR #5 Review](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/5/changes#diff-1a95edf069a4136e9cb71bee758b0dc86996f6051f0d438ec2c424557de7160b)).
+  - Contributed 5 detailed review comments on standard UML notation and diagram readability:
+    1. **PlantUML Notation Conformance** (DG Line 108): Advised hiding PlantUML circle stereotypes `(C)` in Figures 2, 4, 15, and 19 to adhere strictly to textbook UML class diagram standards.
+    2. **Class Box Compartments & Note Connectors** (DG Line 283): Advised displaying all three standard compartments in class boxes and replacing speech-bubble pointers with standard dashed connector lines according to CS2113 reference standards.
+    3. **Lifeline Header Notation** (DG Line 645): Corrected sequence diagram lifeline syntax in Figures 3 and 20, clarifying instance `:TutorLedger` lifelines versus static class utility calls (`<<class>> TutorLedger`).
+    4. **Dependency Arrow Simplification** (DG Line 109): Recommended consolidating multiple curved dashed arrows between `Storage` and `TutorLedgerData` in Figure 2 into a single straight dependency relationship to enhance visual clarity.
+    5. **Activity Diagram Decision Nodes** (DG Line 249): Identified non-standard hexagon condition shapes in Figure 6, recommending standard diamond decision/merge nodes with bracketed guard expressions (`[...]`) along output branches.
