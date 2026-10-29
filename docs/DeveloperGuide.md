@@ -66,26 +66,16 @@ flowchart TB
 The control flow from startup, file loading, deadline inspection, command execution, and termination is illustrated in the activity diagram below:
 
 ```mermaid
-flowchart TD
-    Start([Start]) --> Init[Initialize UI and Storage]
-    Init --> Load[Storage.load applications]
-    Load --> CheckLoad{File load<br/>successful?}
-    CheckLoad -- Yes --> Populate[Populate ApplicationList]
-    CheckLoad -- No --> Fallback[Show error & use empty list]
-    Populate --> Warnings[DeadlineWarnings.show]
-    Fallback --> Warnings
-    Warnings --> Welcome[Show Welcome Banner & Menu]
-    Welcome --> ReadCmd[/Read User Command/]
-    ReadCmd --> CheckEOF{EOF reached?}
-    CheckEOF -- Yes --> Goodbye[Show Goodbye Message]
-    CheckEOF -- No --> ParseCmd[Parse command input]
-    ParseCmd --> ValidCmd{Valid command?}
-    ValidCmd -- No --> ShowErr[Show error message] --> ReadCmd
-    ValidCmd -- Yes --> ExecCmd[Execute command]
-    ExecCmd --> CheckExit{Is ExitCommand?}
-    CheckExit -- Yes --> Goodbye
-    CheckExit -- No --> ReadCmd
-    Goodbye --> End([End])
+flowchart LR
+    Start((●)) --> Init[Initialize UI & Storage]
+    Init --> Load[Load applications]
+    Load --> CheckLoad{"Load success?"}
+    CheckLoad -- "[yes]" --> Warn[Check deadlines & show menu]
+    CheckLoad -- "[no]" --> Fallback[Show error & use empty list] --> Warn
+    Warn --> Read[Read & execute command]
+    Read --> CheckExit{"Exit command?"}
+    CheckExit -- "[no]" --> Read
+    CheckExit -- "[yes]" --> End(((◎)))
 ```
 
 #### Runtime Object Structure (Object Diagram)
@@ -94,40 +84,22 @@ The following object diagram illustrates a concrete runtime snapshot of JobSeek 
 
 ```mermaid
 classDiagram
-    class main {
-        <<object>>
-        :Main
-    }
-    class ui {
-        <<object>>
-        :Ui
-    }
-    class storage {
-        <<object>>
-        :Storage
+    direction LR
+    class main[":Main"]
+    class ui[":Ui"]
+    class storage[":Storage"] {
         filePath = "data/applications.txt"
     }
-    class applications {
-        <<object>>
-        :ApplicationList
-    }
-    class app1 {
-        <<object>>
-        :Application
+    class applications[":ApplicationList"]
+    class app1["app1:Application"] {
         company = "Google"
         role = "SWE Intern"
         isCompleted = false
-        status = "Pending"
-        deadline = 2026-11-15
     }
-    class app2 {
-        <<object>>
-        :Application
+    class app2["app2:Application"] {
         company = "Shopee"
         role = "Backend Intern"
         isCompleted = true
-        status = "Accepted"
-        deadline = null
     }
 
     main --> ui
@@ -146,68 +118,68 @@ The class diagram below reflects the architecture across all components and pack
 ```mermaid
 classDiagram
     class Main {
-        -Ui ui
-        -Storage storage
-        -ApplicationList applications
-        +run() void
-        +parseCommand(option) Command
+        - ui: Ui
+        - storage: Storage
+        - applications: ApplicationList
+        + run(): void
+        + parseCommand(option: String): Command
     }
     class Ui {
-        +showWelcome() void
-        +showMenu(applications) void
-        +showMessage(message) void
-        +showError(errorMessage) void
-        +showPrompt(prompt) void
-        +readCommand() String
-        +showGoodbye() void
+        + showWelcome(): void
+        + showMenu(applications: ApplicationList): void
+        + showMessage(message: String): void
+        + showError(errorMessage: String): void
+        + showPrompt(prompt: String): void
+        + readCommand(): String
+        + showGoodbye(): void
     }
     class Storage {
-        -String filePath
-        +save(applications) void
-        +load() ApplicationList
+        - filePath: String
+        + save(applications: ApplicationList): void
+        + load(): ApplicationList
     }
     class DeadlineWarnings {
-        +show(applications, ui)$ void
+        + show(applications: ApplicationList, ui: Ui)$: void
     }
     class ApplicationTable {
-        +format(applications, indices)$ String
+        + format(applications: ApplicationList, indices: List~Integer~)$: String
     }
     class JobSeekException {
-        +JobSeekException(message)
+        + JobSeekException(message: String)
     }
     class Command {
         <<abstract>>
-        -boolean isExit
-        +execute(applications, ui, storage)* void
-        +isExit() boolean
+        - isExit: boolean
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage)*: void
+        + isExit(): boolean
     }
     class AddCommand {
-        -String company
-        -String role
-        -LocalDate deadline
-        +execute(applications, ui, storage) void
+        - company: String
+        - role: String
+        - deadline: LocalDate
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class DeleteCommand {
-        -int targetIndex
-        +execute(applications, ui, storage) void
+        - targetIndex: int
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class EditCommand {
-        -int targetIndex
-        -String newCompany
-        -String newRole
-        -String newStatus
-        +execute(applications, ui, storage) void
+        - targetIndex: int
+        - newCompany: String
+        - newRole: String
+        - newStatus: String
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class ExitCommand {
-        +execute(applications, ui, storage) void
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class HelpCommand {
-        +execute(applications, ui, storage) void
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class ListCommand {
-        -FilterType filterType
-        +execute(applications, ui, storage) void
-        +parse(args)$ ListCommand
+        - filterType: FilterType
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
+        + parse(args: String)$: ListCommand
     }
     class FilterType {
         <<enumeration>>
@@ -216,51 +188,51 @@ classDiagram
         ALL
     }
     class MarkCommand {
-        -int targetIndex
-        -boolean isCompleted
-        +execute(applications, ui, storage) void
+        - targetIndex: int
+        - isCompleted: boolean
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class SearchCommand {
-        -String keyword
-        +execute(applications, ui, storage) void
+        - keyword: String
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class SortCommand {
-        +execute(applications, ui, storage) void
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class StatusCommand {
-        -int targetIndex
-        -String newStatus
-        +execute(applications, ui, storage) void
+        - targetIndex: int
+        - newStatus: String
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
     }
     class ViewCommand {
-        -int targetIndex
-        +execute(applications, ui, storage) void
-        +parse(args)$ ViewCommand
+        - targetIndex: int
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
+        + parse(args: String)$: ViewCommand
     }
     class ApplicationList {
-        -ArrayList~Application~ applications
-        +add(app) void
-        +delete(index) Application
-        +get(index) Application
-        +size() int
-        +isValidIndex(index) boolean
-        +isEmpty() boolean
+        - applications: ArrayList~Application~
+        + add(app: Application): void
+        + delete(index: int): Application
+        + get(index: int): Application
+        + size(): int
+        + isValidIndex(index: int): boolean
+        + isEmpty(): boolean
     }
     class Application {
-        -String company
-        -String role
-        -boolean isCompleted
-        -String status
-        -LocalDate deadline
-        +getCompany() String
-        +getRole() String
-        +getStatus() String
-        +getDeadline() LocalDate
-        +isCompleted() boolean
-        +setCompany(company) void
-        +setRole(role) void
-        +setStatus(status) void
-        +setCompleted(isCompleted) void
+        - company: String
+        - role: String
+        - isCompleted: boolean
+        - status: String
+        - deadline: LocalDate
+        + getCompany(): String
+        + getRole(): String
+        + getStatus(): String
+        + getDeadline(): LocalDate
+        + isCompleted(): boolean
+        + setCompany(company: String): void
+        + setRole(role: String): void
+        + setStatus(status: String): void
+        + setCompleted(isCompleted: boolean): void
     }
 
     Main "1" --> "1" Ui : uses
@@ -315,29 +287,20 @@ The `AddCommand` allows job seekers to add a new internship or job record with a
 The user input validation, prompt looping, and execution lifecycle for adding an application is illustrated in the activity diagram below:
 
 ```mermaid
-flowchart TD
-    Start([Start Add Application]) --> PromptCompany[/Prompt Company name/]
-    PromptCompany --> ValidCompany{Non-empty?}
-    ValidCompany -- No --> ShowCompErr[Show empty company error] --> PromptCompany
-    ValidCompany -- Yes --> PromptRole[/Prompt Role title/]
-    PromptRole --> ValidRole{Non-empty?}
-    ValidRole -- No --> ShowRoleErr[Show empty role error] --> PromptRole
-    ValidRole -- Yes --> PromptDeadline[/Prompt optional deadline YYYY-MM-DD/]
-    PromptDeadline --> CheckEmptyDate{Empty input?}
-    CheckEmptyDate -- Yes --> CreateWithoutDate[Create AddCommand with null deadline]
-    CheckEmptyDate -- No --> ParseDate{Valid YYYY-MM-DD?}
-    ParseDate -- No --> ShowDateErr[Show invalid date error] --> PromptDeadline
-    ParseDate -- Yes --> CreateWithDate[Create AddCommand with parsed deadline]
-    CreateWithoutDate --> ExecuteAdd[AddCommand.execute]
-    CreateWithDate --> ExecuteAdd
-    ExecuteAdd --> CreateApp[Instantiate Application Pending, false]
-    CreateApp --> AddToList[Add to ApplicationList]
-    AddToList --> SaveStorage[Storage.save applications]
-    SaveStorage --> ShowConfirm[Ui.showMessage success banner]
-    ShowConfirm --> End([End])
+flowchart LR
+    Start((●)) --> Prompt[Prompt company, role, optional deadline]
+    Prompt --> Validate{"Valid input & date?"}
+    Validate -- "[else]" --> ShowErr[Show error message] --> Prompt
+    Validate -- "[valid]" --> Create[Create Application & add to list]
+    Create --> Save[Storage.save applications]
+    Save --> Show[Display confirmation message]
+    Show --> End(((◎)))
 ```
 
 #### Add Application Sequence Diagram
+
+```mermaid
+sequenceDiagram
     actor user as User
     participant main as :Main
     participant ui as :Ui
@@ -357,7 +320,7 @@ flowchart TD
     ui-->>main: "SWE Intern"
     deactivate ui
 
-    alt With optional deadline
+    alt [with optional deadline]
         main->>ui: promptOptionalDate("Deadline:")
         activate ui
         ui-->>main: "2026-11-15"
@@ -366,7 +329,7 @@ flowchart TD
         activate cmd
         cmd-->>main: addCommand
         deactivate cmd
-    else Without deadline
+    else [without deadline]
         main->>cmd: new AddCommand("Google", "SWE Intern")
         activate cmd
         cmd-->>main: addCommand
@@ -429,7 +392,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    alt Index is valid (0 <= targetIndex < size)
+    alt [0 <= targetIndex < size]
         cmd->>list: get(0)
         activate list
         list-->>cmd: application
@@ -454,7 +417,7 @@ sequenceDiagram
         activate ui
         ui-->>user: Structured card display
         deactivate ui
-    else Index out of bounds
+    else [else]
         cmd-->>main: throw JobSeekException
     end
 
@@ -513,7 +476,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    loop For each application in list
+    loop [for each application]
         cmd->>list: get(i)
         activate list
         list-->>cmd: application
@@ -524,7 +487,7 @@ sequenceDiagram
         deactivate app
     end
 
-    alt Filter has matching entries
+    alt [matches found]
         cmd->>table: format(applications, matchingIndices)
         activate table
         table-->>cmd: formattedTable
@@ -533,7 +496,7 @@ sequenceDiagram
         activate ui
         ui-->>user: Formatted table output
         deactivate ui
-    else No entries match filter
+    else [else]
         cmd->>ui: showMessage("No completed applications found.")
         activate ui
         ui-->>user: Status message
@@ -611,12 +574,12 @@ sequenceDiagram
     storage-->>cmd: 
     deactivate storage
 
-    alt Mark completed (isCompleted == true)
+    alt [isCompleted == true]
         cmd->>ui: showMessage("Nice! I have marked this application as completed...")
         activate ui
         ui-->>user: Marked confirmation message
         deactivate ui
-    else Unmark (isCompleted == false)
+    else [else]
         cmd->>ui: showMessage("OK, I have marked this application as not completed yet...")
         activate ui
         ui-->>user: Unmarked confirmation message
@@ -656,17 +619,14 @@ The `DeleteCommand` allows users to permanently remove an application by its 1-b
 The decision flow, bounds validation, and deletion logic is shown in the activity diagram below:
 
 ```mermaid
-flowchart TD
-    Start([Start Delete Application]) --> CheckEmpty{ApplicationList<br/>empty?}
-    CheckEmpty -- Yes --> ShowEmptyErr[Show empty list error] --> End([End])
-    CheckEmpty -- No --> PromptIndex[/Prompt application index/]
-    PromptIndex --> ValidIndex{Valid integer &<br/>1 <= index <= size?}
-    ValidIndex -- No --> ShowIndexErr[Show invalid index error] --> End
-    ValidIndex -- Yes --> CallDelete[ApplicationList.delete 0-based index]
-    CallDelete --> DestroyApp[Remove & dereference Application]
-    DestroyApp --> SaveStorage[Storage.save applications]
-    SaveStorage --> ShowConfirm[Ui.showMessage confirmation]
-    ShowConfirm --> End
+flowchart LR
+    Start((●)) --> Prompt[Prompt application index]
+    Prompt --> Check{"Valid index?"}
+    Check -- "[no]" --> ShowErr[Show error message] --> End(((◎)))
+    Check -- "[yes]" --> Del[Delete from ApplicationList]
+    Del --> Save[Storage.save applications]
+    Save --> Show[Display confirmation message]
+    Show --> End
 ```
 
 #### Delete Application Sequence Diagram
@@ -694,7 +654,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    alt Index is valid (0 <= targetIndex < size)
+    alt [0 <= targetIndex < size]
         cmd->>list: isValidIndex(0)
         activate list
         list-->>cmd: true
@@ -720,7 +680,7 @@ sequenceDiagram
         activate ui
         ui-->>user: Confirmation message
         deactivate ui
-    else Index out of bounds
+    else [else]
         cmd->>ui: showError("Invalid application index...")
         activate ui
         ui-->>user: Error message
@@ -752,35 +712,17 @@ The edit feature allows users to modify existing applications without deleting a
 The user interaction and validation workflow for updating application fields is illustrated in the activity diagram below:
 
 ```mermaid
-flowchart TD
-    Start([Start Edit]) --> CheckEmpty{ApplicationList<br/>empty?}
-    CheckEmpty -- Yes --> ShowEmptyErr[Show empty list error] --> End([End])
-    CheckEmpty -- No --> PromptIndex[/Prompt application index/]
-    PromptIndex --> ValidIndex{Valid index?}
-    ValidIndex -- No --> ShowIndexErr[Show invalid index error] --> End
-    ValidIndex -- Yes --> PromptField[/Prompt field choice 1-4/]
-    PromptField --> BranchField{Field choice}
-    BranchField -- 1: Company --> PromptCo[/Prompt new company/]
-    PromptCo --> ValidCo{Non-empty?}
-    ValidCo -- No --> PromptCo
-    ValidCo -- Yes --> UpdateCo[Update application company]
-    BranchField -- 2: Role --> PromptRole[/Prompt new role/]
-    PromptRole --> ValidRole{Non-empty?}
-    ValidRole -- No --> PromptRole
-    ValidRole -- Yes --> UpdateRole[Update application role]
-    BranchField -- 3: Status --> PromptStatus[/Prompt status 1-3 or text/]
-    PromptStatus --> ValidStatus{Valid status?}
-    ValidStatus -- No --> PromptStatus
-    ValidStatus -- Yes --> UpdateStatus[Update application status]
-    BranchField -- 4: All --> PromptAllCo[/Prompt company, role, status/]
-    PromptAllCo --> UpdateAll[Update all fields]
-    BranchField -- Other --> ShowFieldErr[Show invalid field error] --> End
-    UpdateCo --> Save[Storage.save applications]
-    UpdateRole --> Save
-    UpdateStatus --> Save
-    UpdateAll --> Save
+flowchart LR
+    Start((●)) --> PromptIdx[Prompt & validate index]
+    PromptIdx --> PromptField[Prompt field choice 1-4]
+    PromptField --> Branch{"Field choice"}
+    Branch -- "[1: Company]" --> UpdCo[Update company] --> Merge{ }
+    Branch -- "[2: Role]" --> UpdRole[Update role] --> Merge
+    Branch -- "[3: Status]" --> UpdStat[Update status] --> Merge
+    Branch -- "[4: All]" --> UpdAll[Update all fields] --> Merge
+    Merge --> Save[Storage.save applications]
     Save --> Confirm[Show confirmation message]
-    Confirm --> End
+    Confirm --> End(((◎)))
 ```
 
 #### Edit Application Sequence Diagram
@@ -820,13 +762,13 @@ sequenceDiagram
     list-->>cmd: application
     deactivate list
 
-    alt Field 1: Company only
+    alt [choice == 1 (Company)]
         cmd->>app: setCompany(newCompany)
-    else Field 2: Role only
+    else [choice == 2 (Role)]
         cmd->>app: setRole(newRole)
-    else Field 3: Status only
+    else [choice == 3 (Status)]
         cmd->>app: setStatus(newStatus)
-    else Field 4: All fields
+    else [choice == 4 (All)]
         cmd->>app: setCompany(newCompany)
         cmd->>app: setRole(newRole)
         cmd->>app: setStatus(newStatus)
@@ -860,20 +802,14 @@ The commands collect zero-based indices of matching applications. `SearchCommand
 The flow of user input, matching/sorting logic, and display formatting for both search and sort operations is shown below:
 
 ```mermaid
-flowchart TD
-    Start([User selects Option 8 or 9]) --> CheckCmd{"Option 8 (Search)<br/>or 9 (Sort)?"}
-    CheckCmd -- Option 8: Search --> PromptKeyword[/Prompt non-empty search keyword/]
-    PromptKeyword --> CheckEmptyList{"ApplicationList<br/>empty?"}
-    CheckEmptyList -- Yes --> ShowNoApp["Ui.showMessage: 'No applications found.'"] --> End([End])
-    CheckEmptyList -- No --> FilterLoop["Case-insensitive match<br/>against company & role"]
-    FilterLoop --> CheckMatches{"Matches<br/>found?"}
-    CheckMatches -- No --> ShowNoMatch["Ui.showMessage: 'No applications found matching keyword.'"] --> End
-    CheckMatches -- Yes --> FormatTable[ApplicationTable.format matching indices] --> DisplayTable[Ui.showMessage table] --> End
-
-    CheckCmd -- Option 9: Sort --> CheckEmptySort{"ApplicationList<br/>empty?"}
-    CheckEmptySort -- Yes --> ShowNoAppSort["Ui.showMessage: 'No applications found.'"] --> End
-    CheckEmptySort -- No --> SortIndices["Sort copy of indices by<br/>company, then role"]
-    SortIndices --> FormatSortTable[ApplicationTable.format sorted indices] --> DisplaySortTable[Ui.showMessage table] --> End
+flowchart LR
+    Start((●)) --> Choice{"Option 8 or 9?"}
+    Choice -- "[8: Search]" --> Prompt[Prompt keyword & filter matches]
+    Choice -- "[9: Sort]" --> Sort[Sort index copy by company & role]
+    Prompt --> Table[Format table via ApplicationTable]
+    Sort --> Table
+    Table --> Display[Display table via Ui]
+    Display --> End(((◎)))
 ```
 
 #### Search Sequence Diagram
@@ -903,7 +839,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    loop For each application in list
+    loop [for each application]
         cmd->>list: get(i)
         activate list
         list-->>cmd: application
@@ -918,7 +854,7 @@ sequenceDiagram
         deactivate app
     end
 
-    alt Matches found
+    alt [matches found]
         cmd->>table: format(applications, matches, header)
         activate table
         table-->>cmd: formattedTable
@@ -927,7 +863,7 @@ sequenceDiagram
         activate ui
         ui-->>user: Matching applications table
         deactivate ui
-    else No matches found
+    else [else]
         cmd->>ui: showMessage("No applications found matching 'engineer'.")
         activate ui
         ui-->>user: No matches message
@@ -963,7 +899,7 @@ sequenceDiagram
     activate cmd
 
     Note over cmd: Copy indices [0..size-1] & sort by company, then role
-    loop During index comparison
+    loop [during index comparison]
         cmd->>list: get(index)
         activate list
         list-->>cmd: application
@@ -1023,27 +959,27 @@ classDiagram
     direction TB
 
     class Main {
-        +run() void
+        + run(): void
     }
 
     class DeadlineWarnings {
-        -UPCOMING_WINDOW_DAYS int
-        +show(applications, ui) void
-        -appendWarning(warnings, application, deadline, today) void
+        - UPCOMING_WINDOW_DAYS: int$
+        + show(applications: ApplicationList, ui: Ui): void
+        - appendWarning(warnings: StringBuilder, application: Application, deadline: LocalDate, today: LocalDate): void
     }
 
     class ApplicationList {
-        +size() int
-        +get(index) Application
+        + size(): int
+        + get(index: int): Application
     }
 
     class Application {
-        +getDeadline() LocalDate
-        +isCompleted() boolean
+        + getDeadline(): LocalDate
+        + isCompleted(): boolean
     }
 
     class Ui {
-        +showMessage(message) void
+        + showMessage(message: String): void
     }
 
     Main "1" --> "1" DeadlineWarnings : invokes
@@ -1097,7 +1033,7 @@ sequenceDiagram
     activate warnings
     Note over warnings: Obtain today's date once via LocalDate.now()
 
-    loop Each application
+    loop [for each application]
         warnings->>list: get(i)
         activate list
         list-->>warnings: application
@@ -1111,12 +1047,12 @@ sequenceDiagram
         app-->>warnings: completed
         deactivate app
 
-        opt Incomplete and deadline exists and deadline <= today + 7 days
+        opt [incomplete and deadline <= today + 7 days]
             Note over warnings: Classify deadline and append warning
         end
     end
 
-    opt Warning summary is not empty
+    opt [warning summary is not empty]
         warnings->>ui: showMessage(summary)
         activate ui
         ui-->>warnings: 
@@ -1179,34 +1115,34 @@ classDiagram
     direction TB
 
     class Storage {
-        -String filePath
-        -String TITLE_HEADER$
-        -String COLUMN_HEADER$
-        +save(applications) void
-        +load() ApplicationList
-        -escape(value)$ String
-        -splitFields(line)$ List~String~
+        - filePath: String
+        - TITLE_HEADER: String$
+        - COLUMN_HEADER: String$
+        + save(applications: ApplicationList): void
+        + load(): ApplicationList
+        - escape(value: String)$: String
+        - splitFields(line: String)$: List~String~
     }
 
     class ApplicationList {
-        -ArrayList~Application~ applications
-        +getAll() List~Application~
-        +add(application) void
+        - applications: ArrayList~Application~
+        + getAll(): List~Application~
+        + add(application: Application): void
     }
 
     class Application {
-        -String company
-        -String role
-        -boolean isCompleted
-        -LocalDate deadline
-        +getCompany() String
-        +getRole() String
-        +isCompleted() boolean
-        +getDeadline() LocalDate
+        - company: String
+        - role: String
+        - isCompleted: boolean
+        - deadline: LocalDate
+        + getCompany(): String
+        + getRole(): String
+        + isCompleted(): boolean
+        + getDeadline(): LocalDate
     }
 
     class Main {
-        +loadApplications() ApplicationList
+        + loadApplications(): ApplicationList
     }
 
     Main "1" --> "1" Storage : uses
@@ -1261,7 +1197,7 @@ sequenceDiagram
     list-->>storage: applicationList
     deactivate list
 
-    loop Each application in list
+    loop [for each application]
         storage->>app: getCompany()
         activate app
         app-->>storage: company
@@ -1315,7 +1251,7 @@ sequenceDiagram
     list-->>storage: applications
     deactivate list
 
-    loop Each application record
+    loop [for each valid record]
         Note over storage: Decode fields and validate record
         storage->>app: new Application(company, role, completed, deadline)
         activate app
