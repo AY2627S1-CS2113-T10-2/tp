@@ -70,6 +70,15 @@ public class ApplicationTest {
     public void getStatus_defaultsToApplied() {
         Application application = new Application("Google", "SWE Intern");
         assertEquals("Applied", application.getStatus());
+        assertEquals(RecruitmentStage.APPLIED, application.getRecruitmentStage());
+    }
+
+    @Test
+    public void constructor_legacyPendingLabel_mapsToApplied() {
+        Application application = new Application("Google", "SWE Intern", "Pending");
+
+        assertEquals("Applied", application.getStatus());
+        assertEquals(RecruitmentStage.APPLIED, application.getRecruitmentStage());
     }
 
     @Test
@@ -80,6 +89,9 @@ public class ApplicationTest {
 
         application.setStatus("Rejected");
         assertEquals("Rejected", application.getStatus());
+
+        application.setStatus("Online Assessment");
+        assertEquals(RecruitmentStage.ONLINE_ASSESSMENT, application.getRecruitmentStage());
     }
 
     @Test
@@ -92,9 +104,10 @@ public class ApplicationTest {
     }
 
     @Test
-    public void constructor_fourParameters_setsStatusCorrectly() {
+    public void constructor_legacyOfferAcceptedLabel_mapsToAcceptedStage() {
         Application application = new Application("Microsoft", "Security Intern", true, "Offer Accepted");
         assertEquals("Accepted", application.getStatus());
+        assertEquals(RecruitmentStage.ACCEPTED, application.getRecruitmentStage());
         assertTrue(application.isCompleted());
     }
 

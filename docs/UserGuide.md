@@ -7,7 +7,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 1. Install Java 25 or later.
 2. Download the latest `jobseek.jar` and place it in a folder where you have write permission.
 3. Open a terminal in that folder and run `java -jar jobseek.jar`.
-4. Enter a number from the menu and follow the prompts. You can also type the `list` and `view` commands described below. Enter `0` to exit.
+4. Enter a number from the menu and follow the prompts, or type a one-line command such as `add c/Google r/SWE Intern` (see [Typed commands](#typed-commands-one-line-shortcuts)). Enter `0` or type `exit` to quit.
 
 **Note:** Double-clicking the JAR may not open a usable terminal window. JobSeek needs write permission in the launch folder to create and update its data file.
 
@@ -26,6 +26,60 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 | `9` | Sort applications | View applications alphabetically by company, then role. |
 | `10` | Edit application | Update company, role, recruitment stage, deadline, portal link, email, notes, or all fields of an application. |
 | `0` | Exit | Quit JobSeek. |
+
+---
+
+### Typed commands (one-line shortcuts)
+
+Instead of answering prompts one by one, you can type a whole command on one line. The numbered menu still works.
+
+| Action | Format | Example |
+| --- | --- | --- |
+| Add | `add c/COMPANY r/ROLE [d/YYYY-MM-DD]` | `add c/Google r/SWE Intern d/2026-11-30` |
+| Edit | `edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE]` | `edit 2 r/Backend Intern s/Interview` |
+| Delete | `delete INDEX` | `delete 3` |
+| Mark / unmark | `mark INDEX`, `unmark INDEX` | `mark 1` |
+| Search | `search KEYWORD` | `search google` |
+| Find (combined filters) | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/..]` | `find c/google s/interview` |
+| Sort | `sort` | `sort` |
+| List | `list [completed\|all]` | `list all` |
+| View details | `view INDEX` | `view 2` |
+| Today dashboard | `today` | `today` |
+| Undo | `undo` | `undo` |
+| Help / exit | `help`, `exit` | `exit` |
+
+- `c/` is company, `r/` is role, `d/` is deadline and `s/` is recruitment stage (for example `Interview`, or the shortcut `OA`).
+- Fields can be given in any order. In `add`, `c/` and `r/` are required. In `edit`, at least one field is required.
+- Command words are not case-sensitive. `INDEX` is the number shown by `list`.
+- A field value ends where the next ` x/` prefix starts, so avoid typing text such as ` r/` inside a company name.
+- If a command is wrong, JobSeek shows what is wrong and the correct format, and nothing is changed.
+
+---
+
+### Finding with combined filters: `find`
+
+Narrows the list using several conditions at once. An application is shown only if it satisfies **every** filter you give.
+
+- **Format**: `find [c/COMPANY] [r/ROLE] [s/STAGE] [b/DATE] [a/DATE] [m/yes|no]` (give at least one filter, in any order)
+
+| Filter | Meaning |
+| --- | --- |
+| `c/TEXT` | Company contains the text (ignores upper/lower case). |
+| `r/TEXT` | Role contains the text (ignores upper/lower case). |
+| `s/STAGE` | Recruitment stage equals `STAGE`, such as `Interview` or the shortcut `OA`. |
+| `b/YYYY-MM-DD` | Deadline is on or before the date. |
+| `a/YYYY-MM-DD` | Deadline is on or after the date. |
+| `m/yes` or `m/no` | The application is (or is not) marked as completed. |
+
+Applications without a deadline never match `b/` or `a/`. Use both together to find a date range.
+
+Examples:
+
+- `find c/google s/interview` shows Google applications that are at the interview stage.
+- `find r/intern a/2026-11-01 b/2026-11-30` shows internships with a deadline in November 2026.
+- `find m/no s/offer` shows offers you have not marked as completed yet.
+
+Results keep the numbers from the full list, so you can use them directly with `view`, `edit` and `delete`. If nothing matches, JobSeek says so and shows the conditions it searched for. `find` only displays results and never changes your data. For a quick single-word lookup, `search KEYWORD` is still available.
 
 ---
 
@@ -67,6 +121,7 @@ Choose `1` to create and track a new job or internship application.
   Email: recruiter@google.com
   Notes: Referred by Alice; OA completed
   ```
+- **Typed alternative**: `add c/Google r/Software Engineering Intern d/2026-11-30` does the same in one line.
 
 ---
 
@@ -171,6 +226,7 @@ Choose `10` to update details of an existing application in place without deleti
   - Invalid stage choices are rejected and reprompted (`Error: Invalid recruitment stage: '...'. Enter a number from 1 to 7 or a known stage name.`).
   - Entering an invalid field choice (anything other than 1 through 8) displays `Error: Invalid field choice: '<choice>'. Enter a number from 1 to 8.` and returns to the menu.
   - Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
+- **Typed alternative**: `edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE]` changes only the fields you give, for example `edit 2 r/Backend Intern s/Interview`.
 - **Confirmation message**:
   For field choices updating company, role, or where optional fields are cleared / omitted:
   ```text
@@ -184,13 +240,13 @@ Choose `10` to update details of an existing application in place without deleti
   Application updated successfully.
   Company: Alphabet Inc.
   Role: Senior SWE Intern
-  Status: Pending
+  Status: Applied
   Deadline: 2026-11-20
   Portal Link: https://careers.google.com
   Email: recruiter@google.com
   Notes: Technical interview round completed
   ```
-  For field choice `3` (Status only):
+  For field choice `3` (Recruitment stage only):
   ```text
   Application status updated successfully.
   Company: Alphabet Inc.
@@ -205,7 +261,7 @@ Choose `10` to update details of an existing application in place without deleti
 Each application has one of these stages: `Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`. `Accepted`, `Rejected`, and `Withdrawn` are terminal stages. You can still edit a stage at any time to correct a mistake or reflect a company process; stages do not enforce a fixed transition order.
 
 #### Updating a stage
-Under menu option `10`, select field `3` (Recruitment stage) or `8` (All). Enter one of the numbered choices shown by the prompt (`1` for Applied, `2` for Online Assessment, `3` for Interview, `4` for Offer, `5` for Accepted, `6` for Rejected, `7` for Withdrawn), or type a stage name such as `Interview`. The shortcut `OA` is also accepted for `Online Assessment`. Inputs are case-insensitive. Any unrecognized input triggers `Error: Invalid recruitment stage: '<input>'. Enter a number from 1 to 7 or a known stage name.`
+Under menu option `10`, select field `3` (Recruitment stage) or `8` (All). Enter one of the numbered choices shown by the prompt (`1` for Applied, `2` for Online Assessment, `3` for Interview, `4` for Offer, `5` for Accepted, `6` for Rejected, `7` for Withdrawn), or type a stage name such as `Interview`. The shortcut `OA` is also accepted for `Online Assessment`. Inputs are case-insensitive. You can also type `edit INDEX s/STAGE`, for example `edit 1 s/oa`.
 
 #### Inspecting an application stage
 Use the `view INDEX` command to view the comprehensive card for any application, including its recruitment stage:
@@ -228,26 +284,49 @@ Completed: No
 #### Search applications
 Choose `8`, then enter part of a company name or role. Search ignores letter case. For example, `eng` matches both `Engineer` in a role and `Engineering Co` in a company name. An empty search term is rejected and you will be prompted again. If nothing matches, JobSeek tells you so.
 
+You can also type `search KEYWORD` (for example `search eng`) or, to combine several conditions, `find` (see [Finding with combined filters](#finding-with-combined-filters-find)).
+
 Search results show the same application numbers as the normal list. For example, if the matching record is application `3`, you can still enter `3` when marking or deleting it. Search does not change or save application order.
 
 #### Sort applications alphabetically
-Choose `9` to view applications ordered by company name, then by role when company names match. Sorting ignores letter case. The number beside each application is its original number in the normal list. This is a display-only view: it does not rearrange the saved applications. If you later type `list all`, the original order is shown again.
+Choose `9` or type `sort` to view applications ordered by company name, then by role when company names match. Sorting ignores letter case. The number beside each application is its original number in the normal list. This is a display-only view: it does not rearrange the saved applications. If you later type `list all`, the original order is shown again.
 
 ---
 
 ### Deleting an application
 
-Choose `4` to permanently remove an application.
+Choose `4` to remove an application. JobSeek asks you to confirm first, and you can reverse the deletion with `undo`.
 
 1. Enter `list all` to find the number of the application you want to delete.
 2. Enter `4` at the main menu.
-3. Enter the application number when prompted.
+3. Enter the application number when prompted. (Or type `delete INDEX`, for example `delete 2`, to skip the prompt for the number.)
+4. JobSeek shows the application and asks `Delete ... ? (y/n)`. Enter `y` or `yes` to delete it. Any other answer cancels the deletion and nothing changes.
 
-For example, entering `2` at the deletion prompt removes application number `2`.
+For example, entering `2` at the deletion prompt and `y` at the confirmation prompt removes application number `2`.
 
-There is no additional confirmation prompt or undo feature. Application numbers after the deleted entry shift down by one, so check the list again before deleting another application.
+Application numbers after the deleted entry shift down by one, so check the list again before deleting another application.
 
 If the list is empty or the application number is invalid, JobSeek displays an error without deleting anything.
+
+---
+
+### Undoing a change: `undo`
+
+Reverses the most recent change to your applications, such as an accidental deletion.
+
+- **Usage**: Enter `undo` at the main menu prompt.
+- **What can be undone**: adding, deleting, editing, changing the status of, and marking or unmarking an application.
+- Enter `undo` again to step further back, newest change first.
+- Commands that only display information (`list`, `view`, `search`, `today`) and cancelled or failed commands are not recorded.
+- The history is kept in memory only, so it is cleared when you exit JobSeek.
+- If there is nothing to undo, JobSeek shows `Nothing to undo.`.
+
+```text
+> undo
+____________________________________________________________
+Undone: deleted [ ] Google | SWE Intern
+____________________________________________________________
+```
 
 ---
 
@@ -255,15 +334,16 @@ If the list is empty or the application number is invalid, JobSeek displays an e
 
 Marks the application at the specified index as completed (`[X]`). Completed applications represent concluded application pipelines (such as accepted offers or finalized cycles) and are hidden from the default active list view to keep your workspace clutter-free.
 
-Format: Choose `5` from the menu, then enter `<application_number>`.
+Format: Choose `5` from the menu, then enter `<application_number>`, or type `mark <application_number>`.
 
 Examples:
 * Choose `5`, then enter `1` – Marks application number 1 as completed.
+* `mark 1` – Does the same in one line.
 
 Example output:
 ```text
 Nice! I've marked this application as completed:
-  [X] Google | Role: SWE Intern
+  [X] Google | SWE Intern
 ```
 
 > **Notes on marking applications:**
@@ -279,15 +359,16 @@ Nice! I've marked this application as completed:
 
 Reverts the completion status of the application at the specified index back to incomplete (`[ ]`). The application is reactivated and will appear in active application listings.
 
-Format: Choose `6` from the menu, then enter `<application_number>`.
+Format: Choose `6` from the menu, then enter `<application_number>`, or type `unmark <application_number>`.
 
 Examples:
 * Choose `6`, then enter `1` – Reverts application number 1 back to incomplete.
+* `unmark 1` – Does the same in one line.
 
 Example output:
 ```text
 OK, I've marked this application as not completed yet:
-  [ ] Google | Role: SWE Intern
+  [ ] Google | SWE Intern
 ```
 
 > **Notes on unmarking applications:**
@@ -320,7 +401,7 @@ DUE TODAY: Shopee - Backend Intern (deadline 2026-10-28)
 UPCOMING: GovTech - Data Analyst (deadline 2026-11-03)
 ```
 
-If no applications require attention, no warning summary appears. Warnings are checked once at startup and do not automatically refresh while JobSeek remains open.
+If no applications require attention, no warning summary appears. Warnings are checked once at startup and do not automatically refresh while JobSeek remains open. To see the same information at any time, use the [`today` dashboard](#today-dashboard-today).
 
 ---
 
@@ -360,7 +441,8 @@ JobSeek automatically saves application data to `data/applications.txt` when com
 - If the data file does not exist, JobSeek starts with an empty application list.
 - **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records.
 - If loading completely fails due to an unrecoverable system I/O error, JobSeek displays an error and starts with an empty list.
-- Search, sort, list and help only display information and do not modify saved data.
+- `search`, `find`, `sort`, `list`, `view`, `today` and `help` only display information and do not modify saved data.
+- `undo` history is not saved: it is cleared when you exit JobSeek.
 
 The data file location is relative to the folder from which you launch JobSeek. Launch the application from the same folder each time to access the same saved records.
 
@@ -375,6 +457,12 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
   ```text
   Available menu options:
     list [completed|all]            - List active, completed, or all applications
+    undo                            - Undo the last add, delete, edit, status or mark change
+    add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
+    edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
+    delete|mark|unmark INDEX        - Delete, complete or reopen an application
+    find c/.. r/.. s/.. b/.. a/..   - Combine filters (company, role, stage, deadline)
+    search KEYWORD | sort           - Search by company/role, or view alphabetically
     today                           - Show overdue, due-today and upcoming deadlines
     view INDEX                      - View details for application at INDEX
     [1] Add application             - Add a new internship or job application
@@ -396,17 +484,19 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 
 | Action | Format | Examples / Usage |
 |---|---|---|
-| **Add application** | `1` | Choose `1`, then enter company, role, optional deadline, portal link, email, notes |
+| **Add application** | `1` or `add c/COMPANY r/ROLE [d/DATE]` | Choose `1` (prompts for required company/role and optional deadline, portal link, email, notes), or `add c/Google r/SWE Intern d/2026-11-30` |
 | **List active applications** | `list` or `2` or `3` | `list` or choose `2` or `3` |
 | **List completed applications** | `list completed` | `list completed` |
 | **List all applications** | `list all` | `list all` |
 | **View application details** | `view <application_number>` | `view 1` |
-| **Delete application** | `4` | Choose `4`, then enter application index (e.g. `2`) |
-| **Mark application completed** | `5` | Choose `5`, then enter application index (e.g. `1`) |
-| **Unmark application** | `6` | Choose `6`, then enter application index (e.g. `1`) |
+| **Delete application** | `4` or `delete INDEX` | Choose `4`, or `delete 2`; then confirm with `y` |
+| **Undo last change** | `undo` | `undo` |
+| **Mark application completed** | `5` or `mark INDEX` | Choose `5`, then enter application index (e.g. `1`), or `mark 1` |
+| **Unmark application** | `6` or `unmark INDEX` | Choose `6`, then enter application index (e.g. `1`), or `unmark 1` |
 | **Today dashboard** | `today` | `today` |
-| **Help instructions** | `7` | `7` |
-| **Search applications** | `8` | Choose `8`, then enter search term (e.g. `Google`) |
-| **Sort applications** | `9` | Choose `9` to view applications alphabetically |
-| **Edit application** | `10` | Choose `10`, enter index, and select field 1-8 to modify |
-| **Exit JobSeek** | `0` | `0` |
+| **Help instructions** | `7` or `help` | `7` or `help` |
+| **Search applications** | `8` or `search KEYWORD` | Choose `8`, then enter search term (e.g. `Google`), or `search google` |
+| **Find with combined filters** | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/yes\|no]` | `find c/google s/interview` |
+| **Sort applications** | `9` or `sort` | Choose `9`, or `sort`, to view applications alphabetically |
+| **Edit application** | `10` or `edit INDEX [c/..] [r/..] [s/..]` | Choose `10` (select field 1-8 to modify), or `edit 2 s/Interview` |
+| **Exit JobSeek** | `0` or `exit` | `0` or `exit` |

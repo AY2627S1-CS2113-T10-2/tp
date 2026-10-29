@@ -2,6 +2,7 @@ package jobseek.command;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.AfterEach;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,6 +25,12 @@ public class StatusCommandTest {
 
     private final PrintStream standardOut = System.out;
     private ByteArrayOutputStream outputStream;
+
+    /** Gives each command execution an isolated save path. */
+    private Storage createTestStorage() {
+        return new Storage(Path.of(System.getProperty("java.io.tmpdir"), "jobseek-status-tests",
+                UUID.randomUUID().toString(), "applications.txt").toString());
+    }
 
     @BeforeEach
     public void setUp() {
@@ -43,12 +52,12 @@ public class StatusCommandTest {
     }
 
     @Test
-    public void execute_appliedStatus_updatesSuccessfully() throws Exception {
+    public void execute_appliedStage_updatesSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false, "Accepted"));
 
         StatusCommand command = new StatusCommand(0, "Applied");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
@@ -59,10 +68,10 @@ public class StatusCommandTest {
     @Test
     public void execute_acceptedStatus_updatesSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Google", "SWE Intern", false, "Pending"));
+        applications.add(new Application("Google", "SWE Intern", false, "Applied"));
 
         StatusCommand command = new StatusCommand(0, "Accepted");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
@@ -71,12 +80,34 @@ public class StatusCommandTest {
     }
 
     @Test
+    public void execute_onlineAssessmentStage_updatesSuccessfully() throws Exception {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        StatusCommand command = new StatusCommand(0, "Online Assessment");
+        command.execute(applications, new Ui(), createTestStorage());
+
+        assertEquals(RecruitmentStage.ONLINE_ASSESSMENT, applications.get(0).getRecruitmentStage());
+        assertTrue(outputStream.toString().contains("Status: Online Assessment"));
+    }
+
+    @Test
+    public void execute_legacyPendingLabel_updatesToAppliedStage() throws Exception {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+
+        new StatusCommand(0, "Pending").execute(applications, new Ui(), createTestStorage());
+
+        assertEquals(RecruitmentStage.APPLIED, applications.get(0).getRecruitmentStage());
+    }
+
+    @Test
     public void execute_rejectedStatus_updatesSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
+        applications.add(new Application("Shopee", "Backend Intern", false, "Applied"));
 
         StatusCommand command = new StatusCommand(0, "Rejected");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Rejected", applications.get(0).getStatus());
         String output = outputStream.toString();
@@ -87,10 +118,10 @@ public class StatusCommandTest {
     @Test
     public void execute_whitespaceStatus_trimmedSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Grab", "Data Analyst", false, "Pending"));
+        applications.add(new Application("Grab", "Data Analyst", false, "Applied"));
 
         StatusCommand command = new StatusCommand(0, "   Accepted   ");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Accepted", applications.get(0).getStatus());
     }
@@ -99,7 +130,7 @@ public class StatusCommandTest {
     public void execute_emptyList_showsError() throws Exception {
         ApplicationList applications = new ApplicationList();
         StatusCommand command = new StatusCommand(0, "Accepted");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Your application list is currently empty."));
@@ -111,7 +142,7 @@ public class StatusCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         StatusCommand command = new StatusCommand(-1, "Accepted");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
@@ -124,7 +155,7 @@ public class StatusCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         StatusCommand command = new StatusCommand(5, "Accepted");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
@@ -137,7 +168,7 @@ public class StatusCommandTest {
         applications.add(new Application("Google", "SWE Intern", false, "Applied"));
 
         StatusCommand command = new StatusCommand(0, "");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
@@ -150,7 +181,7 @@ public class StatusCommandTest {
         applications.add(new Application("Google", "SWE Intern", false, "Applied"));
 
         StatusCommand command = new StatusCommand(0, null);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
@@ -163,7 +194,7 @@ public class StatusCommandTest {
         applications.add(new Application("Meta", "Production Engineer", true, "Applied"));
 
         StatusCommand command = new StatusCommand(0, "Accepted");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Meta", applications.get(0).getCompany());
         assertEquals("Production Engineer", applications.get(0).getRole());
@@ -179,7 +210,7 @@ public class StatusCommandTest {
         applications.add(new Application("Grab", "Data", false, "Applied"));
 
         StatusCommand command = new StatusCommand(1, "Accepted");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), createTestStorage());
 
         assertEquals("Applied", applications.get(0).getStatus());
         assertEquals("Accepted", applications.get(1).getStatus());

@@ -62,7 +62,7 @@ public class TodayCommandTest {
     }
 
     @Test
-    public void execute_activeApplications_groupedByStatusInSummary() {
+    public void execute_activeApplications_groupedByRecruitmentStageInSummary() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("A", "R", false, "Accepted", null));
         applications.add(new Application("B", "R", false, "Applied", null));

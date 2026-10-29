@@ -10,13 +10,14 @@ import java.time.LocalDate;
 /**
  * Handles adding a new job or internship application to the list.
  */
-public class AddCommand extends Command {
+public class AddCommand extends UndoableCommand {
     private final String company;
     private final String role;
     private final LocalDate deadline;
     private final String portalLink;
     private final String email;
     private final String notes;
+    private Application addedApplication;
 
     /**
      * Constructs an AddCommand with the given company and role.
@@ -117,6 +118,8 @@ public class AddCommand extends Command {
         Application application = new Application(company, role, false, Application.DEFAULT_STAGE,
                 deadline, portalLink, email, notes);
         applications.add(application);
+        addedApplication = application;
+        markChanged();
 
         assert applications.size() == sizeBefore + 1 : "Adding one application should increase list size by one";
         assert applications.get(applications.size() - 1) == application
@@ -140,5 +143,18 @@ public class AddCommand extends Command {
         ui.showMessage(message.toString());
 
         storage.save(applications);
+    }
+
+    /** Removes the application this command added. */
+    @Override
+    public String undo(ApplicationList applications) {
+        // Compare by identity: two applications can have identical text but only one was added here.
+        for (int i = applications.size() - 1; i >= 0; i--) {
+            if (applications.get(i) == addedApplication) {
+                applications.delete(i);
+                break;
+            }
+        }
+        return "added " + addedApplication;
     }
 }

@@ -94,7 +94,7 @@ public class ViewCommandTest {
     }
 
     @Test
-    public void execute_validIndexDefaultStatus_displaysCardCorrectly() throws Exception {
+    public void execute_validIndexDefaultStage_displaysCardCorrectly() throws Exception {
         ApplicationList list = new ApplicationList();
         list.add(new Application("Google", "SWE Intern", false));
 
@@ -149,6 +149,16 @@ public class ViewCommandTest {
         assertTrue(output.contains("Portal:    https://google.com/jobs"));
         assertTrue(output.contains("Email:     recruiter@google.com"));
         assertTrue(output.contains("Notes:     First interview done"));
+    }
+
+    @Test
+    public void execute_onlineAssessmentStage_displaysStageLabel() throws Exception {
+        ApplicationList list = new ApplicationList();
+        list.add(new Application("Google", "SWE Intern", false, "Online Assessment"));
+
+        new ViewCommand(0).execute(list, new Ui(), new Storage());
+
+        assertTrue(outputStream.toString().contains("Status:    Online Assessment"));
     }
 
     @Test

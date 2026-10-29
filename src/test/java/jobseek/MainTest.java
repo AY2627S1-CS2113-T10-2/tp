@@ -21,7 +21,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.Scanner;
+import java.util.UUID;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,8 +58,14 @@ public class MainTest {
     private Main createMainWithInput(String input, ApplicationList applications) {
         Scanner scanner = new Scanner(input);
         Ui ui = new Ui(scanner);
-        Storage storage = new Storage();
+        Storage storage = createTestStorage();
         return new Main(ui, storage, applications);
+    }
+
+    /** Gives each workflow test an isolated save path. */
+    private Storage createTestStorage() {
+        return new Storage(Path.of(System.getProperty("java.io.tmpdir"), "jobseek-main-tests",
+                UUID.randomUUID().toString(), "applications.txt").toString());
     }
 
     /** Verifies that selecting Exit terminates the application cleanly. */
@@ -133,16 +141,49 @@ public class MainTest {
     /** Verifies that unsupported word commands show errors without ending the workflow. */
     @Test
     public void run_typedWordsOnMenu_rejectedWithErrorMessage() {
-        Main main = createMainWithInput("exit\nbye\nhelp\nremove\nadd\n0\n", new ApplicationList());
+        Main main = createMainWithInput("bye\nremove\nfoo\n0\n", new ApplicationList());
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 10."));
-        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Error: Invalid option: 'remove'. Enter a number from 0 to 10."));
-        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'foo'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
+    }
+
+    /** Verifies that a typed add command adds an application with its deadline in one line. */
+    @Test
+    public void run_typedAdd_addsApplicationWithDeadline() {
+        ApplicationList applications = new ApplicationList();
+        Main main = createMainWithInput("add c/Google r/SWE Intern d/2099-01-31\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertEquals("Google", applications.get(0).getCompany());
+        assertEquals("SWE Intern", applications.get(0).getRole());
+        assertEquals(java.time.LocalDate.of(2099, 1, 31), applications.get(0).getDeadline());
+    }
+
+    /** Verifies that bad typed arguments show the usage message and the program keeps running. */
+    @Test
+    public void run_typedAddMissingRole_showsUsageAndContinues() {
+        ApplicationList applications = new ApplicationList();
+        Main main = createMainWithInput("add c/Google\n0\n", applications);
+        main.run();
+
+        assertTrue(applications.isEmpty());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Usage: add c/COMPANY r/ROLE [d/YYYY-MM-DD]"));
+        assertTrue(output.contains("Goodbye!"));
+    }
+
+    /** Verifies that typed exit ends the program. */
+    @Test
+    public void run_typedExit_terminatesCleanly() {
+        Main main = createMainWithInput("exit\n", new ApplicationList());
+        main.run();
+
+        assertTrue(outputStream.toString().contains("Goodbye!"));
     }
 
     /** Verifies that the Help menu displays all supported options. */
@@ -317,7 +358,7 @@ public class MainTest {
         applications.add(new Application("Google", "SWE Intern", false));
         applications.add(new Application("Shopee", "Backend Intern", false));
 
-        String input = "4\n1\n0\n";
+        String input = "4\n1\ny\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -326,7 +367,48 @@ public class MainTest {
 
         String output = outputStream.toString();
         assertTrue(output.contains("Enter application index to delete:\n> "));
+        assertTrue(output.contains("Delete [ ] Google | SWE Intern? (y/n)"));
         assertTrue(output.contains("I've deleted this application:"));
+    }
+
+    /** Verifies that declining the confirmation keeps the application. */
+    @Test
+    public void run_menuDeleteDeclined_keepsApplication() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false));
+
+        Main main = createMainWithInput("4\n1\nn\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertTrue(outputStream.toString().contains("Deletion cancelled."));
+    }
+
+    /** Verifies that undo brings back an application deleted earlier in the same session. */
+    @Test
+    public void run_undoAfterDelete_restoresApplication() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false));
+
+        Main main = createMainWithInput("4\n1\ny\nundo\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertEquals("Google", applications.get(0).getCompany());
+        assertTrue(outputStream.toString().contains("Undone: deleted"));
+    }
+
+    /** Verifies that undo with nothing to undo reports an error and changes nothing. */
+    @Test
+    public void run_undoWithEmptyHistory_showsError() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false));
+
+        Main main = createMainWithInput("undo\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertTrue(outputStream.toString().contains("Error: Nothing to undo."));
     }
 
     /** Verifies that Delete reports an error when there are no applications. */
@@ -662,7 +744,7 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Invalid recruitment stage: '99'"));
+        assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
     }
 
     @Test
@@ -676,7 +758,7 @@ public class MainTest {
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Invalid recruitment stage: '99'"));
+        assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
         assertTrue(output.contains("Application status updated successfully."));
         assertTrue(output.contains("Status: Accepted"));
     }
@@ -749,7 +831,7 @@ public class MainTest {
         assertInstanceOf(ExitCommand.class, main.parseCommand("0"));
 
         Scanner addScanner = new Scanner("Google\nSWE Intern\n");
-        Main addMain = new Main(new Ui(addScanner), new Storage(), new ApplicationList());
+        Main addMain = new Main(new Ui(addScanner), createTestStorage(), new ApplicationList());
         Command addCmd = addMain.parseCommand("1");
         assertInstanceOf(AddCommand.class, addCmd);
         assertEquals("Google", ((AddCommand) addCmd).getCompany());
@@ -759,27 +841,27 @@ public class MainTest {
         list.add(new Application("Google", "SWE Intern"));
 
         Scanner delScanner = new Scanner("1\n");
-        Main delMain = new Main(new Ui(delScanner), new Storage(), list);
+        Main delMain = new Main(new Ui(delScanner), createTestStorage(), list);
         Command deleteCmd = delMain.parseCommand("4");
         assertInstanceOf(DeleteCommand.class, deleteCmd);
         assertEquals(0, ((DeleteCommand) deleteCmd).getTargetIndex());
 
         Scanner markScanner = new Scanner("1\n");
-        Main markMain = new Main(new Ui(markScanner), new Storage(), list);
+        Main markMain = new Main(new Ui(markScanner), createTestStorage(), list);
         Command markCmd = markMain.parseCommand("5");
         assertInstanceOf(MarkCommand.class, markCmd);
         assertEquals(0, ((MarkCommand) markCmd).getTargetIndex());
         assertTrue(((MarkCommand) markCmd).isCompleted());
 
         Scanner unmarkScanner = new Scanner("1\n");
-        Main unmarkMain = new Main(new Ui(unmarkScanner), new Storage(), list);
+        Main unmarkMain = new Main(new Ui(unmarkScanner), createTestStorage(), list);
         Command unmarkCmd = unmarkMain.parseCommand("6");
         assertInstanceOf(MarkCommand.class, unmarkCmd);
         assertEquals(0, ((MarkCommand) unmarkCmd).getTargetIndex());
         assertFalse(((MarkCommand) unmarkCmd).isCompleted());
 
         Scanner editScanner = new Scanner("1\n1\nGoogle LLC\n");
-        Main editMain = new Main(new Ui(editScanner), new Storage(), list);
+        Main editMain = new Main(new Ui(editScanner), createTestStorage(), list);
         Command editCmd = editMain.parseCommand("10");
         assertInstanceOf(EditCommand.class, editCmd);
         assertEquals(0, ((EditCommand) editCmd).getTargetIndex());
@@ -787,7 +869,7 @@ public class MainTest {
         assertNull(((EditCommand) editCmd).getNewRole());
 
         Scanner searchScanner = new Scanner("goo\n");
-        Main searchMain = new Main(new Ui(searchScanner), new Storage(), list);
+        Main searchMain = new Main(new Ui(searchScanner), createTestStorage(), list);
         assertInstanceOf(SearchCommand.class, searchMain.parseCommand("8"));
 
         Command viewCmd = main.parseCommand("view 1");
@@ -840,8 +922,6 @@ public class MainTest {
         assertNull(main.parseCommand("mark"));
         assertNull(main.parseCommand("unmark"));
         assertNull(main.parseCommand("edit"));
-        assertNull(main.parseCommand("help"));
-        assertNull(main.parseCommand("exit"));
         assertNull(main.parseCommand("bye"));
         assertNull(main.parseCommand("foobar"));
         assertNull(main.parseCommand("remove"));
@@ -853,7 +933,7 @@ public class MainTest {
         Main mainDefault = new Main();
         assertNotNull(mainDefault.getApplications());
 
-        Main mainCustom = new Main(new Ui(), new Storage(), null);
+        Main mainCustom = new Main(new Ui(), createTestStorage(), null);
         assertNotNull(mainCustom.getApplications());
     }
 
@@ -917,8 +997,8 @@ public class MainTest {
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Invalid recruitment stage: 'invalid'"));
-        assertTrue(output.contains("Invalid recruitment stage: '99'"));
+        assertTrue(output.contains("Error: Invalid recruitment stage: 'invalid'."));
+        assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
         assertTrue(output.contains("Application status updated successfully."));
     }
 

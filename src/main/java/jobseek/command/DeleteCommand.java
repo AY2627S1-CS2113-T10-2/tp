@@ -8,8 +8,9 @@ import jobseek.ui.Ui;
 /**
  * Handles deleting an application from the application list.
  */
-public class DeleteCommand extends Command {
+public class DeleteCommand extends UndoableCommand {
     private final int targetIndex;
+    private Application deletedApplication;
 
     /**
      * Constructs a DeleteCommand with the target 0-based index.
@@ -25,7 +26,8 @@ public class DeleteCommand extends Command {
     }
 
     /**
-     * Deletes the target application and saves the updated list.
+     * Asks the user to confirm, then deletes the target application and saves the updated list.
+     * Anything other than "y" or "yes" (including end of input) cancels the deletion.
      *
      * @param applications In-memory list of applications.
      * @param ui User interface for printing user feedback.
@@ -45,14 +47,30 @@ public class DeleteCommand extends Command {
             return;
         }
 
-        int sizeBefore = applications.size();
+        Application target = applications.get(targetIndex);
+        ui.showPrompt("Delete " + target + "? (y/n)\n> ");
+        String answer = ui.readCommand();
+        if (answer == null || !(answer.trim().equalsIgnoreCase("y") || answer.trim().equalsIgnoreCase("yes"))) {
+            ui.showMessage("Deletion cancelled. No application was deleted.");
+            return;
+        }
 
+        int sizeBefore = applications.size();
         Application application = applications.delete(targetIndex);
+        deletedApplication = application;
+        markChanged();
 
         assert applications.size() == sizeBefore - 1
                 : "Deleting one application should reduce the list size by one";
 
         ui.showMessage("OK, I've deleted this application:\n  " + application);
         storage.save(applications);
+    }
+
+    /** Puts the deleted application back at its original position. */
+    @Override
+    public String undo(ApplicationList applications) {
+        applications.insert(Math.min(targetIndex, applications.size()), deletedApplication);
+        return "deleted " + deletedApplication;
     }
 }

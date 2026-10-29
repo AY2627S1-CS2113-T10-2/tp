@@ -2,6 +2,7 @@ package jobseek;
 
 import jobseek.command.AddCommand;
 import jobseek.command.Command;
+import jobseek.command.CommandHistory;
 import jobseek.command.DeleteCommand;
 import jobseek.command.EditCommand;
 import jobseek.command.ExitCommand;
@@ -12,9 +13,11 @@ import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
 import jobseek.command.StatusCommand;
 import jobseek.command.TodayCommand;
+import jobseek.command.UndoCommand;
 import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
+import jobseek.parser.CommandParser;
 import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -30,6 +33,7 @@ public class Main {
     private final Storage storage;
     private final ApplicationList applications;
     private final DeadlineWarnings deadlineWarnings = new DeadlineWarnings();
+    private final CommandHistory history = new CommandHistory();
 
     /**
      * Constructs the main application instance and initializes core components.
@@ -117,6 +121,7 @@ public class Main {
             if (command != null) {
                 try {
                     command.execute(applications, ui, storage);
+                    history.record(command);
                     isExit = command.isExit();
                 } catch (JobSeekException e) {
                     ui.showError(e.getMessage());
@@ -134,7 +139,7 @@ public class Main {
 
     /**
      * Parses a user menu option string into an executable Command instance.
-     * Accepts numeric menu options (0 through 10), plus supported list and view commands.
+     * Accepts numeric menu options (0 through 10), plus typed commands such as list, view, today, add and edit.
      *
      * @param option Raw menu option string entered by the user.
      * @return The corresponding Command object, or null if the option is invalid.
@@ -156,6 +161,10 @@ public class Main {
             }
         }
 
+        if (trimmedOption.equalsIgnoreCase("undo")) {
+            return new UndoCommand(history);
+        }
+
         if (trimmedOption.equalsIgnoreCase("today")) {
             return new TodayCommand();
         }
@@ -168,6 +177,17 @@ public class Main {
                 ui.showError(e.getMessage());
                 return null;
             }
+        }
+
+        // Typed commands such as "add c/Google r/SWE" are tried before falling back to the numbered menu.
+        try {
+            Command typedCommand = CommandParser.parse(trimmedOption);
+            if (typedCommand != null) {
+                return typedCommand;
+            }
+        } catch (JobSeekException e) {
+            ui.showError(e.getMessage());
+            return null;
         }
 
         switch (trimmedOption) {

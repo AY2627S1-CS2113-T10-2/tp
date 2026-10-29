@@ -11,7 +11,7 @@ import java.time.LocalDate;
  * Handles editing specific existing fields (company, role, recruitment stage, deadline, portal link,
  * email, notes, or all) of an application.
  */
-public class EditCommand extends Command {
+public class EditCommand extends UndoableCommand {
     private final int targetIndex;
     private final String newCompany;
     private final String newRole;
@@ -21,6 +21,14 @@ public class EditCommand extends Command {
     private final String newEmail;
     private final String newNotes;
     private boolean isDeadlineUpdated;
+    private Application editedApplication;
+    private String previousCompany;
+    private String previousRole;
+    private String previousStatus;
+    private LocalDate previousDeadline;
+    private String previousPortalLink;
+    private String previousEmail;
+    private String previousNotes;
 
     /**
      * Constructs an EditCommand with the specified target index and new field values for company and role.
@@ -177,6 +185,17 @@ public class EditCommand extends Command {
         Application application = applications.get(targetIndex);
         assert application != null : "Application at valid index should not be null";
 
+        // Remember all old values so undo can restore the application exactly.
+        editedApplication = application;
+        previousCompany = application.getCompany();
+        previousRole = application.getRole();
+        previousStatus = application.getStatus();
+        previousDeadline = application.getDeadline();
+        previousPortalLink = application.getPortalLink();
+        previousEmail = application.getEmail();
+        previousNotes = application.getNotes();
+        markChanged();
+
         if (newCompany != null) {
             application.setCompany(newCompany);
         }
@@ -221,5 +240,18 @@ public class EditCommand extends Command {
         ui.showMessage(message.toString());
 
         storage.save(applications);
+    }
+
+    /** Restores all fields the application had before this command ran. */
+    @Override
+    public String undo(ApplicationList applications) {
+        editedApplication.setCompany(previousCompany);
+        editedApplication.setRole(previousRole);
+        editedApplication.setStatus(previousStatus);
+        editedApplication.setDeadline(previousDeadline);
+        editedApplication.setPortalLink(previousPortalLink);
+        editedApplication.setEmail(previousEmail);
+        editedApplication.setNotes(previousNotes);
+        return "edit of " + editedApplication;
     }
 }

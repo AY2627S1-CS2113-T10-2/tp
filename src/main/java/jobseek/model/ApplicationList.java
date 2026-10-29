@@ -40,6 +40,21 @@ public class ApplicationList {
     }
 
     /**
+     * Inserts an application at the specified 0-based index, shifting later applications down.
+     * Used to restore a deleted application to its original position.
+     *
+     * @param index 0-based position to insert at; must be between 0 and size (inclusive).
+     * @param app Application to insert.
+     */
+    public void insert(int index, Application app) {
+        assert app != null : "Cannot insert a null application";
+        if (index < 0 || index > applications.size()) {
+            throw new IndexOutOfBoundsException("Invalid insert index: " + index + ".");
+        }
+        applications.add(index, app);
+    }
+
+    /**
      * Removes and returns the application at the specified 0-based index.
      *
      * @param index 0-based index of the application to delete.
