@@ -28,37 +28,52 @@ The high-level interaction between the user, UI, logic controller, domain model,
 
 ```mermaid
 flowchart TB
+    classDef uiBox fill:#ffe6cc,stroke:#d79b00,stroke-width:2px,color:#000000
+    classDef logicBox fill:#dae8fc,stroke:#6c8ebf,stroke-width:2px,color:#000000
+    classDef modelBox fill:#d5e8d4,stroke:#82b366,stroke-width:2px,color:#000000
+    classDef storageBox fill:#fff2cc,stroke:#d6b656,stroke-width:2px,color:#000000
+    classDef userBox fill:#e1d5e7,stroke:#9673a6,stroke-width:2px,color:#000000
+    classDef fileBox fill:#f5f5f5,stroke:#666666,stroke-width:2px,color:#000000
+
+    User(["User (Terminal)"]):::userBox
+
     subgraph UI_Component["UI Component"]
-        UI["Ui"]
-        Table["ApplicationTable"]
+        UI["Ui"]:::uiBox
+        Table["ApplicationTable"]:::uiBox
     end
 
     subgraph Logic_Component["Logic / Command Component"]
-        Main["Main (Parser & Controller)"]
-        Commands["Command Hierarchy<br/>(Add, Delete, Edit, List, Status, etc.)"]
+        Main["Main (Controller & Parser)"]:::logicBox
+        Commands["Command Hierarchy<br/>(Add, Delete, Edit, List, Status, etc.)"]:::logicBox
     end
 
     subgraph Model_Component["Model Component"]
-        AppList["ApplicationList"]
-        App["Application"]
-        Warnings["DeadlineWarnings"]
+        AppList["ApplicationList"]:::modelBox
+        App["Application"]:::modelBox
+        Warnings["DeadlineWarnings"]:::modelBox
     end
 
     subgraph Storage_Component["Storage Component"]
-        Storage["Storage"]
-        File[("applications.txt")]
+        Storage["Storage"]:::storageBox
+        File[("applications.txt")]:::fileBox
     end
 
-    User(["User (Terminal)"]) <--> UI
+    style UI_Component fill:#fff8f0,stroke:#d79b00,stroke-width:2px,color:#7a4f00
+    style Logic_Component fill:#f5f9ff,stroke:#6c8ebf,stroke-width:2px,color:#1b365d
+    style Model_Component fill:#f4faf4,stroke:#82b366,stroke-width:2px,color:#274e13
+    style Storage_Component fill:#fffdf4,stroke:#d6b656,stroke-width:2px,color:#665200
+
+    User <--> UI
     UI <--> Main
     Main --> Commands
-    Commands --> Model_Component
-    Commands --> UI_Component
-    Commands --> Storage_Component
-    Storage_Component <--> File
     Main --> Warnings
-    Warnings --> Model_Component
-    Warnings --> UI_Component
+    Commands --> AppList
+    Commands --> Storage
+    Commands --> Table
+    AppList --> App
+    Storage <--> File
+    Warnings --> AppList
+    Warnings --> UI
 ```
 
 #### Application Lifecycle Activity Diagram
@@ -113,10 +128,18 @@ classDiagram
 
 JobSeek employs the Command pattern to decouple command dispatching (`Main`) from command execution and domain model manipulation. All actions inherit from the abstract `Command` class and implement the polymorphic `execute(ApplicationList, Ui, Storage)` method.
 
-The class diagram below reflects the architecture across all components and packages, including explicit UML multiplicities:
+#### Overall Architecture Class Diagram
+
+The class diagram below illustrates the structural relationships, associations, dependencies, and explicit UML multiplicities across the core components (`Main`, `Ui`, `Storage`, domain model, and `Command`):
 
 ```mermaid
+---
+config:
+  themeVariables:
+    fontSize: "16px"
+---
 classDiagram
+    direction TB
     class Main {
         - ui: Ui
         - storage: Storage
@@ -141,12 +164,71 @@ classDiagram
     class DeadlineWarnings {
         + show(applications: ApplicationList, ui: Ui)$: void
     }
-    class ApplicationTable {
-        + format(applications: ApplicationList, indices: List~Integer~)$: String
-    }
     class JobSeekException {
         + JobSeekException(message: String)
     }
+    class Command {
+        <<abstract>>
+        - isExit: boolean
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage)*: void
+        + isExit(): boolean
+    }
+    class ApplicationList {
+        - applications: ArrayList~Application~
+        + add(app: Application): void
+        + delete(index: int): Application
+        + get(index: int): Application
+        + size(): int
+        + isValidIndex(index: int): boolean
+        + isEmpty(): boolean
+    }
+    class Application {
+        - company: String
+        - role: String
+        - isCompleted: boolean
+        - status: String
+        - deadline: LocalDate
+        + getCompany(): String
+        + getRole(): String
+        + getStatus(): String
+        + getDeadline(): LocalDate
+        + isCompleted(): boolean
+        + setCompany(company: String): void
+        + setRole(role: String): void
+        + setStatus(status: String): void
+        + setCompleted(isCompleted: boolean): void
+    }
+
+    Main "1" --> "1" Ui : uses
+    Main "1" --> "1" Storage : uses
+    Main "1" --> "1" ApplicationList : manages
+    Main "1" ..> "0..*" Command : creates
+    Main "1" ..> "1" DeadlineWarnings : invokes
+    Main "1" ..> "0..*" JobSeekException : catches
+
+    ApplicationList "1" *-- "0..*" Application : contains
+
+    Command ..> "1" ApplicationList : operates on
+    Command ..> "1" Ui : displays via
+    Command ..> "1" Storage : persists via
+    DeadlineWarnings "1" ..> "1" ApplicationList : reads
+    DeadlineWarnings "1" ..> "1" Ui : displays via
+    Storage "1" ..> "1" ApplicationList : saves/loads
+    Storage "1" ..> "0..*" Application : serializes
+```
+
+#### Command Pattern Class Diagram
+
+The class diagram below depicts the inheritance hierarchy and helper dependencies for all 11 concrete command subclasses implementing the `Command` pattern:
+
+```mermaid
+---
+config:
+  themeVariables:
+    fontSize: "16px"
+---
+classDiagram
+    direction LR
     class Command {
         <<abstract>>
         - isExit: boolean
@@ -209,38 +291,9 @@ classDiagram
         + execute(applications: ApplicationList, ui: Ui, storage: Storage): void
         + parse(args: String)$: ViewCommand
     }
-    class ApplicationList {
-        - applications: ArrayList~Application~
-        + add(app: Application): void
-        + delete(index: int): Application
-        + get(index: int): Application
-        + size(): int
-        + isValidIndex(index: int): boolean
-        + isEmpty(): boolean
+    class ApplicationTable {
+        + format(applications: ApplicationList, indices: List~Integer~)$: String
     }
-    class Application {
-        - company: String
-        - role: String
-        - isCompleted: boolean
-        - status: String
-        - deadline: LocalDate
-        + getCompany(): String
-        + getRole(): String
-        + getStatus(): String
-        + getDeadline(): LocalDate
-        + isCompleted(): boolean
-        + setCompany(company: String): void
-        + setRole(role: String): void
-        + setStatus(status: String): void
-        + setCompleted(isCompleted: boolean): void
-    }
-
-    Main "1" --> "1" Ui : uses
-    Main "1" --> "1" Storage : uses
-    Main "1" --> "1" ApplicationList : manages
-    Main "1" ..> "0..*" Command : creates
-    Main "1" ..> "1" DeadlineWarnings : invokes
-    Main "1" ..> "0..*" JobSeekException : catches
 
     Command <|-- AddCommand
     Command <|-- DeleteCommand
@@ -255,20 +308,9 @@ classDiagram
     Command <|-- ViewCommand
 
     ListCommand "1" --> "1" FilterType : uses
-    ApplicationList "1" *-- "0..*" Application : contains
-
-    Command ..> "1" ApplicationList : operates on
-    Command ..> "1" Ui : displays via
-    Command ..> "1" Storage : persists via
     SearchCommand ..> "1" ApplicationTable : formats via
     SortCommand ..> "1" ApplicationTable : formats via
     ListCommand ..> "1" ApplicationTable : formats via
-    ViewCommand ..> "0..1" JobSeekException : throws
-    ListCommand ..> "0..1" JobSeekException : throws
-    DeadlineWarnings "1" ..> "1" ApplicationList : reads
-    DeadlineWarnings "1" ..> "1" Ui : displays via
-    Storage "1" ..> "1" ApplicationList : saves/loads
-    Storage "1" ..> "0..*" Application : serializes
 ```
 
 ### Add application feature
@@ -300,6 +342,10 @@ flowchart LR
 #### Add Application Sequence Diagram
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -320,7 +366,7 @@ sequenceDiagram
     ui-->>main: "SWE Intern"
     deactivate ui
 
-    alt [with optional deadline]
+    alt with optional deadline
         main->>ui: promptOptionalDate("Deadline:")
         activate ui
         ui-->>main: "2026-11-15"
@@ -329,7 +375,7 @@ sequenceDiagram
         activate cmd
         cmd-->>main: addCommand
         deactivate cmd
-    else [without deadline]
+    else without deadline
         main->>cmd: new AddCommand("Google", "SWE Intern")
         activate cmd
         cmd-->>main: addCommand
@@ -344,17 +390,17 @@ sequenceDiagram
     deactivate app
     cmd->>list: add(application)
     activate list
-    list-->>cmd: 
+    list-->>cmd: ​
     deactivate list
     cmd->>storage: save(applications)
     activate storage
-    storage-->>cmd: 
+    storage-->>cmd: ​
     deactivate storage
     cmd->>ui: showMessage("Application added successfully...")
     activate ui
     ui-->>user: Confirmation message
     deactivate ui
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -375,6 +421,10 @@ The `ViewCommand` displays all recorded information for an individual applicatio
   6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -392,7 +442,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    alt [0 <= targetIndex < size]
+    alt 0 <= targetIndex < size
         cmd->>list: get(0)
         activate list
         list-->>cmd: application
@@ -417,11 +467,11 @@ sequenceDiagram
         activate ui
         ui-->>user: Structured card display
         deactivate ui
-    else [else]
+    else else
         cmd-->>main: throw JobSeekException
     end
 
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -458,6 +508,10 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
   6. Displays the formatted table via `Ui.showMessage()`.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -476,7 +530,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    loop [for each application]
+    loop for each application
         cmd->>list: get(i)
         activate list
         list-->>cmd: application
@@ -487,7 +541,7 @@ sequenceDiagram
         deactivate app
     end
 
-    alt [matches found]
+    alt matches found
         cmd->>table: format(applications, matchingIndices)
         activate table
         table-->>cmd: formattedTable
@@ -496,14 +550,14 @@ sequenceDiagram
         activate ui
         ui-->>user: Formatted table output
         deactivate ui
-    else [else]
+    else else
         cmd->>ui: showMessage("No completed applications found.")
         activate ui
         ui-->>user: Status message
         deactivate ui
     end
 
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -536,6 +590,10 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
   7. Persists the modification to disk immediately via `Storage.save(applications)`.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -567,26 +625,26 @@ sequenceDiagram
     deactivate list
     cmd->>app: setCompleted(true)
     activate app
-    app-->>cmd: 
+    app-->>cmd: ​
     deactivate app
     cmd->>storage: save(applications)
     activate storage
-    storage-->>cmd: 
+    storage-->>cmd: ​
     deactivate storage
 
-    alt [isCompleted == true]
+    alt isCompleted == true
         cmd->>ui: showMessage("Nice! I have marked this application as completed...")
         activate ui
         ui-->>user: Marked confirmation message
         deactivate ui
-    else [else]
+    else else
         cmd->>ui: showMessage("OK, I have marked this application as not completed yet...")
         activate ui
         ui-->>user: Unmarked confirmation message
         deactivate ui
     end
 
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -632,6 +690,10 @@ flowchart LR
 #### Delete Application Sequence Diagram
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -654,7 +716,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    alt [0 <= targetIndex < size]
+    alt 0 <= targetIndex < size
         cmd->>list: isValidIndex(0)
         activate list
         list-->>cmd: true
@@ -670,24 +732,24 @@ sequenceDiagram
         cmd->>app: delete()
         activate app
         destroy app
-        app-->>cmd: 
+        app-->>cmd: ​
         deactivate app
         cmd->>storage: save(applications)
         activate storage
-        storage-->>cmd: 
+        storage-->>cmd: ​
         deactivate storage
         cmd->>ui: showMessage("Noted. I have removed this application...")
         activate ui
         ui-->>user: Confirmation message
         deactivate ui
-    else [else]
+    else else
         cmd->>ui: showError("Invalid application index...")
         activate ui
         ui-->>user: Error message
         deactivate ui
     end
 
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -728,6 +790,10 @@ flowchart LR
 #### Edit Application Sequence Diagram
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -762,13 +828,13 @@ sequenceDiagram
     list-->>cmd: application
     deactivate list
 
-    alt [choice == 1 (Company)]
+    alt choice == 1 (Company)
         cmd->>app: setCompany(newCompany)
-    else [choice == 2 (Role)]
+    else choice == 2 (Role)
         cmd->>app: setRole(newRole)
-    else [choice == 3 (Status)]
+    else choice == 3 (Status)
         cmd->>app: setStatus(newStatus)
-    else [choice == 4 (All)]
+    else choice == 4 (All)
         cmd->>app: setCompany(newCompany)
         cmd->>app: setRole(newRole)
         cmd->>app: setStatus(newStatus)
@@ -776,13 +842,13 @@ sequenceDiagram
 
     cmd->>storage: save(applications)
     activate storage
-    storage-->>cmd: 
+    storage-->>cmd: ​
     deactivate storage
     cmd->>ui: showMessage("Application updated successfully...")
     activate ui
     ui-->>user: Confirmation message
     deactivate ui
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -817,6 +883,10 @@ flowchart LR
 The interaction sequence for searching applications is shown below:
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -839,7 +909,7 @@ sequenceDiagram
     main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    loop [for each application]
+    loop for each application
         cmd->>list: get(i)
         activate list
         list-->>cmd: application
@@ -854,7 +924,7 @@ sequenceDiagram
         deactivate app
     end
 
-    alt [matches found]
+    alt matches found
         cmd->>table: format(applications, matches, header)
         activate table
         table-->>cmd: formattedTable
@@ -863,14 +933,14 @@ sequenceDiagram
         activate ui
         ui-->>user: Matching applications table
         deactivate ui
-    else [else]
+    else else
         cmd->>ui: showMessage("No applications found matching 'engineer'.")
         activate ui
         ui-->>user: No matches message
         deactivate ui
     end
 
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -880,6 +950,10 @@ sequenceDiagram
 The alphabetical view follows a comparable execution path using `SortCommand`. It sorts a copy of the index array rather than mutating storage or the underlying `ApplicationList`:
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -899,7 +973,7 @@ sequenceDiagram
     activate cmd
 
     Note over cmd: Copy indices [0..size-1] & sort by company, then role
-    loop [during index comparison]
+    loop during index comparison
         cmd->>list: get(index)
         activate list
         list-->>cmd: application
@@ -923,7 +997,7 @@ sequenceDiagram
     ui-->>user: Sorted applications table
     deactivate ui
 
-    cmd-->>main: 
+    cmd-->>main: ​
     deactivate cmd
     deactivate main
 ```
@@ -1016,6 +1090,10 @@ The private `appendWarning()` method adds each warning to a `StringBuilder`. Eac
 The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in a note to keep the diagram focused on interactions between objects.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     participant main as :Main
     participant ui as :Ui
@@ -1026,14 +1104,14 @@ sequenceDiagram
     activate main
     main->>ui: showWelcome()
     activate ui
-    ui-->>main: 
+    ui-->>main: ​
     deactivate ui
 
     main->>warnings: show(applications, ui)
     activate warnings
     Note over warnings: Obtain today's date once via LocalDate.now()
 
-    loop [for each application]
+    loop for each application
         warnings->>list: get(i)
         activate list
         list-->>warnings: application
@@ -1047,23 +1125,23 @@ sequenceDiagram
         app-->>warnings: completed
         deactivate app
 
-        opt [incomplete and deadline <= today + 7 days]
+        opt incomplete and deadline <= today + 7 days
             Note over warnings: Classify deadline and append warning
         end
     end
 
-    opt [warning summary is not empty]
+    opt warning summary is not empty
         warnings->>ui: showMessage(summary)
         activate ui
-        ui-->>warnings: 
+        ui-->>warnings: ​
         deactivate ui
     end
 
-    warnings-->>main: 
+    warnings-->>main: ​
     deactivate warnings
     main->>ui: showMenu(applications)
     activate ui
-    ui-->>main: 
+    ui-->>main: ​
     deactivate ui
     deactivate main
 ```
@@ -1183,6 +1261,10 @@ The save operation performs the following steps:
 The sequence of interactions during a save operation is shown below:
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     participant cmd as :Command
     participant storage as :Storage
@@ -1197,7 +1279,7 @@ sequenceDiagram
     list-->>storage: applicationList
     deactivate list
 
-    loop [for each application]
+    loop for each application
         storage->>app: getCompany()
         activate app
         app-->>storage: company
@@ -1217,7 +1299,7 @@ sequenceDiagram
     end
 
     Note over storage: Encode records & write UTF-8 lines to disk
-    storage-->>cmd: 
+    storage-->>cmd: ​
     deactivate storage
     deactivate cmd
 ```
@@ -1235,6 +1317,10 @@ For each application record, `Storage` checks that there are exactly four fields
 The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note:
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
     participant main as :Main
     participant storage as :Storage
@@ -1251,7 +1337,7 @@ sequenceDiagram
     list-->>storage: applications
     deactivate list
 
-    loop [for each valid record]
+    loop for each valid record
         Note over storage: Decode fields and validate record
         storage->>app: new Application(company, role, completed, deadline)
         activate app
@@ -1259,7 +1345,7 @@ sequenceDiagram
         deactivate app
         storage->>list: add(application)
         activate list
-        list-->>storage: 
+        list-->>storage: ​
         deactivate list
     end
 
