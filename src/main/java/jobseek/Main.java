@@ -15,6 +15,7 @@ import jobseek.command.TodayCommand;
 import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
@@ -272,7 +273,7 @@ public class Main {
             return null;
         }
 
-        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> ");
+        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: All):\n> ");
         String fieldChoice = ui.readCommand();
         if (fieldChoice == null) {
             return null;
@@ -287,7 +288,7 @@ public class Main {
             String role = promptNonEmpty("Enter new role:", "Role cannot be empty.");
             return role != null ? new EditCommand(index, null, role) : null;
         case "3":
-            String status = promptStatus();
+            String status = promptRecruitmentStage();
             return status != null ? new StatusCommand(index, status) : null;
         case "4":
             String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
@@ -298,7 +299,7 @@ public class Main {
             if (allRole == null) {
                 return null;
             }
-            String allStatus = promptStatus();
+            String allStatus = promptRecruitmentStage();
             return allStatus != null ? new EditCommand(index, allCompany, allRole, allStatus) : null;
         default:
             ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter 1, 2, 3, or 4.");
@@ -306,32 +307,49 @@ public class Main {
         }
     }
 
-    private String promptStatus() {
+    private String promptRecruitmentStage() {
         while (true) {
-            ui.showPrompt("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ");
+            ui.showPrompt("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
+                    + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ");
             String input = ui.readCommand();
             if (input == null) {
                 return null;
             }
             String trimmed = input.trim();
+            RecruitmentStage stage;
             switch (trimmed) {
             case "1":
-                return "Pending";
+                stage = RecruitmentStage.APPLIED;
+                break;
             case "2":
-                return "Accepted";
+                stage = RecruitmentStage.ONLINE_ASSESSMENT;
+                break;
             case "3":
-                return "Rejected";
+                stage = RecruitmentStage.INTERVIEW;
+                break;
+            case "4":
+                stage = RecruitmentStage.OFFER;
+                break;
+            case "5":
+                stage = RecruitmentStage.ACCEPTED;
+                break;
+            case "6":
+                stage = RecruitmentStage.REJECTED;
+                break;
+            case "7":
+                stage = RecruitmentStage.WITHDRAWN;
+                break;
             default:
-                if (trimmed.equalsIgnoreCase("Pending")) {
-                    return "Pending";
-                } else if (trimmed.equalsIgnoreCase("Accepted")) {
-                    return "Accepted";
-                } else if (trimmed.equalsIgnoreCase("Rejected")) {
-                    return "Rejected";
+                try {
+                    stage = RecruitmentStage.fromLabel(trimmed);
+                    break;
+                } catch (IllegalArgumentException e) {
+                    ui.showError("Invalid recruitment stage: '" + trimmed
+                            + "'. Enter a stage name or a number from 1 to 7.");
                 }
-                ui.showError("Invalid status choice: '" + trimmed
-                        + "'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).");
+                continue;
             }
+            return stage.getLabel();
         }
     }
 

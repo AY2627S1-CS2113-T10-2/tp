@@ -86,11 +86,12 @@ classDiagram
         -String company
         -String role
         -boolean isCompleted
-        -String status
+        -RecruitmentStage recruitmentStage
         -LocalDate deadline
         +getCompany() String
         +getRole() String
         +getStatus() String
+        +getRecruitmentStage() RecruitmentStage
         +getDeadline() LocalDate
         +isCompleted() boolean
         +setCompany(company) void
@@ -121,7 +122,7 @@ The `AddCommand` allows job seekers to add a new internship or job record with a
 - **Workflow**:
   1. `Main.handleMenuAdd()` queries the user for non-empty company and role strings using `promptNonEmpty()`. Blank or whitespace-only inputs are rejected with informative error messages and reprompted.
   2. Once valid strings are obtained, `Main` instantiates `AddCommand(company, role)`.
-  3. `AddCommand.execute()` instantiates a new `Application`, which initializes with completion status `false` (`[ ]`) and recruitment status `"Pending"`.
+  3. `AddCommand.execute()` instantiates a new `Application`, which initializes with completion status `false` (`[ ]`) and recruitment stage `Applied`.
   4. The application is added to `ApplicationList`. Internal assumptions (such as list size incrementing by 1 and target non-null) are verified via Java `assert`.
   5. The updated list is persisted to disk via `Storage.save(applications)`, and confirmation is rendered to the user via `Ui.showMessage()`.
 
@@ -160,7 +161,7 @@ The `ViewCommand` displays all recorded information for an individual applicatio
   1. `ViewCommand.execute(ApplicationList, Ui, Storage)` validates that the zero-based target index satisfies `0 <= targetIndex < applications.size()`.
   2. If the index is out of bounds, it throws a `JobSeekException` reporting the invalid index and the current list size (e.g., `Application index 5 does not exist. (Total applications: 3)`).
   3. Upon successful bounds validation, it retrieves the target `Application` via `applications.get(targetIndex)`.
-  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment status (`Pending`, `Accepted`, `Rejected`), and completion status (`Yes` or `No`).
+  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment stage (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`), and completion status (`Yes` or `No`).
   5. The card is rendered via `Ui.showMessage()`.
   6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
 
@@ -316,7 +317,7 @@ sequenceDiagram
 
 ### Edit application and recruitment status tracking
 
-The edit feature allows users to modify existing applications without deleting and re-entering them. The status tracking feature categorizes applications into recruitment stages (`Pending`, `Accepted`, `Rejected`).
+The edit feature allows users to modify existing applications without deleting and re-entering them. Recruitment progress is represented by the `RecruitmentStage` enum (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`). The enum owns each display label and whether a stage is terminal. Users may edit a stage freely to handle corrections and different company processes.
 
 - **Design and Implementation**:
   - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, and `newStatus`. A `null` value indicates that the corresponding field should remain unchanged.
@@ -326,7 +327,7 @@ The edit feature allows users to modify existing applications without deleting a
     - `2`: Role only
     - `3`: Status only
     - `4`: All three fields
-  - Status input normalization in `Main.promptStatus()` accepts numeric shortcuts (`1` for Pending, `2` for Accepted, `3` for Rejected) as well as case-insensitive text strings.
+  - Stage input normalization in `Main.promptRecruitmentStage()` accepts numbered choices and case-insensitive stage names. The legacy label `Pending` is read as `Applied`.
   - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty fields, updated status).
 
 ```mermaid
@@ -343,7 +344,7 @@ sequenceDiagram
     Ui-->>Main: 1 (0-based index: 0)
     Main->>Ui: showPrompt(field choice)
     Ui-->>Main: 3 (Status)
-    Main->>Ui: promptStatus()
+    Main->>Ui: promptRecruitmentStage()
     Ui-->>Main: "Accepted"
     Main->>EditCommand: new EditCommand(0, null, null, "Accepted")
     Main->>EditCommand: execute(applications, ui, storage)
@@ -565,13 +566,13 @@ The file uses UTF-8 encoding and contains two header lines followed by applicati
 | Role | Escaped text |
 | Completion flag | `true` or `false` |
 | Deadline | ISO date such as `2026-11-03`, or an empty field |
-| Status | Escaped text such as `Pending`; an empty field is read as `Pending` |
+| Recruitment stage | Escaped text such as `Applied`; an empty field is read as `Applied` |
 
 An empty deadline field represents an application without a recorded deadline.
 
 Backslashes, tabs, newlines and carriage returns within text fields are escaped before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company or role names from being mistaken for field or record separators.
 
-**Backward compatibility:** Files written by earlier versions have only four fields (no status). `load()` accepts both four- and five-field records and gives four-field records the default `Pending` status, so existing user data is not rejected. The next save rewrites the file in the five-field format. Status is the last column so that old records are a prefix of new ones.
+**Backward compatibility:** Files written by earlier versions have only four fields (no status). `load()` accepts both four- and five-field records and gives four-field records the default `Applied` stage. Existing `Pending` values also migrate to `Applied`. The next save rewrites the file in the five-field format. Recruitment stage is the last column so that old records are a prefix of new ones.
 
 #### Saving applications
 
@@ -709,7 +710,7 @@ Loading currently falls back to an empty list after an error. A future recovery 
    --------------------------------------------------
    Company:   Google
    Role:      SWE Intern
-   Status:    Pending
+   Status:    Applied
    Completed: No
    ==================================================
    ```
@@ -767,18 +768,18 @@ Loading currently falls back to an empty list after an error. A future recovery 
 1. Start JobSeek with an empty application list and choose `10`. Confirm `Error: Your application list is currently empty.` appears.
 2. Add an application using `1` with company `Googl` and role `SWE Intern`.
 3. Choose `10` and enter application index `1`.
-4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google`, `Role: SWE Intern`, and `Status: Pending`.
-5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm role is updated to `Backend Intern` while company remains `Google` and status remains `Pending`.
+4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google`, `Role: SWE Intern`, and `Status: Applied`.
+5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm role is updated to `Backend Intern` while company remains `Google` and stage remains `Applied`.
 6. Choose `10` and test invalid inputs: enter non-numeric index `abc` or out-of-bounds `99`. Confirm clear error messages are displayed.
 
-### Managing recruitment status
+### Managing recruitment stage
 
 1. Add an application with company `Shopee` and role `Backend Intern`.
-2. Enter `view 1`. Verify `Status:    Pending` is displayed by default.
-3. Choose `10`, index `1`, and field `3` (Status). Enter `2` (shortcut for Accepted).
-4. Enter `view 1`. Verify `Status:    Accepted` is now displayed.
+2. Enter `view 1`. Verify `Status:    Applied` is displayed by default.
+3. Choose `10`, index `1`, and field `3` (Recruitment stage). Enter `2` (Online Assessment).
+4. Enter `view 1`. Verify `Status:    Online Assessment` is now displayed.
 5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify `Status:    Rejected`.
-6. Choose `10`, index `1`, field `4` (All). Enter company `Sea`, role `Data Analyst`, and status `1` (Pending). Verify all fields updated correctly.
+6. Choose `10`, index `1`, field `4` (All). Enter company `Sea`, role `Data Analyst`, and stage `1` (Applied). Verify all fields updated correctly.
 
 ### Search and sort
 

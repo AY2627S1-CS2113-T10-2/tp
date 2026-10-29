@@ -6,7 +6,7 @@ import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
 /**
- * Handles editing specific existing fields (company, role, status, or all) of an application.
+ * Handles editing specific existing fields (company, role, recruitment stage, or all) of an application.
  */
 public class EditCommand extends Command {
     private final int targetIndex;
@@ -31,7 +31,7 @@ public class EditCommand extends Command {
      * @param targetIndex 0-based index of the application to edit.
      * @param newCompany New company name, or null if company is not being updated.
      * @param newRole New role title, or null if role is not being updated.
-     * @param newStatus New recruitment status, or null if status is not being updated.
+     * @param newStatus New recruitment stage label, or null if the stage is not being updated.
      */
     public EditCommand(int targetIndex, String newCompany, String newRole, String newStatus) {
         this.targetIndex = targetIndex;

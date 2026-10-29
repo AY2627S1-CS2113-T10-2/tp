@@ -24,7 +24,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 | `7` | Help | Show the menu options and command shortcuts. |
 | `8` | Search applications | Find applications by company or role. |
 | `9` | Sort applications | View applications alphabetically by company, then role. |
-| `10` | Edit application | Update company, role, or recruitment status (Pending, Accepted, Rejected) of an application. |
+| `10` | Edit application | Update company, role, or recruitment stage of an application. |
 | `0` | Exit | Quit JobSeek. |
 
 ---
@@ -44,7 +44,7 @@ Choose `1` to create and track a new job or internship application.
 - **Initial attributes**:
   - The new application is assigned the next 1-based number in the list.
   - **Completion status**: Defaults to incomplete (`[ ]`).
-  - **Recruitment status**: Automatically initialized to `"Pending"`.
+  - **Recruitment stage**: Automatically initialized to `Applied`.
 - **Confirmation message**:
   ```text
   Application added successfully.
@@ -124,22 +124,22 @@ Choose `10` to update details of an existing application in place without deleti
 
 - **Prompt sequence**:
   1. `Enter application index to edit:\n> ` — Enter the 1-based index of the application to update (as displayed in `list`).
-  2. `Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> ` — Select which field(s) you wish to modify:
+  2. `Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: All):\n> ` — Select which field(s) you wish to modify:
      - `1`: Edit Company name only.
      - `2`: Edit Role title only.
-     - `3`: Edit Recruitment Status only (`Pending`, `Accepted`, or `Rejected`).
+     - `3`: Edit recruitment stage only.
      - `4`: Edit All three fields (Company, Role, and Status).
   3. JobSeek will then prompt for the respective replacement value(s):
      - `Enter new company:\n> ` (if editing company or all)
      - `Enter new role:\n> ` (if editing role or all)
-     - `Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ` (if editing status or all)
+     - `Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, 4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ` (if editing the stage or all)
 - **Input validation & error handling**:
   - If your application list is currently empty, JobSeek notifies you with `Error: Your application list is currently empty.` and returns to the menu.
   - Blank index input is rejected with `Error: Please specify a valid application index.`.
   - Non-numeric index input is rejected with `Error: Invalid application index. Please enter a valid number.`.
   - Out-of-bounds indices are rejected (`Error: Invalid application index: X. Please enter a number between 1 and Y.`).
   - Empty company or role values are rejected and reprompted.
-  - Invalid status choices are rejected and reprompted (`Error: Invalid status choice: '...'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).`).
+  - Invalid stage choices are rejected and reprompted. Enter a stage name or its number.
   - Entering an invalid field choice (anything other than 1, 2, 3, or 4) displays `Error: Invalid field choice: '<choice>'. Enter 1, 2, 3, or 4.` and returns to the menu.
   - Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
 - **Confirmation message**:
@@ -148,7 +148,7 @@ Choose `10` to update details of an existing application in place without deleti
   Application updated successfully.
   Company: Alphabet Inc.
   Role: Senior SWE Intern
-  Status: Pending
+  Status: Applied
   ```
   For field choice `3` (Status only):
   ```text
@@ -160,21 +160,15 @@ Choose `10` to update details of an existing application in place without deleti
 
 ---
 
-### Recruitment status tracking
+### Recruitment stage tracking
 
-JobSeek provides first-class recruitment stage indicators for tracking your application progress:
-- **`Pending`**: Default initial state. Indicates the application is submitted, pending review, or in interview stages.
-- **`Accepted`**: Indicates you have received and accepted an internship or job offer.
-- **`Rejected`**: Indicates the application was unsuccessful.
+Each application has one of these stages: `Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`. `Accepted`, `Rejected`, and `Withdrawn` are terminal stages. You can still edit a stage at any time to correct a mistake or reflect a company process; stages do not enforce a fixed transition order.
 
-#### Updating Status
-Under menu option `10`, selecting field `3` (Status) or `4` (All) allows you to set the status using either convenient numeric shortcuts or case-insensitive text names:
-- Numeric inputs: `1` for Pending, `2` for Accepted, `3` for Rejected.
-- Text inputs: `pending`, `accepted`, `rejected` (letter case is ignored).
-- Any unrecognized input triggers `Error: Invalid status choice: '...'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).`
+#### Updating a stage
+Under menu option `10`, select field `3` (Recruitment stage) or `4` (All). Enter one of the numbered choices shown by the prompt, or type a stage name such as `Interview`. The shortcut `OA` is also accepted for `Online Assessment`. Inputs are case-insensitive.
 
-#### Inspecting Application Status
-Use the `view INDEX` command to view the comprehensive card for any application, including its recruitment status:
+#### Inspecting an application stage
+Use the `view INDEX` command to view the comprehensive card for any application, including its recruitment stage:
 ```text
 view 1
 ==================================================
@@ -312,7 +306,7 @@ UPCOMING (next 7 days) (1)
 
 SUMMARY
   3 active, 1 completed, 1 active without a deadline
-  Active by status - Accepted: 1, Pending: 2
+  Active by recruitment stage - Accepted: 1, Applied: 2
 ```
 
 ---
@@ -321,8 +315,8 @@ SUMMARY
 
 JobSeek automatically saves application data to `data/applications.txt` when commands modify application records. Saved records are loaded when you next start JobSeek.
 
-- Company, role, completion status, optional deadline and recruitment status (`Pending`, `Accepted` or `Rejected`) are preserved between sessions.
-- Data files saved by older versions of JobSeek (without a status column) still load; their applications start as `Pending`.
+- Company, role, completion status, optional deadline and recruitment stage are preserved between sessions.
+- Data files saved by older versions still load. Missing stages and legacy `Pending` values become `Applied`.
 - If the data file does not exist, JobSeek starts with an empty application list.
 - **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records.
 - If loading completely fails due to an unrecoverable system I/O error, JobSeek displays an error and starts with an empty list.

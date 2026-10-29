@@ -55,7 +55,7 @@ public class TodayCommand extends Command {
         int upcomingCount = 0;
         int activeCount = 0;
         int noDeadlineCount = 0;
-        Map<String, Integer> activeByStatus = new TreeMap<>();
+        Map<String, Integer> activeByStage = new TreeMap<>();
 
         for (int i = 0; i < applications.size(); i++) {
             Application application = applications.get(i);
@@ -63,7 +63,7 @@ public class TodayCommand extends Command {
                 continue;
             }
             activeCount++;
-            activeByStatus.merge(application.getStatus(), 1, Integer::sum);
+            activeByStage.merge(application.getRecruitmentStage().getLabel(), 1, Integer::sum);
 
             LocalDate deadline = application.getDeadline();
             if (deadline == null) {
@@ -89,7 +89,7 @@ public class TodayCommand extends Command {
         appendSection(dashboard, "OVERDUE", overdueCount, overdue);
         appendSection(dashboard, "DUE TODAY", dueTodayCount, dueToday);
         appendSection(dashboard, "UPCOMING (next " + UPCOMING_WINDOW_DAYS + " days)", upcomingCount, upcoming);
-        appendSummary(dashboard, applications.size(), activeCount, noDeadlineCount, activeByStatus);
+        appendSummary(dashboard, applications.size(), activeCount, noDeadlineCount, activeByStage);
         ui.showMessage(dashboard.toString().trim());
     }
 
@@ -109,20 +109,20 @@ public class TodayCommand extends Command {
 
     /** Appends pipeline totals so the user also sees applications that have no deadline pressure. */
     private void appendSummary(StringBuilder dashboard, int total, int activeCount, int noDeadlineCount,
-            Map<String, Integer> activeByStatus) {
+            Map<String, Integer> activeByStage) {
         dashboard.append("\nSUMMARY\n");
         dashboard.append("  ").append(activeCount).append(" active, ")
                 .append(total - activeCount).append(" completed, ")
                 .append(noDeadlineCount).append(" active without a deadline\n");
-        if (!activeByStatus.isEmpty()) {
+        if (!activeByStage.isEmpty()) {
             StringBuilder statuses = new StringBuilder();
-            for (Map.Entry<String, Integer> entry : activeByStatus.entrySet()) {
+            for (Map.Entry<String, Integer> entry : activeByStage.entrySet()) {
                 if (statuses.length() > 0) {
                     statuses.append(", ");
                 }
                 statuses.append(entry.getKey()).append(": ").append(entry.getValue());
             }
-            dashboard.append("  Active by status - ").append(statuses).append('\n');
+            dashboard.append("  Active by recruitment stage - ").append(statuses).append('\n');
         }
     }
 }

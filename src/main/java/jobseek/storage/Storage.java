@@ -11,6 +11,7 @@ import java.util.List;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 
 /**
  * Handles persistence by loading and saving job application data to local storage.
@@ -86,7 +87,8 @@ public class Storage {
         for (Application application : applications.getAll()) {
             String deadline = application.getDeadline() == null ? "" : application.getDeadline().toString();
             lines.add(escape(application.getCompany()) + "\t" + escape(application.getRole()) + "\t"
-                    + application.isCompleted() + "\t" + deadline + "\t" + escape(application.getStatus()));
+                    + application.isCompleted() + "\t" + deadline + "\t"
+                    + escape(application.getRecruitmentStage().getLabel()));
         }
         Files.write(path, lines, StandardCharsets.UTF_8);
     }
@@ -124,7 +126,7 @@ public class Storage {
                 continue;
             }
 
-            // Files saved before status was persisted have only four fields; they load as "Pending".
+            // Files saved before status was persisted have only four fields; they load as "Applied".
             boolean hasValidFieldCount = fields.size() == FIELD_COUNT || fields.size() == LEGACY_FIELD_COUNT;
             if (!hasValidFieldCount || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
                 loadWarnings.add("Skipping invalid record on line " + lineIndex + " in " + filePath + ".");
@@ -151,9 +153,18 @@ public class Storage {
             }
 
             boolean isCompleted = Boolean.parseBoolean(fields.get(2));
-            // A missing or blank status makes the Application constructor fall back to "Pending".
+            // Missing or blank stages are assigned the default "Applied" stage.
             String status = fields.size() == FIELD_COUNT ? fields.get(4) : null;
-            applications.add(new Application(company, role, isCompleted, status, deadline));
+            RecruitmentStage stage;
+            try {
+                stage = status == null || status.isBlank()
+                        ? Application.DEFAULT_STAGE : RecruitmentStage.fromLabel(status);
+            } catch (IllegalArgumentException e) {
+                loadWarnings.add("Skipping record with unknown recruitment stage on line " + lineIndex
+                        + " in " + filePath + ".");
+                continue;
+            }
+            applications.add(new Application(company, role, isCompleted, stage, deadline));
         }
         return applications;
     }
