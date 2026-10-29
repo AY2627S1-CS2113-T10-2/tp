@@ -107,7 +107,7 @@ public class ViewCommandTest {
         assertTrue(output.contains("--------------------------------------------------"));
         assertTrue(output.contains("Company:   Google"));
         assertTrue(output.contains("Role:      SWE Intern"));
-        assertTrue(output.contains("Status:    Pending"));
+        assertTrue(output.contains("Status:    Applied"));
         assertTrue(output.contains("Completed: No"));
         assertFalse(output.contains("Deadline:"));
         assertFalse(output.contains("Portal:"));

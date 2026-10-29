@@ -512,7 +512,7 @@ public class MainTest {
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
         assertTrue(output.contains("Enter application index to edit:\n> "));
-        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Status, 4: Deadline, "
+        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: Deadline, "
                 + "5: Portal Link, 6: Email, 7: Notes, 8: All):\n> "));
         assertTrue(output.contains("Enter new company:\n> "));
         assertTrue(output.contains("Application updated successfully."));
@@ -611,15 +611,16 @@ public class MainTest {
     @Test
     public void run_menuEditStatusOnly_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
+        applications.add(new Application("Shopee", "Backend Intern", false, "Applied"));
 
-        String input = "10\n1\n3\n2\n0\n";
+        String input = "10\n1\n3\n5\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> "));
+        assertTrue(output.contains("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
+                + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> "));
         assertTrue(output.contains("Application status updated successfully."));
         assertTrue(output.contains("Status: Accepted"));
     }
@@ -627,9 +628,9 @@ public class MainTest {
     @Test
     public void run_menuEditStatusRejected_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Grab", "Data Analyst", false, "Pending"));
+        applications.add(new Application("Grab", "Data Analyst", false, "Applied"));
 
-        String input = "10\n1\n3\n3\n0\n";
+        String input = "10\n1\n3\n6\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -642,7 +643,7 @@ public class MainTest {
     @Test
     public void run_menuEditStatusText_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Google", "SWE Intern", false, "Pending"));
+        applications.add(new Application("Google", "SWE Intern", false, "Applied"));
 
         String input = "10\n1\n3\nAccepted\n0\n";
         Main main = createMainWithInput(input, applications);
@@ -661,7 +662,7 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Invalid recruitment stage: '99'"));
     }
 
     @Test
@@ -669,13 +670,13 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
-        String input = "10\n1\n3\n99\n2\n0\n";
+        String input = "10\n1\n3\n99\n5\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Invalid recruitment stage: '99'"));
         assertTrue(output.contains("Application status updated successfully."));
         assertTrue(output.contains("Status: Accepted"));
     }
@@ -683,9 +684,9 @@ public class MainTest {
     @Test
     public void run_menuEditAllFields_updatesSuccessfully() {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
+        applications.add(new Application("OldCorp", "OldRole", false, "Applied"));
 
-        String input = "10\n1\n8\nNewCorp\nNewRole\n2\n\n\n\n\n0\n";
+        String input = "10\n1\n8\nNewCorp\nNewRole\n5\n\n\n\n\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -910,14 +911,14 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
-        String input = "10\n1\n3\ninvalid\n99\n???\nfoo\nbar\n-1\n4\n0\nAccepted\n0\n";
+        String input = "10\n1\n3\ninvalid\n99\n???\nfoo\nbar\n-1\n999\nAccepted\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid status choice: 'invalid'."));
-        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Invalid recruitment stage: 'invalid'"));
+        assertTrue(output.contains("Invalid recruitment stage: '99'"));
         assertTrue(output.contains("Application status updated successfully."));
     }
 
@@ -1108,5 +1109,24 @@ public class MainTest {
         assertEquals("", app.getPortalLink());
         assertEquals("", app.getEmail());
         assertEquals("", app.getNotes());
+    }
+
+    @Test
+    public void main_loadApplicationsWithCorruptedLine_showsWarningAndLoadsValidRecords() throws Exception {
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempDirectory("jobseek-main-test")
+                .resolve("applications.txt");
+        java.nio.file.Files.writeString(tempFile,
+                "Bad Company Line\nValid Company\tSoftware Engineer\tfalse\t2026-12-31\tPending\n");
+        Storage storage = new Storage(tempFile.toString());
+        Scanner scanner = new Scanner("0\n");
+        Ui ui = new Ui(scanner);
+
+        Main main = new Main(ui, storage);
+        main.run();
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Skipping invalid record on line 1"));
+        assertEquals(1, main.getApplications().size());
+        assertEquals("Valid Company", main.getApplications().get(0).getCompany());
     }
 }

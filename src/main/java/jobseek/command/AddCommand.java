@@ -114,7 +114,7 @@ public class AddCommand extends Command {
         }
 
         int sizeBefore = applications.size();
-        Application application = new Application(company, role, false, Application.DEFAULT_STATUS,
+        Application application = new Application(company, role, false, Application.DEFAULT_STAGE,
                 deadline, portalLink, email, notes);
         applications.add(application);
 

@@ -11,9 +11,11 @@ import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
 import jobseek.command.StatusCommand;
+import jobseek.command.TodayCommand;
 import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
@@ -71,7 +73,11 @@ public class Main {
      */
     private static ApplicationList loadApplications(Ui ui, Storage storage) {
         try {
-            return storage.load();
+            ApplicationList loaded = storage.load();
+            for (String warning : storage.getLoadWarnings()) {
+                ui.showError(warning);
+            }
+            return loaded;
         } catch (Exception e) {
             ui.showError("Failed to load applications: " + e.getMessage());
             return new ApplicationList();
@@ -148,6 +154,10 @@ public class Main {
                 ui.showError(e.getMessage());
                 return null;
             }
+        }
+
+        if (trimmedOption.equalsIgnoreCase("today")) {
+            return new TodayCommand();
         }
 
         if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.matches("(?i)^list\\s+.*")) {
@@ -276,7 +286,7 @@ public class Main {
             return null;
         }
 
-        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Status, 4: Deadline, "
+        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: Deadline, "
                 + "5: Portal Link, 6: Email, 7: Notes, 8: All):\n> ");
         String fieldChoice = ui.readCommand();
         if (fieldChoice == null) {
@@ -292,7 +302,7 @@ public class Main {
             String role = promptNonEmpty("Enter new role:", "Role cannot be empty.");
             return role != null ? EditCommand.editRole(index, role) : null;
         case "3":
-            String status = promptStatus();
+            String status = promptRecruitmentStage();
             return status != null ? new StatusCommand(index, status) : null;
         case "4":
             LocalDate deadline = promptDeadline();
@@ -315,7 +325,7 @@ public class Main {
             if (allRole == null) {
                 return null;
             }
-            String allStatus = promptStatus();
+            String allStatus = promptRecruitmentStage();
             if (allStatus == null) {
                 return null;
             }
@@ -331,32 +341,49 @@ public class Main {
         }
     }
 
-    private String promptStatus() {
+    private String promptRecruitmentStage() {
         while (true) {
-            ui.showPrompt("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ");
+            ui.showPrompt("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
+                    + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ");
             String input = ui.readCommand();
             if (input == null) {
                 return null;
             }
             String trimmed = input.trim();
+            RecruitmentStage stage;
             switch (trimmed) {
             case "1":
-                return "Pending";
+                stage = RecruitmentStage.APPLIED;
+                break;
             case "2":
-                return "Accepted";
+                stage = RecruitmentStage.ONLINE_ASSESSMENT;
+                break;
             case "3":
-                return "Rejected";
+                stage = RecruitmentStage.INTERVIEW;
+                break;
+            case "4":
+                stage = RecruitmentStage.OFFER;
+                break;
+            case "5":
+                stage = RecruitmentStage.ACCEPTED;
+                break;
+            case "6":
+                stage = RecruitmentStage.REJECTED;
+                break;
+            case "7":
+                stage = RecruitmentStage.WITHDRAWN;
+                break;
             default:
-                if (trimmed.equalsIgnoreCase("Pending")) {
-                    return "Pending";
-                } else if (trimmed.equalsIgnoreCase("Accepted")) {
-                    return "Accepted";
-                } else if (trimmed.equalsIgnoreCase("Rejected")) {
-                    return "Rejected";
+                try {
+                    stage = RecruitmentStage.fromLabel(trimmed);
+                    break;
+                } catch (IllegalArgumentException e) {
+                    ui.showError("Invalid recruitment stage: '" + trimmed
+                            + "'. Enter a stage name or a number from 1 to 7.");
                 }
-                ui.showError("Invalid status choice: '" + trimmed
-                        + "'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).");
+                continue;
             }
+            return stage.getLabel();
         }
     }
 

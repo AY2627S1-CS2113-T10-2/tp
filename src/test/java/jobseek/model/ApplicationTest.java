@@ -67,9 +67,9 @@ public class ApplicationTest {
     }
 
     @Test
-    public void getStatus_defaultsToPending() {
+    public void getStatus_defaultsToApplied() {
         Application application = new Application("Google", "SWE Intern");
-        assertEquals("Pending", application.getStatus());
+        assertEquals("Applied", application.getStatus());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class ApplicationTest {
     @Test
     public void constructor_fourParameters_setsStatusCorrectly() {
         Application application = new Application("Microsoft", "Security Intern", true, "Offer Accepted");
-        assertEquals("Offer Accepted", application.getStatus());
+        assertEquals("Accepted", application.getStatus());
         assertTrue(application.isCompleted());
     }
 

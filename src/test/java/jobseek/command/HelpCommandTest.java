@@ -24,6 +24,7 @@ public class HelpCommandTest {
         assertTrue(ui.lastMessage.contains("Available menu options:"));
         assertTrue(ui.lastMessage.contains("list [completed|all]"));
         assertTrue(ui.lastMessage.contains("view INDEX"));
+        assertTrue(ui.lastMessage.contains("today"));
         assertTrue(ui.lastMessage.contains("[1] Add application"));
         assertTrue(ui.lastMessage.contains("[2] List applications"));
         assertTrue(ui.lastMessage.contains("[3] List uncompleted apps"));

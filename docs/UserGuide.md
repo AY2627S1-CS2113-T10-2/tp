@@ -24,7 +24,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 | `7` | Help | Show the menu options and command shortcuts. |
 | `8` | Search applications | Find applications by company or role. |
 | `9` | Sort applications | View applications alphabetically by company, then role. |
-| `10` | Edit application | Update company, role, recruitment status, deadline, portal link, email, notes, or all fields of an application. |
+| `10` | Edit application | Update company, role, recruitment stage, deadline, portal link, email, notes, or all fields of an application. |
 | `0` | Exit | Quit JobSeek. |
 
 ---
@@ -49,7 +49,7 @@ Choose `1` to create and track a new job or internship application.
 - **Initial attributes**:
   - The new application is assigned the next 1-based number in the list.
   - **Completion status**: Defaults to incomplete (`[ ]`).
-  - **Recruitment status**: Automatically initialized to `"Pending"`.
+  - **Recruitment stage**: Automatically initialized to `Applied`.
 - **Confirmation message**:
   When optional fields are omitted (leaving them blank):
   ```text
@@ -145,19 +145,19 @@ Choose `10` to update details of an existing application in place without deleti
 
 - **Prompt sequence**:
   1. `Enter application index to edit:\n> ` — Enter the 1-based index of the application to update (as displayed in `list`).
-  2. `Enter field to edit (1: Company, 2: Role, 3: Status, 4: Deadline, 5: Portal Link, 6: Email, 7: Notes, 8: All):\n> ` — Select which field(s) you wish to modify:
+  2. `Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: Deadline, 5: Portal Link, 6: Email, 7: Notes, 8: All):\n> ` — Select which field(s) you wish to modify:
      - `1`: Edit Company name only.
      - `2`: Edit Role title only.
-     - `3`: Edit Recruitment Status only (`Pending`, `Accepted`, or `Rejected`).
+     - `3`: Edit Recruitment stage only (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`).
      - `4`: Edit Deadline only (enter date `YYYY-MM-DD` or leave blank to clear).
      - `5`: Edit Company Portal Link only (enter URL or leave blank to clear).
      - `6`: Edit Contact Email only (enter email or leave blank to clear).
      - `7`: Edit Notes only (enter text or leave blank to clear).
-     - `8`: Edit All fields in sequence (Company, Role, Status, Deadline, Portal Link, Email, Notes).
+     - `8`: Edit All fields in sequence (Company, Role, Recruitment Stage, Deadline, Portal Link, Email, Notes).
   3. JobSeek will then prompt for the respective replacement value(s):
      - `Enter new company:\n> ` (if editing company or all)
      - `Enter new role:\n> ` (if editing role or all)
-     - `Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> ` (if editing status or all)
+     - `Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, 4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ` (if editing stage or all)
      - `Deadline (YYYY-MM-DD, leave blank if none):\n> ` (if editing deadline or all)
      - `Enter new company portal link (leave blank to clear):\n> ` (if editing portal link; or `Company Portal Link (leave blank to clear):` in all)
      - `Enter new contact email (leave blank to clear):\n> ` (if editing email; or `Contact Email (leave blank to clear):` in all)
@@ -168,7 +168,7 @@ Choose `10` to update details of an existing application in place without deleti
   - Non-numeric index input is rejected with `Error: Invalid application index. Please enter a valid number.`.
   - Out-of-bounds indices are rejected (`Error: Invalid application index: X. Please enter a number between 1 and Y.`).
   - Empty company or role values are rejected and reprompted.
-  - Invalid status choices are rejected and reprompted (`Error: Invalid status choice: '...'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).`).
+  - Invalid stage choices are rejected and reprompted (`Error: Invalid recruitment stage: '...'. Enter a number from 1 to 7 or a known stage name.`).
   - Entering an invalid field choice (anything other than 1 through 8) displays `Error: Invalid field choice: '<choice>'. Enter a number from 1 to 8.` and returns to the menu.
   - Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
 - **Confirmation message**:
@@ -177,7 +177,7 @@ Choose `10` to update details of an existing application in place without deleti
   Application updated successfully.
   Company: Alphabet Inc.
   Role: Senior SWE Intern
-  Status: Pending
+  Status: Applied
   ```
   When optional fields (deadline, portal link, email, notes) are set or updated:
   ```text
@@ -200,21 +200,15 @@ Choose `10` to update details of an existing application in place without deleti
 
 ---
 
-### Recruitment status tracking
+### Recruitment stage tracking
 
-JobSeek provides first-class recruitment stage indicators for tracking your application progress:
-- **`Pending`**: Default initial state. Indicates the application is submitted, pending review, or in interview stages.
-- **`Accepted`**: Indicates you have received and accepted an internship or job offer.
-- **`Rejected`**: Indicates the application was unsuccessful.
+Each application has one of these stages: `Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`. `Accepted`, `Rejected`, and `Withdrawn` are terminal stages. You can still edit a stage at any time to correct a mistake or reflect a company process; stages do not enforce a fixed transition order.
 
-#### Updating Status
-Under menu option `10`, selecting field `3` (Status) or `8` (All) allows you to set the status using either convenient numeric shortcuts or case-insensitive text names:
-- Numeric inputs: `1` for Pending, `2` for Accepted, `3` for Rejected.
-- Text inputs: `pending`, `accepted`, `rejected` (letter case is ignored).
-- Any unrecognized input triggers `Error: Invalid status choice: '...'. Enter 1 (Pending), 2 (Accepted), or 3 (Rejected).`
+#### Updating a stage
+Under menu option `10`, select field `3` (Recruitment stage) or `8` (All). Enter one of the numbered choices shown by the prompt (`1` for Applied, `2` for Online Assessment, `3` for Interview, `4` for Offer, `5` for Accepted, `6` for Rejected, `7` for Withdrawn), or type a stage name such as `Interview`. The shortcut `OA` is also accepted for `Online Assessment`. Inputs are case-insensitive. Any unrecognized input triggers `Error: Invalid recruitment stage: '<input>'. Enter a number from 1 to 7 or a known stage name.`
 
-#### Inspecting Application Status
-Use the `view INDEX` command to view the comprehensive card for any application, including its recruitment status:
+#### Inspecting an application stage
+Use the `view INDEX` command to view the comprehensive card for any application, including its recruitment stage:
 ```text
 view 1
 ==================================================
@@ -330,14 +324,42 @@ If no applications require attention, no warning summary appears. Warnings are c
 
 ---
 
+### Today dashboard: `today`
+
+Shows what needs your attention right now, without restarting JobSeek.
+
+- **Usage**: Enter `today` at the main menu prompt.
+- **Sections**: `OVERDUE`, `DUE TODAY` and `UPCOMING` (deadlines within the next seven days), followed by a `SUMMARY` of active and completed applications and a count of active applications per status.
+- Only applications that are not marked as completed appear in the deadline sections. Each entry keeps the number you use with `view`, `edit` and `delete`.
+
+```text
+Today: 2026-10-28
+
+OVERDUE (1)
+  1. Google | SWE Intern - 2026-10-27 (1 day overdue)
+
+DUE TODAY (0)
+  none
+
+UPCOMING (next 7 days) (1)
+  3. GovTech | Analyst - 2026-11-04 (in 7 days)
+
+SUMMARY
+  3 active, 1 completed, 1 active without a deadline
+  Active by recruitment stage - Accepted: 1, Applied: 2
+```
+
+---
+
 ## Data
 
 JobSeek automatically saves application data to `data/applications.txt` when commands modify application records. Saved records are loaded when you next start JobSeek.
 
-- Company, role, completion status and optional deadline are preserved between sessions.
-- Recruitment status (`Pending`, `Accepted` or `Rejected`) is currently not saved and resets to `Pending` when records are loaded.
+- Company, role, completion status, optional deadline and recruitment stage are preserved between sessions.
+- Data files saved by older versions still load. Missing stages and legacy `Pending` values become `Applied`.
 - If the data file does not exist, JobSeek starts with an empty application list.
-- If loading fails, JobSeek displays an error and starts with an empty list. Back up the existing data file before making changes, as subsequent saves may overwrite it.
+- **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records.
+- If loading completely fails due to an unrecoverable system I/O error, JobSeek displays an error and starts with an empty list.
 - Search, sort, list and help only display information and do not modify saved data.
 
 The data file location is relative to the folder from which you launch JobSeek. Launch the application from the same folder each time to access the same saved records.
@@ -353,6 +375,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
   ```text
   Available menu options:
     list [completed|all]            - List active, completed, or all applications
+    today                           - Show overdue, due-today and upcoming deadlines
     view INDEX                      - View details for application at INDEX
     [1] Add application             - Add a new internship or job application
     [2] List applications           - View active applications in a numbered table
@@ -381,6 +404,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **Delete application** | `4` | Choose `4`, then enter application index (e.g. `2`) |
 | **Mark application completed** | `5` | Choose `5`, then enter application index (e.g. `1`) |
 | **Unmark application** | `6` | Choose `6`, then enter application index (e.g. `1`) |
+| **Today dashboard** | `today` | `today` |
 | **Help instructions** | `7` | `7` |
 | **Search applications** | `8` | Choose `8`, then enter search term (e.g. `Google`) |
 | **Sort applications** | `9` | Choose `9` to view applications alphabetically |

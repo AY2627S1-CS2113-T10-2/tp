@@ -43,17 +43,17 @@ public class StatusCommandTest {
     }
 
     @Test
-    public void execute_pendingStatus_updatesSuccessfully() throws Exception {
+    public void execute_appliedStatus_updatesSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern", false, "Accepted"));
 
-        StatusCommand command = new StatusCommand(0, "Pending");
+        StatusCommand command = new StatusCommand(0, "Applied");
         command.execute(applications, new Ui(), new Storage());
 
-        assertEquals("Pending", applications.get(0).getStatus());
+        assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
         assertTrue(output.contains("Application status updated successfully."));
-        assertTrue(output.contains("Status: Pending"));
+        assertTrue(output.contains("Status: Applied"));
     }
 
     @Test
@@ -113,7 +113,7 @@ public class StatusCommandTest {
         StatusCommand command = new StatusCommand(-1, "Accepted");
         command.execute(applications, new Ui(), new Storage());
 
-        assertEquals("Pending", applications.get(0).getStatus());
+        assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Invalid application index: 0. Please enter a number between 1 and 1."));
     }
@@ -126,7 +126,7 @@ public class StatusCommandTest {
         StatusCommand command = new StatusCommand(5, "Accepted");
         command.execute(applications, new Ui(), new Storage());
 
-        assertEquals("Pending", applications.get(0).getStatus());
+        assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Invalid application index: 6. Please enter a number between 1 and 1."));
     }
@@ -134,12 +134,12 @@ public class StatusCommandTest {
     @Test
     public void execute_emptyStatus_showsError() throws Exception {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Google", "SWE Intern", false, "Pending"));
+        applications.add(new Application("Google", "SWE Intern", false, "Applied"));
 
         StatusCommand command = new StatusCommand(0, "");
         command.execute(applications, new Ui(), new Storage());
 
-        assertEquals("Pending", applications.get(0).getStatus());
+        assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Status cannot be empty."));
     }
@@ -147,12 +147,12 @@ public class StatusCommandTest {
     @Test
     public void execute_nullStatus_showsError() throws Exception {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Google", "SWE Intern", false, "Pending"));
+        applications.add(new Application("Google", "SWE Intern", false, "Applied"));
 
         StatusCommand command = new StatusCommand(0, null);
         command.execute(applications, new Ui(), new Storage());
 
-        assertEquals("Pending", applications.get(0).getStatus());
+        assertEquals("Applied", applications.get(0).getStatus());
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Status cannot be empty."));
     }
@@ -160,7 +160,7 @@ public class StatusCommandTest {
     @Test
     public void execute_preservesOtherFields_unchanged() throws Exception {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Meta", "Production Engineer", true, "Pending"));
+        applications.add(new Application("Meta", "Production Engineer", true, "Applied"));
 
         StatusCommand command = new StatusCommand(0, "Accepted");
         command.execute(applications, new Ui(), new Storage());
@@ -174,15 +174,15 @@ public class StatusCommandTest {
     @Test
     public void execute_multipleApplications_updatesOnlyTarget() throws Exception {
         ApplicationList applications = new ApplicationList();
-        applications.add(new Application("Google", "SWE", false, "Pending"));
-        applications.add(new Application("Shopee", "Backend", false, "Pending"));
-        applications.add(new Application("Grab", "Data", false, "Pending"));
+        applications.add(new Application("Google", "SWE", false, "Applied"));
+        applications.add(new Application("Shopee", "Backend", false, "Applied"));
+        applications.add(new Application("Grab", "Data", false, "Applied"));
 
         StatusCommand command = new StatusCommand(1, "Accepted");
         command.execute(applications, new Ui(), new Storage());
 
-        assertEquals("Pending", applications.get(0).getStatus());
+        assertEquals("Applied", applications.get(0).getStatus());
         assertEquals("Accepted", applications.get(1).getStatus());
-        assertEquals("Pending", applications.get(2).getStatus());
+        assertEquals("Applied", applications.get(2).getStatus());
     }
 }

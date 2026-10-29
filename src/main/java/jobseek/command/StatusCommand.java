@@ -6,7 +6,7 @@ import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
 /**
- * Handles setting or updating the recruitment status indicator (e.g., Pending, Accepted, Rejected)
+ * Handles setting or updating the recruitment stage (e.g., Applied, Interview, Accepted)
  * for an existing application.
  */
 public class StatusCommand extends Command {
@@ -17,7 +17,7 @@ public class StatusCommand extends Command {
      * Constructs a StatusCommand with the target index and desired recruitment status.
      *
      * @param targetIndex 0-based index of the application in the application list.
-     * @param status Recruitment status string to assign (e.g. "Pending", "Accepted", "Rejected").
+     * @param status Recruitment stage label to assign (e.g. "Applied", "Interview", "Accepted").
      */
     public StatusCommand(int targetIndex, String status) {
         this.targetIndex = targetIndex;
@@ -67,7 +67,8 @@ public class StatusCommand extends Command {
         assert application != null : "Application at valid index should not be null";
 
         application.setStatus(status);
-        assert application.getStatus().equals(status) : "Application status should match the updated status";
+        assert application.getStatus().equals(application.getRecruitmentStage().getLabel())
+                : "Application status should match the updated status";
 
         String message = "Application status updated successfully.\n"
                 + "Company: " + application.getCompany() + "\n"

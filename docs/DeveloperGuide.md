@@ -176,7 +176,7 @@ classDiagram
         - company: String
         - role: String
         - isCompleted: boolean
-        - status: String
+        - recruitmentStage: RecruitmentStage
         - deadline: LocalDate
         - portalLink: String
         - email: String
@@ -184,6 +184,7 @@ classDiagram
         + getCompany(): String
         + getRole(): String
         + getStatus(): String
+        + getRecruitmentStage(): RecruitmentStage
         + getDeadline(): LocalDate
         + getPortalLink(): String
         + getEmail(): String
@@ -192,6 +193,8 @@ classDiagram
         + setCompany(company: String): void
         + setRole(role: String): void
         + setStatus(status: String): void
+        + setRecruitmentStage(recruitmentStage: RecruitmentStage): void
+        + setDeadline(deadline: LocalDate): void
         + setPortalLink(portalLink: String): void
         + setEmail(email: String): void
         + setNotes(notes: String): void
@@ -326,7 +329,7 @@ The `AddCommand` allows job seekers to add a new internship or job record with a
 - **Workflow**:
   1. `Main.handleMenuAdd()` queries the user for non-empty company and role strings using `promptNonEmpty()`, followed by optional deadline (`promptDeadline()`), portal link, contact email, and notes (`promptOptional()`). Blank or whitespace-only inputs for required fields are rejected with informative error messages and reprompted.
   2. Once inputs are obtained, `Main` instantiates `AddCommand(company, role, deadline, portalLink, email, notes)`.
-  3. `AddCommand.execute()` instantiates a new `Application` with all specified attributes, initializing completion status to `false` (`[ ]`) and recruitment status to `"Pending"`.
+  3. `AddCommand.execute()` instantiates a new `Application` with all specified attributes, initializing completion status to `false` (`[ ]`) and recruitment stage to `Applied` (`Application.DEFAULT_STAGE`).
   4. The application is added to `ApplicationList`. Internal assumptions (such as list size incrementing by 1 and target non-null) are verified via Java `assert`.
   5. The updated list is persisted to disk via `Storage.save(applications)`, and confirmation displaying recorded details is rendered to the user via `Ui.showMessage()`.
 
@@ -429,7 +432,7 @@ The `ViewCommand` displays all recorded information for an individual applicatio
   1. `ViewCommand.execute(ApplicationList, Ui, Storage)` validates that the zero-based target index satisfies `0 <= targetIndex < applications.size()`.
   2. If the index is out of bounds, it throws a `JobSeekException` reporting the invalid index and the current list size (e.g., `Application index 5 does not exist. (Total applications: 3)`).
   3. Upon successful bounds validation, it retrieves the target `Application` via `applications.get(targetIndex)`.
-  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment status (`Pending`, `Accepted`, `Rejected`), and completion status (`Yes` or `No`).
+  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment stage (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`), and completion status (`Yes` or `No`).
   5. The card is rendered via `Ui.showMessage()`.
   6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
 
@@ -771,7 +774,7 @@ sequenceDiagram
 
 ### Edit application and recruitment status tracking
 
-The edit feature allows users to modify existing applications without deleting and re-entering them. The status tracking feature categorizes applications into recruitment stages (`Pending`, `Accepted`, `Rejected`).
+The edit feature allows users to modify existing applications without deleting and re-entering them. Recruitment progress is represented by the `RecruitmentStage` enum (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`). The enum owns each display label and whether a stage is terminal. Users may edit a stage freely to handle corrections and different company processes.
 
 - **Design and Implementation**:
   - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, `newStatus`, `newDeadline`, `newPortalLink`, `newEmail`, and `newNotes`. A `null` value indicates that the corresponding field should remain unchanged.
@@ -779,13 +782,13 @@ The edit feature allows users to modify existing applications without deleting a
   - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by a field choice (1 to 8):
     - `1`: Company only
     - `2`: Role only
-    - `3`: Status only
+    - `3`: Recruitment stage only
     - `4`: Deadline only
     - `5`: Company Portal Link only
     - `6`: Contact Email only
     - `7`: Notes only
-    - `8`: All fields in sequence (Company, Role, Status, Deadline, Portal Link, Email, Notes)
-  - Status input normalization in `Main.promptStatus()` accepts numeric shortcuts (`1` for Pending, `2` for Accepted, `3` for Rejected) as well as case-insensitive text strings.
+    - `8`: All fields in sequence (Company, Role, Recruitment Stage, Deadline, Portal Link, Email, Notes)
+  - Stage input normalization in `Main.promptRecruitmentStage()` accepts numbered choices (`1` for Applied, `2` for Online Assessment, `3` for Interview, `4` for Offer, `5` for Accepted, `6` for Rejected, `7` for Withdrawn) and case-insensitive stage names (e.g. `OA`). The legacy label `Pending` is read as `Applied`.
   - Optional fields (deadline, portal link, email, notes) can be updated or cleared with blank inputs.
   - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty required fields, updated status).
 
@@ -856,7 +859,7 @@ sequenceDiagram
         cmd->>app: setCompany(newCompany)
     else choice == 2 (Role)
         cmd->>app: setRole(newRole)
-    else choice == 3 (Status)
+    else choice == 3 (Recruitment stage)
         cmd->>app: setStatus(newStatus)
     else choice == 4 (Deadline)
         cmd->>app: setDeadline(newDeadline)
@@ -1034,6 +1037,14 @@ sequenceDiagram
 ```
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
+
+### Today dashboard
+
+`TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per status). `Main.parseCommand` creates it for the text command `today`.
+
+It is read-only, so it does not call `Storage.save`. Its constructor accepts a `LocalDate` so tests can fix "today"; the no-argument constructor uses `LocalDate.now()`. Each entry prints the application's original one-based index so it can be used with `view`, `edit` and `delete`. The classification rules match `DeadlineWarnings` (same 7-day window, completed applications ignored), but the dashboard can be run on demand instead of only at startup.
+
+**Alternative considered:** reuse `DeadlineWarnings` directly. It was not reused because it builds a single text block with no per-section counts or summary; extracting a shared classifier is a possible later refactoring.
 
 ### Startup deadline warnings
 
@@ -1277,8 +1288,8 @@ The file uses UTF-8 encoding and contains two header lines followed by applicati
 | Company | Escaped text |
 | Role | Escaped text |
 | Completion flag | `true` or `false` |
-| Status | Escaped text (`Pending`, `Accepted`, `Rejected`) |
 | Deadline | ISO date such as `2026-11-03`, or an empty field |
+| Recruitment stage | Escaped text such as `Applied`; an empty field is read as `Applied` |
 | Company portal link | Escaped URL text, or an empty field |
 | Contact email | Escaped email address, or an empty field |
 | Notes | Escaped freeform text, or an empty field |
@@ -1287,7 +1298,7 @@ An empty deadline, portal link, email, or notes field represents an application 
 
 Backslashes, tabs, newlines and carriage returns within text fields are escaped (`\\`, `\t`, `\n`, `\r`) before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company, role, or notes from being mistaken for field or record separators.
 
-**Backwards compatibility:** `Storage.load()` automatically parses legacy 4-field records (`company\trole\tcompleted\tdeadline`), cleanly assigning default values for status (`Pending`), portal link (`""`), email (`""`), and notes (`""`).
+**Backward compatibility:** Files written by earlier versions have four fields (legacy, without status) or five fields (prior stage format). `Storage.load()` accepts four-field, five-field, and modern eight-field records. Four-field records receive the default `Applied` stage, and existing `Pending` values automatically migrate to `Applied`. Missing portal link, email, and notes default to empty strings. The next save rewrites the file in the full eight-field format.
 
 #### Saving applications
 
@@ -1514,7 +1525,7 @@ This section provides step-by-step instructions for manual testing of JobSeek. I
    --------------------------------------------------
    Company:   Google
    Role:      SWE Intern
-   Status:    Pending
+   Status:    Applied
    Completed: No
    ==================================================
    ```
@@ -1633,20 +1644,20 @@ This section provides step-by-step instructions for manual testing of JobSeek. I
    Application updated successfully.
    Company: Google
    Role: SWE Intern
-   Status: Pending
+   Status: Applied
    ```
 5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm updated role:
    ```text
    Application updated successfully.
    Company: Google
    Role: Backend Intern
-   Status: Pending
+   Status: Applied
    ```
 6. Choose `10`, index `1`, and field `4` (Deadline). Enter `2026-11-20`. Confirm updated deadline.
 7. Choose `10`, index `1`, and field `5` (Portal Link). Enter `https://careers.google.com`. Confirm updated portal link.
 8. Choose `10`, index `1`, and field `6` (Email). Enter `recruiter@google.com`. Confirm updated email.
 9. Choose `10`, index `1`, and field `7` (Notes). Enter `Passed interview round 1`. Confirm updated notes.
-10. Choose `10`, index `1`, and field `8` (All). Enter company `Alphabet`, role `Senior SWE Intern`, status `2` (Accepted), deadline `2026-12-15`, portal `https://abc.xyz/jobs`, email `lead@abc.xyz`, and notes `Offer accepted!`. Confirm full update output:
+10. Choose `10`, index `1`, and field `8` (All). Enter company `Alphabet`, role `Senior SWE Intern`, stage `5` (Accepted), deadline `2026-12-15`, portal `https://abc.xyz/jobs`, email `lead@abc.xyz`, and notes `Offer accepted!`. Confirm full update output:
     ```text
     Application updated successfully.
     Company: Alphabet
@@ -1672,34 +1683,31 @@ This section provides step-by-step instructions for manual testing of JobSeek. I
     Error: Invalid field choice: '99'. Enter a number from 1 to 8.
     ```
 
-### Managing recruitment status
+### Managing recruitment stage
 
 1. Add an application with company `Shopee` and role `Backend Intern`.
-2. Enter `view 1`. Verify `Status:    Pending` is displayed by default.
-3. Choose `10`, index `1`, and field `3` (Status). Enter `2` (shortcut for Accepted). Confirm output:
+2. Enter `view 1`. Verify `Status:    Applied` is displayed by default.
+3. Choose `10`, index `1`, and field `3` (Recruitment stage). Enter `2` (Online Assessment). Confirm output:
    ```text
-   Application updated successfully.
+   Application status updated successfully.
    Company: Shopee
    Role: Backend Intern
-   Status: Accepted
+   Status: Online Assessment
    ```
-4. Enter `view 1`. Verify updated card details:
-   ```text
-   ==================================================
-   Application Details [Index: 1]
-   --------------------------------------------------
-   Company:   Shopee
-   Role:      Backend Intern
-   Status:    Accepted
-   Completed: No
-   ==================================================
-   ```
+4. Enter `view 1`. Verify updated card details show `Status:    Online Assessment`.
 5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify:
    ```text
-   Application updated successfully.
+   Application status updated successfully.
    Company: Shopee
    Role: Backend Intern
    Status: Rejected
+   ```
+6. Choose `10`, index `1`, field `8` (All). Enter company `Sea`, role `Data Analyst`, stage `1` (Applied), and press enter for the optional fields. Verify all fields updated correctly:
+   ```text
+   Application updated successfully.
+   Company: Sea
+   Role: Data Analyst
+   Status: Applied
    ```
 
 ### Search and sort

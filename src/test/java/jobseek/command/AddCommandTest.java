@@ -7,7 +7,10 @@ import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -33,6 +36,25 @@ public class AddCommandTest {
         Application added = applications.get(0);
         assertEquals("Google", added.getCompany());
         assertEquals("Software Engineer Intern", added.getRole());
+    }
+
+    @Test
+    public void execute_withDeadline_storesDeadlineOnApplication() throws Exception {
+        ApplicationList applications = new ApplicationList();
+        LocalDate deadline = LocalDate.of(2026, 12, 31);
+
+        new AddCommand("Google", "SWE Intern", deadline).execute(applications, new Ui(), new Storage());
+
+        assertEquals(deadline, applications.get(0).getDeadline());
+    }
+
+    @Test
+    public void execute_withoutDeadline_leavesDeadlineNull() throws Exception {
+        ApplicationList applications = new ApplicationList();
+
+        new AddCommand("Google", "SWE Intern").execute(applications, new Ui(), new Storage());
+
+        assertNull(applications.get(0).getDeadline());
     }
 
     @Test
