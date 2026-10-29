@@ -290,12 +290,39 @@ If no applications require attention, no warning summary appears. Warnings are c
 
 ---
 
+### Today dashboard: `today`
+
+Shows what needs your attention right now, without restarting JobSeek.
+
+- **Usage**: Enter `today` at the main menu prompt.
+- **Sections**: `OVERDUE`, `DUE TODAY` and `UPCOMING` (deadlines within the next seven days), followed by a `SUMMARY` of active and completed applications and a count of active applications per status.
+- Only applications that are not marked as completed appear in the deadline sections. Each entry keeps the number you use with `view`, `edit` and `delete`.
+
+```text
+Today: 2026-10-28
+
+OVERDUE (1)
+  1. Google | SWE Intern - 2026-10-27 (1 day overdue)
+
+DUE TODAY (0)
+  none
+
+UPCOMING (next 7 days) (1)
+  3. GovTech | Analyst - 2026-11-04 (in 7 days)
+
+SUMMARY
+  3 active, 1 completed, 1 active without a deadline
+  Active by status - Accepted: 1, Pending: 2
+```
+
+---
+
 ## Data
 
 JobSeek automatically saves application data to `data/applications.txt` when commands modify application records. Saved records are loaded when you next start JobSeek.
 
-- Company, role, completion status and optional deadline are preserved between sessions.
-- Recruitment status (`Pending`, `Accepted` or `Rejected`) is currently not saved and resets to `Pending` when records are loaded.
+- Company, role, completion status, optional deadline and recruitment status (`Pending`, `Accepted` or `Rejected`) are preserved between sessions.
+- Data files saved by older versions of JobSeek (without a status column) still load; their applications start as `Pending`.
 - If the data file does not exist, JobSeek starts with an empty application list.
 - If loading fails, JobSeek displays an error and starts with an empty list. Back up the existing data file before making changes, as subsequent saves may overwrite it.
 - Search, sort, list and help only display information and do not modify saved data.
@@ -313,6 +340,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
   ```text
   Available menu options:
     list [completed|all]            - List active, completed, or all applications
+    today                           - Show overdue, due-today and upcoming deadlines
     view INDEX                      - View details for application at INDEX
     [1] Add application             - Add a new internship or job application
     [2] List applications           - View active applications in a numbered table
@@ -341,6 +369,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **Delete application** | `4` | Choose `4`, then enter application index (e.g. `2`) |
 | **Mark application completed** | `5` | Choose `5`, then enter application index (e.g. `1`) |
 | **Unmark application** | `6` | Choose `6`, then enter application index (e.g. `1`) |
+| **Today dashboard** | `today` | `today` |
 | **Help instructions** | `7` | `7` |
 | **Search applications** | `8` | Choose `8`, then enter search term (e.g. `Google`) |
 | **Sort applications** | `9` | Choose `9` to view applications alphabetically |

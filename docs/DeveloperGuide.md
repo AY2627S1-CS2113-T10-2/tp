@@ -387,6 +387,14 @@ sequenceDiagram
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
 
+### Today dashboard
+
+`TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per status). `Main.parseCommand` creates it for the text command `today`.
+
+It is read-only, so it does not call `Storage.save`. Its constructor accepts a `LocalDate` so tests can fix "today"; the no-argument constructor uses `LocalDate.now()`. Each entry prints the application's original one-based index so it can be used with `view`, `edit` and `delete`. The classification rules match `DeadlineWarnings` (same 7-day window, completed applications ignored), but the dashboard can be run on demand instead of only at startup.
+
+**Alternative considered:** reuse `DeadlineWarnings` directly. It was not reused because it builds a single text block with no per-section counts or summary; extracting a shared classifier is a possible later refactoring.
+
 ### Startup deadline warnings
 
 #### Overview
@@ -549,7 +557,7 @@ The feature involves the following classes:
 
 #### File format
 
-The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains four tab-separated fields:
+The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains five tab-separated fields:
 
 | Field | Representation |
 |---|---|
@@ -557,12 +565,13 @@ The file uses UTF-8 encoding and contains two header lines followed by applicati
 | Role | Escaped text |
 | Completion flag | `true` or `false` |
 | Deadline | ISO date such as `2026-11-03`, or an empty field |
+| Status | Escaped text such as `Pending`; an empty field is read as `Pending` |
 
 An empty deadline field represents an application without a recorded deadline.
 
 Backslashes, tabs, newlines and carriage returns within text fields are escaped before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company or role names from being mistaken for field or record separators.
 
-**Current limitation:** Recruitment status (`Pending`, `Accepted` or `Rejected`) is not included in the stored format. Therefore, changes to this status are not preserved by the current storage implementation.
+**Backward compatibility:** Files written by earlier versions have only four fields (no status). `load()` accepts both four- and five-field records and gives four-field records the default `Pending` status, so existing user data is not rejected. The next save rewrites the file in the five-field format. Status is the last column so that old records are a prefix of new ones.
 
 #### Saving applications
 

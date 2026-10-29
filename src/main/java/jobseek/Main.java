@@ -11,6 +11,7 @@ import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
 import jobseek.command.StatusCommand;
+import jobseek.command.TodayCommand;
 import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
@@ -148,6 +149,10 @@ public class Main {
                 ui.showError(e.getMessage());
                 return null;
             }
+        }
+
+        if (trimmedOption.equalsIgnoreCase("today")) {
+            return new TodayCommand();
         }
 
         if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.matches("(?i)^list\\s+.*")) {
