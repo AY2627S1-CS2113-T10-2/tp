@@ -21,9 +21,24 @@ classDiagram
     class AddCommand {
         -String company
         -String role
+        -LocalDate deadline
         +execute(applications, ui, storage) void
         +getCompany() String
         +getRole() String
+        +getDeadline() LocalDate
+    }
+    class ViewCommand {
+        -int targetIndex
+        +execute(applications, ui, storage) void
+        +getTargetIndex() int
+        +parse(args)$ ViewCommand
+    }
+    class MarkCommand {
+        -int targetIndex
+        -boolean isCompleted
+        +execute(applications, ui, storage) void
+        +getTargetIndex() int
+        +isCompleted() boolean
     }
     class EditCommand {
         -int targetIndex
@@ -49,6 +64,8 @@ classDiagram
     class ListCommand {
         -FilterType filterType
         +execute(applications, ui, storage) void
+        +getFilterType() FilterType
+        +parse(args)$ ListCommand
     }
     class ApplicationList {
         -ArrayList~Application~ applications
@@ -57,28 +74,38 @@ classDiagram
         +get(index) Application
         +size() int
         +isValidIndex(index) boolean
+        +isEmpty() boolean
     }
     class Application {
         -String company
         -String role
         -boolean isCompleted
         -String status
+        -LocalDate deadline
         +getCompany() String
         +getRole() String
         +getStatus() String
+        +getDeadline() LocalDate
+        +isCompleted() boolean
         +setCompany(company) void
         +setRole(role) void
         +setStatus(status) void
+        +setCompleted(isCompleted) void
     }
     Command <|-- AddCommand
+    Command <|-- ViewCommand
+    Command <|-- MarkCommand
     Command <|-- EditCommand
     Command <|-- StatusCommand
     Command <|-- HelpCommand
     Command <|-- ListCommand
     ApplicationList --> Application
     AddCommand ..> ApplicationList
+    ViewCommand ..> ApplicationList
+    MarkCommand ..> ApplicationList
     EditCommand ..> ApplicationList
     StatusCommand ..> ApplicationList
+    ListCommand ..> ApplicationList
 ```
 
 ### Add application feature
@@ -115,6 +142,171 @@ sequenceDiagram
     AddCommand->>Ui: showMessage("Application added successfully...")
     Ui-->>User: Confirmation message
 ```
+
+### View application feature
+
+#### Overview
+The `ViewCommand` displays all recorded information for an individual application as a structured, visual card. It is executed via the `view <application_number>` standalone command.
+
+#### Design and implementation
+- **Parsing**: `ViewCommand.parse(String args)` parses user input following the `view` command prefix. It validates that the argument is a non-empty, positive integer (`1`-based). If the argument is invalid or non-numeric, it throws a `JobSeekException` with helpful usage instructions (`Usage: view INDEX`).
+- **Execution**:
+  1. `ViewCommand.execute(ApplicationList, Ui, Storage)` validates that the zero-based target index satisfies `0 <= targetIndex < applications.size()`.
+  2. If the index is out of bounds, it throws a `JobSeekException` reporting the invalid index and the current list size (e.g., `Application index 5 does not exist. (Total applications: 3)`).
+  3. Upon successful bounds validation, it retrieves the target `Application` via `applications.get(targetIndex)`.
+  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment status (`Pending`, `Accepted`, `Rejected`), and completion status (`Yes` or `No`).
+  5. The card is rendered via `Ui.showMessage()`.
+  6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Main
+    participant ViewCommand
+    participant ApplicationList
+    participant Application
+    participant Ui
+    User->>Main: Enter "view 1"
+    Main->>ViewCommand: ViewCommand.parse("1")
+    activate ViewCommand
+    ViewCommand-->>Main: viewCommand
+    deactivate ViewCommand
+    Main->>ViewCommand: execute(applications, ui, storage)
+    activate ViewCommand
+    ViewCommand->>ApplicationList: size()
+    ApplicationList-->>ViewCommand: size
+    ViewCommand->>ApplicationList: get(0)
+    ApplicationList-->>ViewCommand: application
+    ViewCommand->>Application: getCompany()
+    Application-->>ViewCommand: "Google"
+    ViewCommand->>Application: getRole()
+    Application-->>ViewCommand: "SWE Intern"
+    ViewCommand->>Application: getStatus()
+    Application-->>ViewCommand: "Accepted"
+    ViewCommand->>Application: isCompleted()
+    Application-->>ViewCommand: false
+    ViewCommand->>Ui: showMessage(card)
+    Ui-->>User: Structured card display
+    deactivate ViewCommand
+```
+
+#### Design considerations
+- **Card view vs tabular view**:
+  - *Current choice*: A structured card view focuses on one record at a time, providing space to cleanly display all recorded attributes (including recruitment status and completion status) without line truncation or horizontal overflow.
+  - *Alternative*: Adding more columns to the standard list table. This was rejected because widening the table reduces readability on smaller terminal windows and clutters the overview.
+- **Read-only decoupling**:
+  - `ViewCommand` adheres to the Command pattern without calling `Storage.save()`, ensuring zero disk I/O overhead.
+
+### Filtered application listing feature
+
+#### Overview
+The `ListCommand` presents applications in an aligned ASCII table. It supports completion-status filtering so users can focus on active applications, completed applications, or inspect all tracked opportunities.
+
+#### Design and implementation
+- **Filter criteria**: Controlled by the `FilterType` enum:
+  - `ACTIVE`: Displays only uncompleted applications (`isCompleted() == false`).
+  - `COMPLETED`: Displays only completed applications (`isCompleted() == true`).
+  - `ALL`: Displays all applications regardless of completion state.
+- **Triggering mechanisms**:
+  - Standalone text commands: `list` (defaults to `ACTIVE`), `list completed`, `list all`. Parsed by `ListCommand.parse(String args)`. Unrecognized filters throw a `JobSeekException` with usage instructions.
+  - Numeric menu options: Menu option `2` (`List applications`) and menu option `3` (`List uncompleted applications`) both instantiate `ListCommand(FilterType.ACTIVE)`.
+- **Workflow**:
+  1. `ListCommand.execute()` checks if `applications.isEmpty()`. If the list is empty, it outputs `"No applications found."`.
+  2. Iterates over all applications and collects the zero-based indices of matching records into an `ArrayList<Integer> matchingIndices` using `matchesFilter(app)`.
+  3. If no records match the chosen filter, context-sensitive feedback is displayed:
+     - `COMPLETED`: `"No completed applications found."`
+     - `ACTIVE`: `"No active applications found."`
+     - `ALL`: `"No applications found."`
+  4. Dynamically calculates column widths for `No.`, `Status`, `Company`, `Role`, and `Deadline` based on the longest values among matching entries, guaranteeing clean tabular alignment.
+  5. Renders each matching row, preserving the application's original 1-based index (`index + 1`).
+  6. Displays the formatted table via `Ui.showMessage()`.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Main
+    participant ListCommand
+    participant ApplicationList
+    participant Application
+    participant Ui
+    User->>Main: Enter "list completed" (or menu option 2/3)
+    Main->>ListCommand: ListCommand.parse("completed")
+    activate ListCommand
+    ListCommand-->>Main: listCommand
+    deactivate ListCommand
+    Main->>ListCommand: execute(applications, ui, storage)
+    activate ListCommand
+    loop For each application in list
+        ListCommand->>ApplicationList: get(i)
+        ApplicationList-->>ListCommand: application
+        ListCommand->>Application: isCompleted()
+        Application-->>ListCommand: status
+    end
+    Note over ListCommand: Collect matching indices and build formatted table with original numbers
+    ListCommand->>Ui: showMessage(table)
+    Ui-->>User: Formatted table output
+    deactivate ListCommand
+```
+
+#### Design considerations
+- **Preserving original 1-based indices**:
+  - *Current choice*: The `No.` column displays the application's original index from `ApplicationList` rather than re-indexing from 1 in the filtered view. This guarantees that numbers remain consistent across `list`, `list completed`, `view`, `mark`, `edit`, and `delete` commands.
+  - *Alternative*: Re-numbering matching rows sequentially (1, 2, ...). This was rejected because it introduces confusion when users attempt to execute `view` or `mark` on an application whose display number differs from its list position.
+- **Default to active applications**:
+  - Job seekers primarily need to review and act upon active, ongoing applications. Concluded applications are hidden by default to keep the interface concise and relevant.
+
+### Mark and unmark application completion feature
+
+#### Overview
+The `MarkCommand` allows users to toggle an application's lifecycle between active/incomplete (`[ ]`) and completed (`[X]`). Completed applications are typically archived from the default active list.
+
+#### Design and implementation
+- **Menu triggers**:
+  - Menu option `5`: Calls `handleMenuMark(true)` to mark an application as completed.
+  - Menu option `6`: Calls `handleMenuMark(false)` to unmark an application.
+- **Workflow**:
+  1. `Main.promptApplicationIndex()` prompts the user for the 1-based application index and converts it to a zero-based integer.
+  2. `Main` instantiates `MarkCommand(targetIndex, isCompleted)`.
+  3. `MarkCommand.execute(applications, ui, storage)` checks whether `applications.isEmpty()`. If empty, it displays an error message via `Ui.showError()`.
+  4. Validates that `targetIndex` is valid using `applications.isValidIndex(targetIndex)`. If invalid, displays a bounds error (e.g., `Invalid application index: 4. Please enter a number between 1 and 2.`).
+  5. Retrieves the application and updates its completion state using `application.setCompleted(isCompleted)`.
+  6. Displays a confirmation message showing the updated application representation:
+     - Marked: `"Nice! I've marked this application as completed:\n  " + application`
+     - Unmarked: `"OK, I've marked this application as not completed yet:\n  " + application`
+  7. Persists the modification to disk immediately via `Storage.save(applications)`.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Main
+    participant MarkCommand
+    participant ApplicationList
+    participant Application
+    participant Storage
+    participant Ui
+    User->>Main: Select option 5 (Mark)
+    Main->>Ui: promptApplicationIndex()
+    Ui-->>Main: 1 (0-based: 0)
+    Main->>MarkCommand: new MarkCommand(0, true)
+    Main->>MarkCommand: execute(applications, ui, storage)
+    activate MarkCommand
+    MarkCommand->>ApplicationList: isValidIndex(0)
+    ApplicationList-->>MarkCommand: true
+    MarkCommand->>ApplicationList: get(0)
+    ApplicationList-->>MarkCommand: application
+    MarkCommand->>Application: setCompleted(true)
+    MarkCommand->>Storage: save(applications)
+    MarkCommand->>Ui: showMessage("Nice! I've marked this application...")
+    Ui-->>User: Confirmation message
+    deactivate MarkCommand
+```
+
+#### Design considerations
+- **Single unified command vs separate commands**:
+  - *Current choice*: A unified `MarkCommand` parameterized with boolean `isCompleted`. The workflow for validation, index checking, list mutation, and disk persistence is identical for both actions; unifying them eliminates code duplication.
+  - *Alternative*: Separate `MarkCommand` and `UnmarkCommand` classes. This was rejected to avoid redundant boilerplate and maintenance overhead.
+- **Immediate disk persistence**:
+  - Changes to completion status immediately invoke `Storage.save(applications)` to guarantee that completion progress is preserved across application crashes or restarts.
 
 ### Edit application and recruitment status tracking
 
@@ -454,8 +646,12 @@ Loading currently falls back to an empty list after an error. A future recovery 
 |---|---|---|---|
 | v1.0 | student beginning to track applications | add a new job application | keep an opportunity in one central record |
 | v1.0 | new user | see usage instructions | refer to them when I forget how to use the application |
+| v1.0 | job seeker | view detailed information of a specific application | inspect all fields including recruitment status and deadlines in a structured card |
+| v1.0 | job seeker | mark an application as completed | track which applications have concluded their recruitment cycle |
+| v1.0 | job seeker | unmark a completed application | reopen an application if the recruitment process resumes or if marked by mistake |
 | v2.0 | job seeker | find applications by company or role | locate an application without scanning the full list |
 | v2.0 | job seeker | view applications alphabetically | compare applications by company and role more easily |
+| v2.0 | job seeker | filter applications by active or completed status | focus on pending applications without distraction from completed ones |
 | v2.0 | student | edit the recorded details of an application | keep information accurate when details change or I make a mistake |
 | v2.0 | student | record the current recruitment stage of an application | track my current progress for the application |
 
@@ -487,6 +683,69 @@ Loading currently falls back to an empty list after an error. A future recovery 
 
 1. Enter `7` from the main menu.
 2. Verify that all menu options `[0]` through `[10]` and shortcuts `list [completed|all]` and `view INDEX` are displayed.
+
+### Viewing application details
+
+1. Start JobSeek and add an application with company `Google` and role `SWE Intern`.
+2. Enter `view 1`. Confirm that a structured details card appears:
+   ```text
+   ==================================================
+   Application Details [Index: 1]
+   --------------------------------------------------
+   Company:   Google
+   Role:      SWE Intern
+   Status:    Pending
+   Completed: No
+   ==================================================
+   ```
+3. Test invalid and boundary inputs:
+   - Enter `view` (no index). Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
+   - Enter `view 0` or `view -1`. Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
+   - Enter `view abc`. Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
+   - Enter `view 99` (out of bounds). Confirm error: `Error: Application index 99 does not exist. (Total applications: 1)`.
+
+### Listing and filtering applications
+
+1. Start JobSeek with an empty list. Choose `2` or type `list`. Confirm `No applications found.` appears.
+2. Add three applications:
+   - Application 1: `Google / SWE Intern`
+   - Application 2: `Shopee / Backend Intern`
+   - Application 3: `GovTech / Fullstack Developer`
+3. Mark Application 2 as completed using option `5`.
+4. Test active filter (default):
+   - Choose `2` (or option `3`, or type `list`).
+   - Confirm only Application 1 and Application 3 appear in the table with their original list numbers `1` and `3`. Application 2 is not listed.
+5. Test completed filter:
+   - Type `list completed`.
+   - Confirm only Application 2 appears in the table with `No.` `2` and `Status` `[X]`.
+6. Test all filter:
+   - Type `list all`.
+   - Confirm all three applications (1, 2, 3) are displayed in the table.
+7. Test unrecognized filter:
+   - Type `list pending`.
+   - Confirm error appears: `Error: Invalid list filter: 'pending'. Usage: list [completed|all]`.
+
+### Marking and unmarking applications
+
+1. Have at least one uncompleted application (e.g. Application 1 `[ ] Google`).
+2. Choose option `5` (Mark completed). Enter `1`.
+   - Confirm confirmation message:
+     ```text
+     Nice! I've marked this application as completed:
+       [X] Google | Role: SWE Intern
+     ```
+3. Type `list`. Confirm Application 1 is no longer in the active list.
+4. Type `list completed`. Confirm Application 1 appears with status `[X]`.
+5. Choose option `6` (Unmark). Enter `1`.
+   - Confirm confirmation message:
+     ```text
+     OK, I've marked this application as not completed yet:
+       [ ] Google | Role: SWE Intern
+     ```
+6. Type `list`. Confirm Application 1 reappears in the active list with `[ ]`.
+7. Test invalid inputs for marking and unmarking:
+   - Enter non-numeric input `xyz` at the index prompt. Confirm error `Error: Invalid application index. Please enter a valid number.` appears.
+   - Enter out-of-bounds index `99`. Confirm error `Error: Invalid application index: 99. Please enter a number between 1 and 3.` appears.
 
 ### Editing application fields
 

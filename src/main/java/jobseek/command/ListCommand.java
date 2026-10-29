@@ -113,8 +113,8 @@ public class ListCommand extends Command {
         int companyWidth = "Company".length();
         int roleWidth = "Role".length();
         int deadlineWidth = "Deadline".length();
-        for (int i = 0; i < applications.size(); i++) {
-            Application application = applications.get(i);
+        for (int index : matchingIndices) {
+            Application application = applications.get(index);
             companyWidth = Math.max(companyWidth, application.getCompany().length());
             roleWidth = Math.max(roleWidth, application.getRole().length());
             deadlineWidth = Math.max(deadlineWidth, deadlineText(application).length());
@@ -130,9 +130,9 @@ public class ListCommand extends Command {
                 .append("-+-").append("-".repeat(roleWidth))
                 .append("-+-").append("-".repeat(deadlineWidth));
 
-        for (int i = 0; i < applications.size(); i++) {
-            Application application = applications.get(i);
-            table.append('\n').append(String.format(rowFormat, Integer.toString(i + 1),
+        for (int index : matchingIndices) {
+            Application application = applications.get(index);
+            table.append('\n').append(String.format(rowFormat, Integer.toString(index + 1),
                     application.getStatusIcon(), application.getCompany(), application.getRole(),
                     deadlineText(application)));
         }
@@ -143,6 +143,8 @@ public class ListCommand extends Command {
     /** Returns a printable deadline value, using a dash when none is recorded. */
     private String deadlineText(Application application) {
         return application.getDeadline() == null ? "-" : application.getDeadline().toString();
+    }
+
     private boolean matchesFilter(Application app) {
         switch (filterType) {
         case COMPLETED:

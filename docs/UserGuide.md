@@ -54,19 +54,67 @@ Choose `1` to create and track a new job or internship application.
 
 ---
 
-### Listing applications
+### Listing applications: `list`
 
-JobSeek provides flexible options to display and inspect your tracked applications:
+Shows a table of tracked applications with their original list numbers, completion status (`[X]` or `[ ]`), company name, role title, and deadline. By default, only active (uncompleted) applications are displayed.
 
-- **Menu options**:
-  - **`[2] List applications`**: Shows active applications in a numbered table with their original index and completion status.
-  - **`[3] List uncompleted applications`**: Displays active / uncompleted applications.
-- **Textual filter commands**:
-  - `list`: Displays active applications.
-  - `list completed`: Displays only applications that have been marked completed (`[X]`).
-  - `list all`: Displays every tracked application regardless of completion status.
-- **Detailed card view**:
-  - `view INDEX`: Displays the full information card for the application at the specified 1-based index (e.g., `view 1`), including company, role, recruitment status, and completion state.
+Format: `list [completed|all]`
+
+Menu shortcuts:
+* Choose `2` to list active applications.
+* Choose `3` to list uncompleted applications.
+
+Examples:
+* `list` – Shows active (uncompleted) applications.
+* `list completed` – Shows only completed applications.
+* `list all` – Shows all applications regardless of completion status.
+
+Example output:
+```text
+Here are your applications:
+No. | Status | Company   | Role           | Deadline  
+----+--------+-----------+----------------+-----------
+1   | [ ]    | Google    | SWE Intern     | 2026-11-03
+3   | [ ]    | Shopee    | Backend Intern | -         
+```
+
+> **Notes on list filtering:**
+> * The `No.` column always displays each application's original 1-based index from the main list. You can safely use this index in commands such as `view`, `edit`, `delete`, or `mark`.
+> * If no applications match the chosen filter, JobSeek displays an informative message:
+>   * `No active applications found.`
+>   * `No completed applications found.`
+>   * `No applications found.`
+
+---
+
+### Viewing application details: `view`
+
+Displays a comprehensive, structured information card for a single job application at the specified index. The card presents all recorded details including company, role, recruitment status, and completion state.
+
+Format: `view <application_number>`
+
+Examples:
+* `view 1` – Displays the detailed card for application number 1.
+* `view 3` – Displays the detailed card for application number 3.
+
+Example output:
+```text
+==================================================
+Application Details [Index: 1]
+--------------------------------------------------
+Company:   Google
+Role:      SWE Intern
+Status:    Accepted
+Completed: No
+==================================================
+```
+
+> **Notes on viewing applications:**
+> * `<application_number>` must be a valid positive integer corresponding to an existing entry in your application list (e.g., `1`, `2`).
+> * If `<application_number>` is missing, non-numeric, or `<= 0`, JobSeek notifies you:
+>   `Error: Please provide a valid positive application index. Usage: view INDEX`
+> * If `<application_number>` is greater than the total number of applications, JobSeek displays:
+>   `Error: Application index X does not exist. (Total applications: Y)`
 
 ---
 
@@ -169,6 +217,54 @@ If the list is empty or the application number is invalid, JobSeek displays an e
 
 ---
 
+### Marking an application as completed: `mark`
+
+Marks the application at the specified index as completed (`[X]`). Completed applications represent concluded application pipelines (such as accepted offers or finalized cycles) and are hidden from the default active list view to keep your workspace clutter-free.
+
+Format: Choose `5` from the menu, then enter `<application_number>`.
+
+Examples:
+* Choose `5`, then enter `1` – Marks application number 1 as completed.
+
+Example output:
+```text
+Nice! I've marked this application as completed:
+  [X] Google | Role: SWE Intern
+```
+
+> **Notes on marking applications:**
+> * If your application list is currently empty, JobSeek notifies you:
+>   `Error: Your application list is currently empty.`
+> * If the entered index is blank, non-numeric, or out of range, JobSeek rejects it with an error:
+>   * `Error: Please specify a valid application index.`
+>   * `Error: Invalid application index. Please enter a valid number.`
+
+---
+
+### Unmarking an application: `unmark`
+
+Reverts the completion status of the application at the specified index back to incomplete (`[ ]`). The application is reactivated and will appear in active application listings.
+
+Format: Choose `6` from the menu, then enter `<application_number>`.
+
+Examples:
+* Choose `6`, then enter `1` – Reverts application number 1 back to incomplete.
+
+Example output:
+```text
+OK, I've marked this application as not completed yet:
+  [ ] Google | Role: SWE Intern
+```
+
+> **Notes on unmarking applications:**
+> * If your application list is currently empty, JobSeek notifies you:
+>   `Error: Your application list is currently empty.`
+> * If the entered index is blank, non-numeric, or out of range, JobSeek rejects it with an error:
+>   * `Error: Please specify a valid application index.`
+>   * `Error: Invalid application index. Please enter a valid number.`
+
+---
+
 ### Deadline warnings
 
 JobSeek automatically checks deadlines when it starts and displays warnings before the main menu.
@@ -230,3 +326,23 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
     [10] Edit application           - Edit an existing application's details
     [0] Exit                        - Exit JobSeek
   ```
+
+---
+
+## Command Summary
+
+| Action | Format | Examples / Usage |
+|---|---|---|
+| **Add application** | `1` | Choose `1`, then enter company, role, and optional deadline |
+| **List active applications** | `list` or `2` or `3` | `list` or choose `2` or `3` |
+| **List completed applications** | `list completed` | `list completed` |
+| **List all applications** | `list all` | `list all` |
+| **View application details** | `view <application_number>` | `view 1` |
+| **Delete application** | `4` | Choose `4`, then enter application index (e.g. `2`) |
+| **Mark application completed** | `5` | Choose `5`, then enter application index (e.g. `1`) |
+| **Unmark application** | `6` | Choose `6`, then enter application index (e.g. `1`) |
+| **Help instructions** | `7` | `7` |
+| **Search applications** | `8` | Choose `8`, then enter search term (e.g. `Google`) |
+| **Sort applications** | `9` | Choose `9` to view applications alphabetically |
+| **Edit application** | `10` | Choose `10`, then enter index and choose field to modify |
+| **Exit JobSeek** | `0` | `0` |
