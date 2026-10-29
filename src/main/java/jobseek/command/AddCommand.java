@@ -78,7 +78,7 @@ public class AddCommand extends Command {
         }
 
         int sizeBefore = applications.size();
-        Application application = new Application(company, role);
+        Application application = new Application(company, role, false, deadline);
         applications.add(application);
 
         assert applications.size() == sizeBefore + 1 : "Adding one application should increase list size by one";

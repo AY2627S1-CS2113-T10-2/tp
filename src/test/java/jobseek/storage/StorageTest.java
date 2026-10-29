@@ -114,6 +114,46 @@ public class StorageTest {
     }
 
     @Test
+    public void saveThenLoad_preservesRecruitmentStatus() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Storage storage = new Storage(temporaryFile.toString());
+        ApplicationList list = new ApplicationList();
+        list.add(new Application("Google", "SWE", false, "Accepted", null));
+        list.add(new Application("Shopee", "Backend", true, "Rejected", LocalDate.of(2026, 11, 3)));
+
+        storage.save(list);
+
+        ApplicationList loaded = storage.load();
+        assertEquals("Accepted", loaded.get(0).getStatus());
+        assertEquals("Rejected", loaded.get(1).getStatus());
+        assertEquals(LocalDate.of(2026, 11, 3), loaded.get(1).getDeadline());
+    }
+
+    @Test
+    public void load_legacyFourFieldFile_defaultsStatusToPending() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile,
+                "JOBSEEK Applications\ncompany\trole\tcompleted\tdeadline\n"
+                        + "Example Company\tSoftware Engineer\tfalse\t2026-12-31\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(1, loaded.size());
+        assertEquals("Pending", loaded.get(0).getStatus());
+        assertEquals(LocalDate.of(2026, 12, 31), loaded.get(0).getDeadline());
+    }
+
+    @Test
+    public void load_blankStatusField_defaultsStatusToPending() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tfalse\t\t\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        assertEquals("Pending", storage.load().get(0).getStatus());
+    }
+
+    @Test
     public void load_ignoresBlankLinesAndComments() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
         Files.writeString(temporaryFile,

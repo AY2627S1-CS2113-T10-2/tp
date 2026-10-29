@@ -18,8 +18,12 @@ import jobseek.model.ApplicationList;
 public class Storage {
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
-    private static final String COLUMN_HEADER = "company\trole\tcompleted\tdeadline";
+    private static final String COLUMN_HEADER = "company\trole\tcompleted\tdeadline\tstatus";
+    /** Column header written by earlier versions, which did not save the recruitment status. */
+    private static final String LEGACY_COLUMN_HEADER = "company\trole\tcompleted\tdeadline";
     private static final String HEADER = TITLE_HEADER + "\n" + COLUMN_HEADER;
+    private static final int LEGACY_FIELD_COUNT = 4;
+    private static final int FIELD_COUNT = 5;
 
     private String filePath;
 
@@ -71,7 +75,7 @@ public class Storage {
         for (Application application : applications.getAll()) {
             String deadline = application.getDeadline() == null ? "" : application.getDeadline().toString();
             lines.add(escape(application.getCompany()) + "\t" + escape(application.getRole()) + "\t"
-                    + application.isCompleted() + "\t" + deadline);
+                    + application.isCompleted() + "\t" + deadline + "\t" + escape(application.getStatus()));
         }
         Files.write(path, lines, StandardCharsets.UTF_8);
     }
@@ -95,11 +99,13 @@ public class Storage {
             if (line.isBlank() || line.startsWith("#")) {
                 continue;
             }
-            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)) {
+            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line) || LEGACY_COLUMN_HEADER.equals(line)) {
                 continue;
             }
             List<String> fields = splitFields(line);
-            if (fields.size() != 4 || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
+            // Files saved before status was persisted have only four fields; they load as "Pending".
+            boolean hasValidFieldCount = fields.size() == FIELD_COUNT || fields.size() == LEGACY_FIELD_COUNT;
+            if (!hasValidFieldCount || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
                 throw new IOException("Invalid record on line " + (lineNumber + 1) + " in " + filePath + ".");
             }
             LocalDate deadline = null;
@@ -111,7 +117,9 @@ public class Storage {
                 }
             }
             boolean isCompleted = Boolean.parseBoolean(fields.get(2));
-            applications.add(new Application(fields.get(0), fields.get(1), isCompleted, deadline));
+            // A missing or blank status makes the Application constructor fall back to "Pending".
+            String status = fields.size() == FIELD_COUNT ? fields.get(4) : null;
+            applications.add(new Application(fields.get(0), fields.get(1), isCompleted, status, deadline));
         }
         return applications;
     }
