@@ -69,12 +69,10 @@ I contributed across the full product lifecycle: bootstrapped the initial code s
 
 ### Review/mentoring contributions
 
-- Reviewed and merged teammates' pull requests, including [PR #1](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/1) (Delete application feature).
-- Assisted teammates in resolving git merge conflicts across feature branches and aligning command-model interfaces.
-- Reviewed and audited team PRs for code consistency, Checkstyle compliance, and test coverage.
-
-### Contributions beyond the project team
-
+- **Internal Team Reviews & Mentoring**:
+  - Reviewed and merged teammates' pull requests, including [PR #1](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/1) (Delete application feature).
+  - Assisted teammates in resolving git merge conflicts across feature branches and aligning command-model interfaces.
+  - Reviewed and audited team PRs for code consistency, Checkstyle compliance, and test coverage.
 - **Cross-Team Developer Guide & UML Review**:
   - Provided extensive, detailed review feedback on the Developer Guide and UML diagrams of Team TutorLedger (CS2113-W12-2) on the central cohort repository ([PR #5 Review](https://github.com/NUS-CS2113-AY2627-S1/tp/pull/5/changes#diff-1a95edf069a4136e9cb71bee758b0dc86996f6051f0d438ec2c424557de7160b)).
   - Contributed 5 detailed review comments on standard UML notation and diagram readability:
@@ -83,3 +81,7 @@ I contributed across the full product lifecycle: bootstrapped the initial code s
     3. **Lifeline Header Notation** (DG Line 645): Corrected sequence diagram lifeline syntax in Figures 3 and 20, clarifying instance `:TutorLedger` lifelines versus static class utility calls (`<<class>> TutorLedger`).
     4. **Dependency Arrow Simplification** (DG Line 109): Recommended consolidating multiple curved dashed arrows between `Storage` and `TutorLedgerData` in Figure 2 into a single straight dependency relationship to enhance visual clarity.
     5. **Activity Diagram Decision Nodes** (DG Line 249): Identified non-standard hexagon condition shapes in Figure 6, recommending standard diamond decision/merge nodes with bracketed guard expressions (`[...]`) along output branches.
+
+### Contributions beyond the project team
+
+- *(To be added: e.g. forum contributions, bugs reported in other teams' products)*
