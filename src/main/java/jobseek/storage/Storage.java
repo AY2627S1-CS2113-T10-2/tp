@@ -27,6 +27,8 @@ public class Storage {
 
     private String filePath;
 
+    private final List<String> loadWarnings = new ArrayList<>();
+
     /**
      * Constructs a Storage instance with the default file path.
      */
@@ -58,6 +60,15 @@ public class Storage {
     }
 
     /**
+     * Returns the list of warning messages generated during the most recent load operation.
+     *
+     * @return An unmodifiable list of load warnings.
+     */
+    public List<String> getLoadWarnings() {
+        return List.copyOf(loadWarnings);
+    }
+
+    /**
      * Saves the application list to local storage.
      *
      * @param applications The ApplicationList to save.
@@ -81,12 +92,13 @@ public class Storage {
     }
 
     /**
-     * Loads the application list from local storage.
+     * Loads the application list from local storage, recovering valid records when encountering corrupted lines.
      *
-     * @return The loaded ApplicationList.
-     * @throws Exception If an I/O or deserialization error occurs.
+     * @return The loaded ApplicationList containing all recoverable records.
+     * @throws Exception If an unrecoverable file reading error occurs.
      */
     public ApplicationList load() throws Exception {
+        loadWarnings.clear();
         Path path = Path.of(filePath);
         if (!Files.exists(path)) {
             return new ApplicationList();
@@ -102,24 +114,46 @@ public class Storage {
             if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line) || LEGACY_COLUMN_HEADER.equals(line)) {
                 continue;
             }
-            List<String> fields = splitFields(line);
+
+            int lineIndex = lineNumber + 1;
+            List<String> fields;
+            try {
+                fields = splitFields(line);
+            } catch (IOException e) {
+                loadWarnings.add("Skipping line " + lineIndex + " in " + filePath + ": " + e.getMessage());
+                continue;
+            }
+
             // Files saved before status was persisted have only four fields; they load as "Pending".
             boolean hasValidFieldCount = fields.size() == FIELD_COUNT || fields.size() == LEGACY_FIELD_COUNT;
             if (!hasValidFieldCount || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
-                throw new IOException("Invalid record on line " + (lineNumber + 1) + " in " + filePath + ".");
+                loadWarnings.add("Skipping invalid record on line " + lineIndex + " in " + filePath + ".");
+                continue;
             }
+
+            String company = fields.get(0);
+            String role = fields.get(1);
+            if (company.isBlank() || role.isBlank()) {
+                loadWarnings.add("Skipping record with empty company or role on line " + lineIndex
+                        + " in " + filePath + ".");
+                continue;
+            }
+
             LocalDate deadline = null;
             if (!fields.get(3).isEmpty()) {
                 try {
                     deadline = LocalDate.parse(fields.get(3));
                 } catch (DateTimeParseException e) {
-                    throw new IOException("Invalid deadline on line " + (lineNumber + 1) + " in " + filePath + ".", e);
+                    loadWarnings.add("Skipping record with invalid deadline on line " + lineIndex
+                            + " in " + filePath + ".");
+                    continue;
                 }
             }
+
             boolean isCompleted = Boolean.parseBoolean(fields.get(2));
             // A missing or blank status makes the Application constructor fall back to "Pending".
             String status = fields.size() == FIELD_COUNT ? fields.get(4) : null;
-            applications.add(new Application(fields.get(0), fields.get(1), isCompleted, status, deadline));
+            applications.add(new Application(company, role, isCompleted, status, deadline));
         }
         return applications;
     }

@@ -4,7 +4,6 @@ import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -12,7 +11,6 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -168,35 +166,82 @@ public class StorageTest {
     }
 
     @Test
-    public void load_recordWithInvalidFieldCount_throwsIOException() throws Exception {
+    public void load_recordWithInvalidFieldCount_skipsCorruptedLineAndLoadsValidRecords() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
-        Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tfalse\n");
+        Files.writeString(temporaryFile,
+                "Bad Company\tInvalid Only Three\tfalse\n"
+                        + "Valid Company\tSoftware Engineer\tfalse\t2026-12-31\tPending\n");
         Storage storage = new Storage(temporaryFile.toString());
 
-        IOException exception = assertThrows(IOException.class, storage::load);
+        ApplicationList loaded = storage.load();
 
-        assertTrue(exception.getMessage().contains("Invalid record on line 1"));
+        assertEquals(1, loaded.size());
+        assertEquals("Valid Company", loaded.get(0).getCompany());
+        assertEquals(1, storage.getLoadWarnings().size());
+        assertTrue(storage.getLoadWarnings().get(0).contains("line 1"));
     }
 
     @Test
-    public void load_recordWithInvalidCompletionStatus_throwsIOException() throws Exception {
+    public void load_recordWithInvalidCompletionStatus_skipsCorruptedLine() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
-        Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tpending\t\n");
+        Files.writeString(temporaryFile,
+                "Bad Status\tSoftware Engineer\tnot-a-boolean\t\tPending\n"
+                        + "Valid Company\tSWE\ttrue\t\tAccepted\n");
         Storage storage = new Storage(temporaryFile.toString());
 
-        IOException exception = assertThrows(IOException.class, storage::load);
+        ApplicationList loaded = storage.load();
 
-        assertTrue(exception.getMessage().contains("Invalid record on line 1"));
+        assertEquals(1, loaded.size());
+        assertEquals("Valid Company", loaded.get(0).getCompany());
+        assertTrue(loaded.get(0).isCompleted());
+        assertEquals(1, storage.getLoadWarnings().size());
     }
 
     @Test
-    public void load_recordWithInvalidDeadline_throwsIOException() throws Exception {
+    public void load_recordWithInvalidDeadline_skipsCorruptedLine() throws Exception {
         Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
-        Files.writeString(temporaryFile, "Example Company\tSoftware Engineer\tfalse\tnot-a-date\n");
+        Files.writeString(temporaryFile,
+                "Bad Date\tSoftware Engineer\tfalse\tnot-a-date\tPending\n"
+                        + "Valid Company\tSoftware Engineer\tfalse\t2026-12-31\tPending\n");
         Storage storage = new Storage(temporaryFile.toString());
 
-        IOException exception = assertThrows(IOException.class, storage::load);
+        ApplicationList loaded = storage.load();
 
-        assertTrue(exception.getMessage().contains("Invalid deadline on line 1"));
+        assertEquals(1, loaded.size());
+        assertEquals("Valid Company", loaded.get(0).getCompany());
+        assertEquals(1, storage.getLoadWarnings().size());
+        assertTrue(storage.getLoadWarnings().get(0).contains("invalid deadline on line 1"));
+    }
+
+    @Test
+    public void load_recordWithEmptyCompanyOrRole_skipsCorruptedLine() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile,
+                "\tSoftware Engineer\tfalse\t\tPending\n"
+                        + "Valid Company\t\tfalse\t\tPending\n"
+                        + "Google\tSWE Intern\tfalse\t\tPending\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(1, loaded.size());
+        assertEquals("Google", loaded.get(0).getCompany());
+        assertEquals(2, storage.getLoadWarnings().size());
+    }
+
+    @Test
+    public void load_corruptedEscapeSequence_skipsCorruptedLine() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile,
+                "Company\\z\tSoftware Engineer\tfalse\t\tPending\n"
+                        + "Google\tSWE Intern\tfalse\t\tPending\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(1, loaded.size());
+        assertEquals("Google", loaded.get(0).getCompany());
+        assertEquals(1, storage.getLoadWarnings().size());
+        assertTrue(storage.getLoadWarnings().get(0).contains("Invalid escape sequence"));
     }
 }

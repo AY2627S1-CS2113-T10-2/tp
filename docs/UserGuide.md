@@ -324,7 +324,8 @@ JobSeek automatically saves application data to `data/applications.txt` when com
 - Company, role, completion status, optional deadline and recruitment status (`Pending`, `Accepted` or `Rejected`) are preserved between sessions.
 - Data files saved by older versions of JobSeek (without a status column) still load; their applications start as `Pending`.
 - If the data file does not exist, JobSeek starts with an empty application list.
-- If loading fails, JobSeek displays an error and starts with an empty list. Back up the existing data file before making changes, as subsequent saves may overwrite it.
+- **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records.
+- If loading completely fails due to an unrecoverable system I/O error, JobSeek displays an error and starts with an empty list.
 - Search, sort, list and help only display information and do not modify saved data.
 
 The data file location is relative to the folder from which you launch JobSeek. Launch the application from the same folder each time to access the same saved records.
