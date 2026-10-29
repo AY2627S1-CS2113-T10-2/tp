@@ -133,16 +133,49 @@ public class MainTest {
     /** Verifies that unsupported word commands show errors without ending the workflow. */
     @Test
     public void run_typedWordsOnMenu_rejectedWithErrorMessage() {
-        Main main = createMainWithInput("exit\nbye\nhelp\nremove\nadd\n0\n", new ApplicationList());
+        Main main = createMainWithInput("bye\nremove\nfoo\n0\n", new ApplicationList());
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid option: 'exit'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Error: Invalid option: 'bye'. Enter a number from 0 to 10."));
-        assertTrue(output.contains("Error: Invalid option: 'help'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Error: Invalid option: 'remove'. Enter a number from 0 to 10."));
-        assertTrue(output.contains("Error: Invalid option: 'add'. Enter a number from 0 to 10."));
+        assertTrue(output.contains("Error: Invalid option: 'foo'. Enter a number from 0 to 10."));
         assertTrue(output.contains("Goodbye! Best of luck with your job search!"));
+    }
+
+    /** Verifies that a typed add command adds an application with its deadline in one line. */
+    @Test
+    public void run_typedAdd_addsApplicationWithDeadline() {
+        ApplicationList applications = new ApplicationList();
+        Main main = createMainWithInput("add c/Google r/SWE Intern d/2099-01-31\n0\n", applications);
+        main.run();
+
+        assertEquals(1, applications.size());
+        assertEquals("Google", applications.get(0).getCompany());
+        assertEquals("SWE Intern", applications.get(0).getRole());
+        assertEquals(java.time.LocalDate.of(2099, 1, 31), applications.get(0).getDeadline());
+    }
+
+    /** Verifies that bad typed arguments show the usage message and the program keeps running. */
+    @Test
+    public void run_typedAddMissingRole_showsUsageAndContinues() {
+        ApplicationList applications = new ApplicationList();
+        Main main = createMainWithInput("add c/Google\n0\n", applications);
+        main.run();
+
+        assertTrue(applications.isEmpty());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Usage: add c/COMPANY r/ROLE [d/YYYY-MM-DD]"));
+        assertTrue(output.contains("Goodbye!"));
+    }
+
+    /** Verifies that typed exit ends the program. */
+    @Test
+    public void run_typedExit_terminatesCleanly() {
+        Main main = createMainWithInput("exit\n", new ApplicationList());
+        main.run();
+
+        assertTrue(outputStream.toString().contains("Goodbye!"));
     }
 
     /** Verifies that the Help menu displays all supported options. */
@@ -879,8 +912,6 @@ public class MainTest {
         assertNull(main.parseCommand("mark"));
         assertNull(main.parseCommand("unmark"));
         assertNull(main.parseCommand("edit"));
-        assertNull(main.parseCommand("help"));
-        assertNull(main.parseCommand("exit"));
         assertNull(main.parseCommand("bye"));
         assertNull(main.parseCommand("foobar"));
         assertNull(main.parseCommand("remove"));

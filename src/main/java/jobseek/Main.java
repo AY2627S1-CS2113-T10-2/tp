@@ -17,6 +17,7 @@ import jobseek.command.UndoCommand;
 import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
+import jobseek.parser.CommandParser;
 import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -138,7 +139,7 @@ public class Main {
 
     /**
      * Parses a user menu option string into an executable Command instance.
-     * Accepts numeric menu options (0 through 10), plus supported list and view commands.
+     * Accepts numeric menu options (0 through 10), plus typed commands such as list, view, today, add and edit.
      *
      * @param option Raw menu option string entered by the user.
      * @return The corresponding Command object, or null if the option is invalid.
@@ -176,6 +177,17 @@ public class Main {
                 ui.showError(e.getMessage());
                 return null;
             }
+        }
+
+        // Typed commands such as "add c/Google r/SWE" are tried before falling back to the numbered menu.
+        try {
+            Command typedCommand = CommandParser.parse(trimmedOption);
+            if (typedCommand != null) {
+                return typedCommand;
+            }
+        } catch (JobSeekException e) {
+            ui.showError(e.getMessage());
+            return null;
         }
 
         switch (trimmedOption) {

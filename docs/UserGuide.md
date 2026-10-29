@@ -29,6 +29,56 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 
 ---
 
+### Typed commands (one-line shortcuts)
+
+Instead of answering prompts one by one, you can type a whole command on one line. The numbered menu still works.
+
+| Action | Format | Example |
+| --- | --- | --- |
+| Add | `add c/COMPANY r/ROLE [d/YYYY-MM-DD]` | `add c/Google r/SWE Intern d/2026-11-30` |
+| Edit | `edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE]` | `edit 2 r/Backend Intern s/Interview` |
+| Delete | `delete INDEX` | `delete 3` |
+| Mark / unmark | `mark INDEX`, `unmark INDEX` | `mark 1` |
+| Search | `search KEYWORD` | `search google` |
+| Find (combined filters) | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/..]` | `find c/google s/interview` |
+| Sort | `sort` | `sort` |
+| Help / exit | `help`, `exit` | `exit` |
+
+- `c/` is company, `r/` is role, `d/` is deadline and `s/` is recruitment stage (for example `Interview`, or the shortcut `OA`).
+- Fields can be given in any order. In `add`, `c/` and `r/` are required. In `edit`, at least one field is required.
+- Command words are not case-sensitive. `INDEX` is the number shown by `list`.
+- A field value ends where the next ` x/` prefix starts, so avoid typing text such as ` r/` inside a company name.
+- If a command is wrong, JobSeek shows what is wrong and the correct format, and nothing is changed.
+
+---
+
+### Finding with combined filters: `find`
+
+Narrows the list using several conditions at once. An application is shown only if it satisfies **every** filter you give.
+
+- **Format**: `find [c/COMPANY] [r/ROLE] [s/STAGE] [b/DATE] [a/DATE] [m/yes|no]` (give at least one filter, in any order)
+
+| Filter | Meaning |
+| --- | --- |
+| `c/TEXT` | Company contains the text (ignores upper/lower case). |
+| `r/TEXT` | Role contains the text (ignores upper/lower case). |
+| `s/STAGE` | Recruitment stage equals `STAGE`, such as `Interview` or the shortcut `OA`. |
+| `b/YYYY-MM-DD` | Deadline is on or before the date. |
+| `a/YYYY-MM-DD` | Deadline is on or after the date. |
+| `m/yes` or `m/no` | The application is (or is not) marked as completed. |
+
+Applications without a deadline never match `b/` or `a/`. Use both together to find a date range.
+
+Examples:
+
+- `find c/google s/interview` shows Google applications that are at the interview stage.
+- `find r/intern a/2026-11-01 b/2026-11-30` shows internships with a deadline in November 2026.
+- `find m/no s/offer` shows offers you have not marked as completed yet.
+
+Results keep the numbers from the full list, so you can use them directly with `view`, `edit` and `delete`. If nothing matches, JobSeek says so and shows the conditions it searched for. `find` only displays results and never changes your data. For a quick single-word lookup, `search KEYWORD` is still available.
+
+---
+
 ### Adding an application
 
 Choose `1` to create and track a new job or internship application.
@@ -357,6 +407,11 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
   Available menu options:
     list [completed|all]            - List active, completed, or all applications
     undo                            - Undo the last add, delete, edit, status or mark change
+    add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
+    edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
+    delete|mark|unmark INDEX        - Delete, complete or reopen an application
+    find c/.. r/.. s/.. b/.. a/..   - Combine filters (company, role, stage, deadline)
+    search KEYWORD | sort           - Search by company/role, or view alphabetically
     today                           - Show overdue, due-today and upcoming deadlines
     view INDEX                      - View details for application at INDEX
     [1] Add application             - Add a new internship or job application
@@ -378,7 +433,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 
 | Action | Format | Examples / Usage |
 |---|---|---|
-| **Add application** | `1` | Choose `1`, then enter company, role, and optional deadline |
+| **Add application** | `1` or `add c/COMPANY r/ROLE [d/DATE]` | Choose `1`, or `add c/Google r/SWE Intern d/2026-11-30` |
 | **List active applications** | `list` or `2` or `3` | `list` or choose `2` or `3` |
 | **List completed applications** | `list completed` | `list completed` |
 | **List all applications** | `list all` | `list all` |
@@ -391,5 +446,5 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **Help instructions** | `7` | `7` |
 | **Search applications** | `8` | Choose `8`, then enter search term (e.g. `Google`) |
 | **Sort applications** | `9` | Choose `9` to view applications alphabetically |
-| **Edit application** | `10` | Choose `10`, then enter index and choose field to modify |
+| **Edit application** | `10` or `edit INDEX [c/..] [r/..] [s/..]` | Choose `10`, or `edit 2 s/Interview` |
 | **Exit JobSeek** | `0` | `0` |
