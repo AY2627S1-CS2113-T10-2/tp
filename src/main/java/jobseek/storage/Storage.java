@@ -19,14 +19,20 @@ import jobseek.model.RecruitmentStage;
 public class Storage {
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
-    private static final String COLUMN_HEADER = "company\trole\tcompleted\tdeadline\tstage";
-    /** Column header used by earlier versions for the recruitment stage field. */
-    private static final String LEGACY_STATUS_COLUMN_HEADER = "company\trole\tcompleted\tdeadline\tstatus";
-    /** Column header written by older versions, which did not save the recruitment stage. */
-    private static final String LEGACY_COLUMN_HEADER = "company\trole\tcompleted\tdeadline";
+    private static final String COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline\tstage\tportalLink\temail\tnotes";
+    private static final String LEGACY_STATUS_8_COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline\tstatus\tportalLink\temail\tnotes";
+    private static final String LEGACY_STAGE_5_COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline\tstage";
+    private static final String LEGACY_STATUS_5_COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline\tstatus";
+    private static final String LEGACY_4_COLUMN_HEADER =
+            "company\trole\tcompleted\tdeadline";
     private static final String HEADER = TITLE_HEADER + "\n" + COLUMN_HEADER;
-    private static final int LEGACY_FIELD_COUNT = 4;
-    private static final int FIELD_COUNT = 5;
+    private static final int LEGACY_FIELD_COUNT_4 = 4;
+    private static final int LEGACY_FIELD_COUNT_5 = 5;
+    private static final int FIELD_COUNT = 8;
 
     private String filePath;
 
@@ -88,15 +94,21 @@ public class Storage {
         lines.add(HEADER);
         for (Application application : applications.getAll()) {
             String deadline = application.getDeadline() == null ? "" : application.getDeadline().toString();
-            lines.add(escape(application.getCompany()) + "\t" + escape(application.getRole()) + "\t"
-                    + application.isCompleted() + "\t" + deadline + "\t"
-                    + escape(application.getRecruitmentStage().getLabel()));
+            lines.add(escape(application.getCompany()) + "\t"
+                    + escape(application.getRole()) + "\t"
+                    + application.isCompleted() + "\t"
+                    + deadline + "\t"
+                    + escape(application.getRecruitmentStage().getLabel()) + "\t"
+                    + escape(application.getPortalLink()) + "\t"
+                    + escape(application.getEmail()) + "\t"
+                    + escape(application.getNotes()));
         }
         Files.write(path, lines, StandardCharsets.UTF_8);
     }
 
     /**
      * Loads the application list from local storage, recovering valid records when encountering corrupted lines.
+     * Supports modern 8-field format and backwards-compatible 4-field / 5-field records.
      *
      * @return The loaded ApplicationList containing all recoverable records.
      * @throws Exception If an unrecoverable file reading error occurs.
@@ -116,7 +128,10 @@ public class Storage {
                 continue;
             }
             if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)
-                    || LEGACY_STATUS_COLUMN_HEADER.equals(line) || LEGACY_COLUMN_HEADER.equals(line)) {
+                    || LEGACY_STATUS_8_COLUMN_HEADER.equals(line)
+                    || LEGACY_STAGE_5_COLUMN_HEADER.equals(line)
+                    || LEGACY_STATUS_5_COLUMN_HEADER.equals(line)
+                    || LEGACY_4_COLUMN_HEADER.equals(line)) {
                 continue;
             }
 
@@ -129,8 +144,9 @@ public class Storage {
                 continue;
             }
 
-            // Files saved before a recruitment stage was persisted have only four fields; they load as "Applied".
-            boolean hasValidFieldCount = fields.size() == FIELD_COUNT || fields.size() == LEGACY_FIELD_COUNT;
+            boolean hasValidFieldCount = fields.size() == FIELD_COUNT
+                    || fields.size() == LEGACY_FIELD_COUNT_5
+                    || fields.size() == LEGACY_FIELD_COUNT_4;
             if (!hasValidFieldCount || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
                 loadWarnings.add("Skipping invalid record on line " + lineIndex + " in " + filePath + ".");
                 continue;
@@ -156,8 +172,7 @@ public class Storage {
             }
 
             boolean isCompleted = Boolean.parseBoolean(fields.get(2));
-            // Missing or blank stages are assigned the default "Applied" stage.
-            String stageLabel = fields.size() == FIELD_COUNT ? fields.get(4) : null;
+            String stageLabel = fields.size() >= 5 ? fields.get(4) : null;
             RecruitmentStage stage;
             try {
                 stage = stageLabel == null || stageLabel.isBlank()
@@ -167,9 +182,27 @@ public class Storage {
                         + " in " + filePath + ".");
                 continue;
             }
-            applications.add(new Application(company, role, isCompleted, stage, deadline));
+
+            String portalLink = fields.size() >= 8 ? fields.get(5) : "";
+            String email = fields.size() >= 8 ? fields.get(6) : "";
+            String notes = fields.size() >= 8 ? fields.get(7) : "";
+
+            applications.add(new Application(company, role, isCompleted, stage, deadline,
+                    portalLink, email, notes));
         }
         return applications;
+    }
+
+    /** Parses a raw date string into a LocalDate, throwing an IOException on format failure. */
+    private LocalDate parseDeadline(String rawDate, int lineNumber) throws IOException {
+        if (rawDate == null || rawDate.isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(rawDate);
+        } catch (DateTimeParseException e) {
+            throw new IOException("Invalid deadline on line " + (lineNumber + 1) + " in " + filePath + ".", e);
+        }
     }
 
     /** Escapes characters that would otherwise conflict with the tab-separated format. */

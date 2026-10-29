@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -286,5 +287,67 @@ public class StorageTest {
         assertEquals("Google", loaded.get(0).getCompany());
         assertEquals(1, storage.getLoadWarnings().size());
         assertTrue(storage.getLoadWarnings().get(0).contains("Invalid escape sequence"));
+    }
+
+    @Test
+    public void saveThenLoad_allEightFields_preservesAllData() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Storage storage = new Storage(temporaryFile.toString());
+        ApplicationList list = new ApplicationList();
+        LocalDate deadline = LocalDate.of(2026, 11, 28);
+        list.add(new Application("Apple", "iOS SWE", false, "Accepted",
+                deadline, "https://apple.com/careers", "hiring@apple.com", "Completed all rounds"));
+        storage.save(list);
+
+        ApplicationList loaded = storage.load();
+        assertEquals(1, loaded.size());
+        Application app = loaded.get(0);
+        assertEquals("Apple", app.getCompany());
+        assertEquals("iOS SWE", app.getRole());
+        assertFalse(app.isCompleted());
+        assertEquals("Accepted", app.getStatus());
+        assertEquals(deadline, app.getDeadline());
+        assertEquals("https://apple.com/careers", app.getPortalLink());
+        assertEquals("hiring@apple.com", app.getEmail());
+        assertEquals("Completed all rounds", app.getNotes());
+    }
+
+    @Test
+    public void load_legacyFourFieldFormat_loadsWithDefaults() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Files.writeString(temporaryFile,
+                "JOBSEEK Applications\ncompany\trole\tcompleted\tdeadline\n"
+                        + "LegacyCo\tIntern\ttrue\t2026-12-31\n");
+        Storage storage = new Storage(temporaryFile.toString());
+
+        ApplicationList loaded = storage.load();
+        assertEquals(1, loaded.size());
+        Application app = loaded.get(0);
+        assertEquals("LegacyCo", app.getCompany());
+        assertEquals("Intern", app.getRole());
+        assertTrue(app.isCompleted());
+        assertEquals("Applied", app.getStatus());
+        assertEquals(LocalDate.of(2026, 12, 31), app.getDeadline());
+        assertEquals("", app.getPortalLink());
+        assertEquals("", app.getEmail());
+        assertEquals("", app.getNotes());
+    }
+
+    @Test
+    public void saveThenLoad_specialCharactersInNewFields_escapedAndDecodedCorrectly() throws Exception {
+        Path temporaryFile = Files.createTempDirectory("jobseek-storage-test").resolve("applications.txt");
+        Storage storage = new Storage(temporaryFile.toString());
+        ApplicationList list = new ApplicationList();
+        list.add(new Application("ByteDance", "SWE", false, "Pending",
+                null, "https://jobs.bytedance.com/line1\\line2", "hr\tcontact@bytedance.com",
+                "Note line 1\nNote line 2"));
+        storage.save(list);
+
+        ApplicationList loaded = storage.load();
+        assertEquals(1, loaded.size());
+        Application app = loaded.get(0);
+        assertEquals("https://jobs.bytedance.com/line1\\line2", app.getPortalLink());
+        assertEquals("hr\tcontact@bytedance.com", app.getEmail());
+        assertEquals("Note line 1\nNote line 2", app.getNotes());
     }
 }

@@ -11,6 +11,88 @@
 
 ## Design & implementation
 
+### Architecture Overview
+
+JobSeek is a command-line desktop application for managing internship and job applications. The application architecture is organized into five primary components:
+
+* **`Main`**: Acts as the central coordinator and entry point. It initializes core dependencies, checks deadline alerts, parses user input into commands, and manages the execution loop.
+* **`UI`**: Consists of `Ui` and `ApplicationTable`. It reads console inputs, renders formatted tables, application cards, deadline warning banners, and error notifications.
+* **`Logic / Command`**: Built upon the Command pattern. Encapsulates all executable actions (`AddCommand`, `DeleteCommand`, `EditCommand`, `ListCommand`, etc.) inheriting from the common abstract `Command` base class.
+* **`Model`**: Comprises `ApplicationList`, `Application`, and `DeadlineWarnings`. Represents in-memory domain entities, their validation rules, and lifecycle states (`Pending`, `Accepted`, `Rejected`, and completion flags).
+* **`Storage`**: Encapsulated by `Storage`. Handles file encoding/decoding and persistent reading/writing to `data/applications.txt`.
+
+#### Architecture Diagram
+
+The high-level interaction between the user, UI, logic controller, domain model, and storage subsystem is shown below:
+
+```mermaid
+flowchart TB
+    User(["User (Terminal)"])
+    UI["UI Component<br/>(Ui, ApplicationTable)"]
+    Logic["Logic / Command Component<br/>(Main, CommandParser, Command Hierarchy)"]
+    Storage["Storage Component<br/>(Storage)"]
+    Model["Model Component<br/>(ApplicationList, Application, DeadlineWarnings)"]
+    File[("applications.txt")]
+
+    User <--> UI
+    UI <--> Logic
+    Logic --> Storage
+    Logic --> Model
+    Storage <--> File
+    Storage -.->|loads / saves| Model
+    Model -.->|supplies data| UI
+```
+
+#### Application Lifecycle Activity Diagram
+
+The control flow from startup, file loading, deadline inspection, command execution, and termination is illustrated in the activity diagram below:
+
+```mermaid
+flowchart LR
+    Start((●)) --> Init["Initialize UI<br/>& Storage"]
+    Init --> Load["Load applications"]
+    Load --> CheckLoad{"Load<br/>success?"}
+    CheckLoad -->|"[yes]"| Warn["Check deadlines<br/>& show menu"]
+    CheckLoad -->|"[no]"| Fallback["Show error &<br/>use empty list"]
+    Fallback --> Warn
+    Warn --> MergeRead{ }
+    MergeRead --> Read["Read & execute<br/>command"]
+    Read --> CheckExit{"Exit<br/>command?"}
+    CheckExit -->|"[no]"| MergeRead
+    CheckExit -->|"[yes]"| End(((◎)))
+```
+
+#### Runtime Object Structure (Object Diagram)
+
+The following object diagram illustrates a concrete runtime snapshot of JobSeek after two applications have been loaded and tracked in memory:
+
+```mermaid
+classDiagram
+    direction LR
+    class main[":Main"]
+    class ui[":Ui"]
+    class storage[":Storage"] {
+        filePath = "data/applications.txt"
+    }
+    class applications[":ApplicationList"]
+    class app1["app1:Application"] {
+        company = "Google"
+        role = "SWE Intern"
+        isCompleted = false
+    }
+    class app2["app2:Application"] {
+        company = "Shopee"
+        role = "Backend Intern"
+        isCompleted = true
+    }
+
+    main --> ui
+    main --> storage
+    main --> applications
+    applications --> app1
+    applications --> app2
+```
+
 ### Architecture and Command pattern
 
 JobSeek is a single-user command-line application. `Main` reads one line at a time from `Ui`, turns it into a `Command`, and runs it. Every action inherits from the abstract `Command` class and implements the polymorphic `execute(ApplicationList, Ui, Storage)` method. This is the Command pattern: `Main` (which dispatches) does not need to know what each command does.
@@ -41,68 +123,63 @@ flowchart LR
 
 **Command hierarchy.** Commands that change the list extend `UndoableCommand`, which adds `undo` (see [Delete confirmation and undo](#delete-confirmation-and-undo)). Commands that only display information extend `Command` directly.
 
+#### Overall Architecture Class Diagram
+
+The class diagram below illustrates the structural relationships, associations, dependencies, and explicit UML multiplicities across the core components (`Main`, `Ui`, `Storage`, domain model, and `Command`):
+
 ```mermaid
+---
+config:
+  themeVariables:
+    fontSize: "16px"
+---
 classDiagram
+    direction TB
+    class Main {
+        - ui: Ui
+        - storage: Storage
+        - applications: ApplicationList
+        + run(): void
+        + parseCommand(option: String): Command
+    }
+    class Ui {
+        + showWelcome(): void
+        + showMenu(applications: ApplicationList): void
+        + showMessage(message: String): void
+        + showError(errorMessage: String): void
+        + showPrompt(prompt: String): void
+        + readCommand(): String
+        + showGoodbye(): void
+    }
+    class Storage {
+        - filePath: String
+        + save(applications: ApplicationList): void
+        + load(): ApplicationList
+    }
+    class DeadlineWarnings {
+        + show(applications: ApplicationList, ui: Ui)$: void
+    }
+    class JobSeekException {
+        + JobSeekException(message: String)
+    }
     class Command {
         <<abstract>>
-        #boolean isExit
-        +execute(applications, ui, storage)* void
-        +isExit() boolean
+        - isExit: boolean
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage)*: void
+        + isExit(): boolean
     }
-    class AddCommand {
-        -String company
-        -String role
-        -LocalDate deadline
-        +execute(applications, ui, storage) void
-        +getCompany() String
-        +getRole() String
-        +getDeadline() LocalDate
-    }
-    class ViewCommand {
-        -int targetIndex
-        +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +parse(args)$ ViewCommand
-    }
-    class MarkCommand {
-        -int targetIndex
-        -boolean isCompleted
-        +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +isCompleted() boolean
-    }
-    class EditCommand {
-        -int targetIndex
-        -String newCompany
-        -String newRole
-        -RecruitmentStage newStage
-        +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +getNewCompany() String
-        +getNewRole() String
-        +getNewStage() RecruitmentStage
-    }
-    class RecruitmentStageCommand {
-        -int targetIndex
-        -RecruitmentStage stage
-        +execute(applications, ui, storage) void
-        +getTargetIndex() int
-        +getStage() RecruitmentStage
-    }
-    class HelpCommand {
-        +execute(applications, ui, storage) void
-    }
-    class ListCommand {
-        -FilterType filterType
-        +execute(applications, ui, storage) void
-        +getFilterType() FilterType
-        +parse(args)$ ListCommand
+    class UndoableCommand {
+        <<abstract>>
+        - hasChanged: boolean
+        # markChanged(): void
+        + hasChanged(): boolean
+        + undo(applications: ApplicationList)*: String
     }
     Command <|-- UndoableCommand
     UndoableCommand <|-- AddCommand
     UndoableCommand <|-- DeleteCommand
     UndoableCommand <|-- EditCommand
-    UndoableCommand <|-- StatusCommand
+    UndoableCommand <|-- RecruitmentStageCommand
     UndoableCommand <|-- MarkCommand
     Command <|-- UndoCommand
     Command <|-- ListCommand
@@ -120,47 +197,59 @@ classDiagram
 ```mermaid
 classDiagram
     class ApplicationList {
-        -ArrayList~Application~ applications
-        +add(app) void
-        +insert(index, app) void
-        +delete(index) Application
-        +get(index) Application
-        +getAll() ArrayList~Application~
-        +size() int
-        +isValidIndex(index) boolean
-        +isEmpty() boolean
+        - applications: ArrayList~Application~
+        + add(app: Application): void
+        + insert(index: int, app: Application): void
+        + delete(index: int): Application
+        + get(index: int): Application
+        + getAll(): ArrayList~Application~
+        + size(): int
+        + isValidIndex(index: int): boolean
+        + isEmpty(): boolean
     }
     class Application {
-        -String company
-        -String role
-        -boolean isCompleted
-        -RecruitmentStage recruitmentStage
-        -LocalDate deadline
-        +getCompany() String
-        +getRole() String
-        +getRecruitmentStage() RecruitmentStage
-        +getDeadline() LocalDate
-        +isCompleted() boolean
-        +setCompany(company) void
-        +setRole(role) void
-        +setRecruitmentStage(stage) void
-        +setCompleted(isCompleted) void
-        +getDeadline() LocalDate
+        - company: String
+        - role: String
+        - isCompleted: boolean
+        - recruitmentStage: RecruitmentStage
+        - deadline: LocalDate
+        - portalLink: String
+        - email: String
+        - notes: String
+        + getCompany(): String
+        + getRole(): String
+        + getStatus(): String
+        + getRecruitmentStage(): RecruitmentStage
+        + getDeadline(): LocalDate
+        + getPortalLink(): String
+        + getEmail(): String
+        + getNotes(): String
+        + isCompleted(): boolean
+        + setCompany(company: String): void
+        + setRole(role: String): void
+        + setStatus(status: String): void
+        + setRecruitmentStage(recruitmentStage: RecruitmentStage): void
+        + setDeadline(deadline: LocalDate): void
+        + setPortalLink(portalLink: String): void
+        + setEmail(email: String): void
+        + setNotes(notes: String): void
+        + setCompleted(isCompleted: boolean): void
     }
-    Command <|-- AddCommand
-    Command <|-- ViewCommand
-    Command <|-- MarkCommand
-    Command <|-- EditCommand
-    Command <|-- RecruitmentStageCommand
-    Command <|-- HelpCommand
-    Command <|-- ListCommand
-    ApplicationList --> Application
-    AddCommand ..> ApplicationList
-    ViewCommand ..> ApplicationList
-    MarkCommand ..> ApplicationList
-    EditCommand ..> ApplicationList
-    RecruitmentStageCommand ..> ApplicationList
-    ListCommand ..> ApplicationList
+    class RecruitmentStage {
+        <<enumeration>>
+        APPLIED
+        ONLINE_ASSESSMENT
+        INTERVIEW
+        OFFER
+        ACCEPTED
+        REJECTED
+        WITHDRAWN
+        + getLabel(): String
+        + isTerminal(): boolean
+        + fromLabel(value)$: RecruitmentStage
+    }
+    ApplicationList "1" o-- "*" Application
+    Application --> RecruitmentStage
 ```
 
 ### Add application feature
@@ -168,36 +257,98 @@ classDiagram
 The `AddCommand` allows job seekers to add a new internship or job record with a company, a role and an optional deadline. It can be reached from menu option `1` or from the typed command `add c/COMPANY r/ROLE [d/YYYY-MM-DD]`.
 
 - **Workflow (menu option `1`)**:
-  1. `Main.handleMenuAdd()` queries the user for non-empty company and role strings using `promptNonEmpty()`, then for an optional deadline using `promptDeadline()`. Blank company or role inputs are rejected with informative error messages and reprompted. An invalid date is rejected and reprompted; a blank answer means no deadline.
-  2. `Main` instantiates `AddCommand(company, role, deadline)`. (For the typed command, `CommandParser.parseAdd()` builds the same object.)
-  3. `AddCommand.execute()` creates a new `Application` with the deadline, completion status `false` (`[ ]`) and recruitment stage `Applied`.
-  4. The application is added to `ApplicationList` and remembered by the command so it can be undone. Internal assumptions (such as list size incrementing by 1) are verified via Java `assert`.
-  5. A confirmation is shown through `Ui.showMessage()` and the updated list is persisted with `Storage.save(applications)`.
+  1. `Main.handleMenuAdd()` queries the user for non-empty company and role strings using `promptNonEmpty()`, followed by optional deadline (`promptDeadline()`), portal link, contact email, and notes (`promptOptional()`). Blank or whitespace-only inputs for required fields are rejected with informative error messages and reprompted.
+  2. Once inputs are obtained, `Main` instantiates `AddCommand(company, role, deadline, portalLink, email, notes)`. (For the typed command, `CommandParser.parseAdd()` builds an `AddCommand`.)
+  3. `AddCommand.execute()` instantiates a new `Application` with all specified attributes, initializing completion status to `false` (`[ ]`) and recruitment stage to `Applied` (`Application.DEFAULT_STAGE`).
+  4. The application is added to `ApplicationList` and remembered by the command so it can be undone. Internal assumptions (such as list size incrementing by 1 and target non-null) are verified via Java `assert`.
+  5. The updated list is persisted to disk via `Storage.save(applications)`, and confirmation displaying recorded details is rendered to the user via `Ui.showMessage()`.
+
+#### Add Application Activity Diagram
+
+The user input validation, prompt looping, and execution lifecycle for adding an application is illustrated in the activity diagram below:
 
 ```mermaid
+flowchart LR
+    Start((●)) --> MergePrompt{ }
+    MergePrompt --> Prompt["Prompt company, role,<br/>deadline, portal, email, notes"]
+    Prompt --> Validate{"Valid required<br/>fields & date?"}
+    Validate -->|"[valid]"| Create["Create Application<br/>& add to list"]
+    Validate -->|"[else]"| ShowErr["Show error<br/>message"]
+    ShowErr --> MergePrompt
+    Create --> Save["Storage.save<br/>applications"]
+    Save --> Show["Display confirmation<br/>message"]
+    Show --> End(((◎)))
+```
+
+#### Add Application Sequence Diagram
+
+```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    actor User
-    participant Main
-    participant AddCommand
-    participant ApplicationList
-    participant Application
-    participant Storage
-    participant Ui
-    User->>Main: Enter 1
-    Main->>Ui: promptNonEmpty("Company:")
-    Ui-->>Main: "Google"
-    Main->>Ui: promptNonEmpty("Role:")
-    Ui-->>Main: "SWE Intern"
-    Main->>Ui: promptDeadline()
-    Ui-->>Main: 2026-11-30 (or none)
-    Main->>AddCommand: new AddCommand("Google", "SWE Intern", deadline)
-    Main->>AddCommand: execute(applications, ui, storage)
-    AddCommand->>Application: new Application(company, role, false, deadline)
-    Application-->>AddCommand: application
-    AddCommand->>ApplicationList: add(application)
-    AddCommand->>Ui: showMessage("Application added successfully...")
-    AddCommand->>Storage: save(applications)
-    Ui-->>User: Confirmation message
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :AddCommand
+    participant app as :Application
+    participant list as :ApplicationList
+    participant storage as :Storage
+
+    user->>main: Enter 1
+    activate main
+    main->>ui: promptNonEmpty("Company:")
+    activate ui
+    ui-->>main: "Google"
+    deactivate ui
+    main->>ui: promptNonEmpty("Role:")
+    activate ui
+    ui-->>main: "SWE Intern"
+    deactivate ui
+    main->>ui: promptDeadline()
+    activate ui
+    ui-->>main: "2026-11-15"
+    deactivate ui
+    main->>ui: promptOptional("Company Portal Link:")
+    activate ui
+    ui-->>main: "https://careers.google.com"
+    deactivate ui
+    main->>ui: promptOptional("Contact Email:")
+    activate ui
+    ui-->>main: "recruiter@google.com"
+    deactivate ui
+    main->>ui: promptOptional("Notes:")
+    activate ui
+    ui-->>main: "OA passed"
+    deactivate ui
+
+    main->>cmd: new AddCommand(company, role, deadline, portal, email, notes)
+    activate cmd
+    cmd-->>main: addCommand
+    deactivate cmd
+
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd->>app: new Application(company, role, false, "Applied", deadline, portal, email, notes)
+    activate app
+    app-->>cmd: application
+    deactivate app
+    cmd->>list: add(application)
+    activate list
+    list-->>cmd: ​
+    deactivate list
+    cmd->>storage: save(applications)
+    activate storage
+    storage-->>cmd: ​
+    deactivate storage
+    cmd->>ui: showMessage("Application added successfully...")
+    activate ui
+    ui-->>user: Confirmation message
+    deactivate ui
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
 ```
 
 ### View application feature
@@ -216,35 +367,59 @@ The `ViewCommand` displays all recorded information for an individual applicatio
   6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    actor User
-    participant Main
-    participant ViewCommand
-    participant ApplicationList
-    participant Application
-    participant Ui
-    User->>Main: Enter "view 1"
-    Main->>ViewCommand: ViewCommand.parse("1")
-    activate ViewCommand
-    ViewCommand-->>Main: viewCommand
-    deactivate ViewCommand
-    Main->>ViewCommand: execute(applications, ui, storage)
-    activate ViewCommand
-    ViewCommand->>ApplicationList: size()
-    ApplicationList-->>ViewCommand: size
-    ViewCommand->>ApplicationList: get(0)
-    ApplicationList-->>ViewCommand: application
-    ViewCommand->>Application: getCompany()
-    Application-->>ViewCommand: "Google"
-    ViewCommand->>Application: getRole()
-    Application-->>ViewCommand: "SWE Intern"
-    ViewCommand->>Application: getRecruitmentStage()
-    Application-->>ViewCommand: RecruitmentStage (displayed as "Accepted")
-    ViewCommand->>Application: isCompleted()
-    Application-->>ViewCommand: false
-    ViewCommand->>Ui: showMessage(card)
-    Ui-->>User: Structured card display
-    deactivate ViewCommand
+    actor user as User
+    participant main as :Main
+    participant cmd as :ViewCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant ui as :Ui
+
+    user->>main: Enter "view 1"
+    activate main
+    main->>cmd: ViewCommand.parse("1")
+    activate cmd
+    cmd-->>main: viewCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    alt 0 <= targetIndex < size
+        cmd->>list: get(0)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: "Google"
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: "SWE Intern"
+        deactivate app
+        cmd->>app: getRecruitmentStage()
+        activate app
+        app-->>cmd: RecruitmentStage.ACCEPTED
+        deactivate app
+        cmd->>app: isCompleted()
+        activate app
+        app-->>cmd: false
+        deactivate app
+        cmd->>ui: showMessage(card)
+        activate ui
+        ui-->>user: Structured card display
+        deactivate ui
+    else else
+        cmd-->>main: throw JobSeekException
+    end
+
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
 ```
 
 #### Design considerations
@@ -279,30 +454,58 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
   6. Displays the formatted table via `Ui.showMessage()`.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    actor User
-    participant Main
-    participant ListCommand
-    participant ApplicationList
-    participant Application
-    participant Ui
-    User->>Main: Enter "list completed" (or menu option 2/3)
-    Main->>ListCommand: ListCommand.parse("completed")
-    activate ListCommand
-    ListCommand-->>Main: listCommand
-    deactivate ListCommand
-    Main->>ListCommand: execute(applications, ui, storage)
-    activate ListCommand
-    loop For each application in list
-        ListCommand->>ApplicationList: get(i)
-        ApplicationList-->>ListCommand: application
-        ListCommand->>Application: isCompleted()
-        Application-->>ListCommand: completion icon
+    actor user as User
+    participant main as :Main
+    participant cmd as :ListCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+    participant ui as :Ui
+
+    user->>main: Enter "list completed" (or option 2/3)
+    activate main
+    main->>cmd: ListCommand.parse("completed")
+    activate cmd
+    cmd-->>main: listCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    loop for each application
+        cmd->>list: get(i)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: isCompleted()
+        activate app
+        app-->>cmd: isCompleted
+        deactivate app
     end
-    Note over ListCommand: Collect matching indices and build formatted table with original numbers
-    ListCommand->>Ui: showMessage(table)
-    Ui-->>User: Formatted table output
-    deactivate ListCommand
+
+    alt matches found
+        cmd->>table: format(applications, matchingIndices)
+        activate table
+        table-->>cmd: formattedTable
+        deactivate table
+        cmd->>ui: showMessage(formattedTable)
+        activate ui
+        ui-->>user: Formatted table output
+        deactivate ui
+    else else
+        cmd->>ui: showMessage("No completed applications")
+        activate ui
+        ui-->>user: Status message
+        deactivate ui
+    end
+
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
 ```
 
 #### Design considerations
@@ -333,29 +536,63 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
   7. Persists the modification to disk immediately via `Storage.save(applications)`.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    actor User
-    participant Main
-    participant MarkCommand
-    participant ApplicationList
-    participant Application
-    participant Storage
-    participant Ui
-    User->>Main: Select option 5 (Mark)
-    Main->>Ui: promptApplicationIndex()
-    Ui-->>Main: 1 (0-based: 0)
-    Main->>MarkCommand: new MarkCommand(0, true)
-    Main->>MarkCommand: execute(applications, ui, storage)
-    activate MarkCommand
-    MarkCommand->>ApplicationList: isValidIndex(0)
-    ApplicationList-->>MarkCommand: true
-    MarkCommand->>ApplicationList: get(0)
-    ApplicationList-->>MarkCommand: application
-    MarkCommand->>Application: setCompleted(true)
-    MarkCommand->>Storage: save(applications)
-    MarkCommand->>Ui: showMessage("Nice! I've marked this application...")
-    Ui-->>User: Confirmation message
-    deactivate MarkCommand
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :MarkCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Option 5 (Mark) / Option 6 (Unmark)
+    activate main
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>cmd: new MarkCommand(0, true)
+    activate cmd
+    cmd-->>main: markCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd->>list: isValidIndex(0)
+    activate list
+    list-->>cmd: true
+    deactivate list
+    cmd->>list: get(0)
+    activate list
+    list-->>cmd: application
+    deactivate list
+    cmd->>app: setCompleted(true)
+    activate app
+    app-->>cmd: ​
+    deactivate app
+    cmd->>storage: save(applications)
+    activate storage
+    storage-->>cmd: ​
+    deactivate storage
+
+    alt isCompleted == true
+        cmd->>ui: showMessage("Marked as completed")
+        activate ui
+        ui-->>user: Marked confirmation message
+        deactivate ui
+    else else
+        cmd->>ui: showMessage("Marked as incomplete")
+        activate ui
+        ui-->>user: Unmarked confirmation message
+        deactivate ui
+    end
+
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
 ```
 
 #### Design considerations
@@ -365,45 +602,220 @@ sequenceDiagram
 - **Immediate disk persistence**:
   - Changes to completion status immediately invoke `Storage.save(applications)` to guarantee that completion progress is preserved across application crashes or restarts.
 
+### Delete application feature
+
+#### Overview
+The `DeleteCommand` allows users to permanently remove an application by its 1-based index number (as shown in the list table). Removing an application triggers immediate list re-indexing and disk synchronization.
+
+#### Design and implementation
+- **Trigger**: Menu option `4` invokes `Main.handleMenuDelete()`.
+- **Workflow**:
+  1. `Main.promptApplicationIndex()` checks whether `applications.isEmpty()`. If empty, an error is displayed and execution terminates.
+  2. Prompts the user for the 1-based index and converts it to a 0-based integer.
+  3. `DeleteCommand.execute()` validates index bounds via `applications.isValidIndex(targetIndex)`.
+  4. Calls `applications.delete(targetIndex)`, which removes the `Application` from the underlying `ArrayList` and renumbers following elements.
+  5. The removed application object is destroyed from in-memory tracking (represented by the UML destruction cross `X` on its lifeline).
+  6. The modified list is immediately saved to disk via `Storage.save(applications)`.
+  7. A confirmation message displaying the removed entry is shown via `Ui.showMessage()`.
+
+#### Delete Application Activity Diagram
+
+The decision flow, bounds validation, and deletion logic is shown in the activity diagram below:
+
+```mermaid
+flowchart LR
+    Start((●)) --> Prompt["Prompt application<br/>index"]
+    Prompt --> Check{"Valid index?"}
+    Check -->|"[yes]"| Del["Delete from<br/>ApplicationList"]
+    Check -->|"[no]"| ShowErr["Show error<br/>message"]
+    Del --> Save["Storage.save<br/>applications"]
+    Save --> Show["Display confirmation<br/>message"]
+    Show --> MergeEnd{ }
+    ShowErr --> MergeEnd
+    MergeEnd --> End(((◎)))
+```
+
+#### Delete Application Sequence Diagram
+
+```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :DeleteCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Option 4 (Delete)
+    activate main
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>cmd: new DeleteCommand(0)
+    activate cmd
+    cmd-->>main: deleteCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    alt 0 <= targetIndex < size
+        cmd->>list: isValidIndex(0)
+        activate list
+        list-->>cmd: true
+        deactivate list
+        cmd->>list: delete(0)
+        activate list
+        list->>app: remove(0)
+        activate app
+        app-->>list: application
+        deactivate app
+        list-->>cmd: deletedApplication
+        deactivate list
+        cmd->>app: delete()
+        activate app
+        destroy app
+        app-->>cmd: ​
+        deactivate app
+        cmd->>storage: save(applications)
+        activate storage
+        storage-->>cmd: ​
+        deactivate storage
+        cmd->>ui: showMessage("Application removed")
+        activate ui
+        ui-->>user: Confirmation message
+        deactivate ui
+    else else
+        cmd->>ui: showError("Invalid index: 4")
+        activate ui
+        ui-->>user: Error message
+        deactivate ui
+    end
+
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
+```
+
 ### Edit application and recruitment stage tracking
 
 The edit feature allows users to modify existing applications without deleting and re-entering them. Recruitment progress is represented by the `RecruitmentStage` enum (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`). The enum owns each display label and whether a stage is terminal. Users may edit a stage freely to handle corrections and different company processes.
 
 - **Design and Implementation**:
-  - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, and `newStage`. A `null` value indicates that the corresponding field should remain unchanged.
-  - `RecruitmentStageCommand` provides direct, dedicated recruitment stage modification for targeted application records.
-  - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by a field choice:
-    - `1`: Company only
-    - `2`: Role only
-    - `3`: Recruitment stage only
-    - `4`: All three fields
-  - Stage input normalization in `Main.promptRecruitmentStage()` accepts numbered choices and case-insensitive stage names. The legacy label `Pending` is read as `Applied`.
-  - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty fields, updated stage).
+  - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, `newStage`, `newDeadline`, `newPortalLink`, `newEmail`, and `newNotes`. A `null` value indicates that the corresponding field should remain unchanged.
+  - `RecruitmentStageCommand` provides direct, dedicated recruitment stage modification for targeted application records. The menu uses it when only the stage is edited.
+  - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by a field choice (1 to 8):
+    - `1`: Company only (`EditCommand`)
+    - `2`: Role only (`EditCommand`)
+    - `3`: Recruitment stage only (`RecruitmentStageCommand`)
+    - `4`: Deadline only (`EditCommand`)
+    - `5`: Company Portal Link only (`EditCommand`)
+    - `6`: Contact Email only (`EditCommand`)
+    - `7`: Notes only (`EditCommand`)
+    - `8`: All fields in sequence (Company, Role, Recruitment Stage, Deadline, Portal Link, Email, Notes) (`EditCommand`)
+  - The typed command `edit INDEX [c/..] [r/..] [s/..]` is parsed by `CommandParser.parseEdit()` and always creates an `EditCommand`.
+  - Stage input normalization in `Main.promptRecruitmentStage()` accepts numbered choices (`1` for Applied, `2` for Online Assessment, `3` for Interview, `4` for Offer, `5` for Accepted, `6` for Rejected, `7` for Withdrawn) and case-insensitive stage names (e.g. `OA`). The legacy label `Pending` is read as `Applied`.
+  - Optional fields (deadline, portal link, email, notes) can be updated or cleared with blank inputs.
+  - Both commands extend `UndoableCommand` and remember previous values, so `undo` can restore them.
+  - **Defensive programming & Assertions**: Java `assert` statements verify preconditions (non-null arguments, in-bounds target indices) and postconditions (non-empty required fields, updated stage).
+
+#### Edit Application Activity Diagram
+
+The user interaction and validation workflow for updating application fields is illustrated in the activity diagram below:
 
 ```mermaid
+flowchart LR
+    Start((●)) --> PromptIdx["Prompt & validate<br/>index"]
+    PromptIdx --> PromptField["Prompt field choice<br/>(1-8)"]
+    PromptField --> Branch{"Field choice"}
+    Branch -->|"[1: Co]"| UpdCo["Update company"] --> Merge{ }
+    Branch -->|"[2: Role]"| UpdRole["Update role"] --> Merge
+    Branch -->|"[3: Stat]"| UpdStat["Update status"] --> Merge
+    Branch -->|"[4: Due]"| UpdDue["Update deadline"] --> Merge
+    Branch -->|"[5: Portal]"| UpdPort["Update portal link"] --> Merge
+    Branch -->|"[6: Email]"| UpdMail["Update email"] --> Merge
+    Branch -->|"[7: Notes]"| UpdNote["Update notes"] --> Merge
+    Branch -->|"[8: All]"| UpdAll["Update all fields"] --> Merge
+    Merge --> Save["Storage.save<br/>applications"]
+    Save --> Confirm["Show confirmation<br/>message"]
+    Confirm --> End(((◎)))
+```
+
+#### Edit Application Sequence Diagram
+
+```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    actor User
-    participant Main
-    participant StatusCommand
-    participant ApplicationList
-    participant Application
-    participant Storage
-    participant Ui
-    User->>Main: Enter 10
-    Main->>Ui: promptApplicationIndex()
-    Ui-->>Main: 1 (0-based index: 0)
-    Main->>Ui: showPrompt(field choice)
-    Ui-->>Main: 3 (Recruitment stage)
-    Main->>Ui: promptRecruitmentStage()
-    Ui-->>Main: RecruitmentStage.ACCEPTED
-    Main->>EditCommand: new EditCommand(0, null, null, RecruitmentStage.ACCEPTED)
-    Main->>EditCommand: execute(applications, ui, storage)
-    EditCommand->>ApplicationList: get(0)
-    ApplicationList-->>EditCommand: application
-    EditCommand->>Application: setRecruitmentStage(RecruitmentStage.ACCEPTED)
-    EditCommand->>Storage: save(applications)
-    EditCommand->>Ui: showMessage("Application updated successfully...")
-    Ui-->>User: Confirmation message
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :EditCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Option 10 (Edit)
+    activate main
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>ui: showPrompt(field choice 1-8)
+    activate ui
+    ui-->>main: 5 (Portal Link)
+    deactivate ui
+    main->>ui: promptOptional("Enter new company portal link:")
+    activate ui
+    ui-->>main: "https://careers.google.com"
+    deactivate ui
+    main->>cmd: EditCommand.editPortalLink(0, "https://careers.google.com")
+    activate cmd
+    cmd-->>main: editCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd->>list: get(0)
+    activate list
+    list-->>cmd: application
+    deactivate list
+
+    alt choice == 1 (Company)
+        cmd->>app: setCompany(newCompany)
+    else choice == 2 (Role)
+        cmd->>app: setRole(newRole)
+    else choice == 3 (Recruitment stage)
+        cmd->>app: setRecruitmentStage(newStage)
+    else choice == 4 (Deadline)
+        cmd->>app: setDeadline(newDeadline)
+    else choice == 5 (Portal Link)
+        cmd->>app: setPortalLink(newPortalLink)
+    else choice == 6 (Email)
+        cmd->>app: setEmail(newEmail)
+    else choice == 7 (Notes)
+        cmd->>app: setNotes(newNotes)
+    else choice == 8 (All)
+        cmd->>app: update all fields
+    end
+
+    cmd->>storage: save(applications)
+    activate storage
+    storage-->>cmd: ​
+    deactivate storage
+    cmd->>ui: showMessage("Application updated successfully...")
+    activate ui
+    ui-->>user: Confirmation message
+    deactivate ui
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
 ```
 
 ### Help feature
@@ -416,24 +828,144 @@ sequenceDiagram
 
 The commands collect zero-based indices of matching applications. `SearchCommand` matches a case-insensitive substring against both company and role. `SortCommand` sorts a copy of the indices by company, then role, using a case-insensitive comparator; original index breaks ties. `ApplicationTable` formats either view with one-based numbers derived from the original indices. This keeps subsequent mark and delete commands unambiguous, even when the display order differs from storage order.
 
+#### Search and Sort Activity Diagram
+
+The flow of user input, matching/sorting logic, and display formatting for both search and sort operations is shown below:
+
 ```mermaid
+flowchart LR
+    Start((●)) --> Choice{"Option 8 or 9?"}
+    Choice -->|"[8: Search]"| Prompt["Prompt keyword &<br/>filter matches"]
+    Choice -->|"[9: Sort]"| Sort["Sort index copy by<br/>company & role"]
+    Prompt --> MergeTable{ }
+    Sort --> MergeTable
+    MergeTable --> Table["Format table via<br/>ApplicationTable"]
+    Table --> Display["Display table<br/>via Ui"]
+    Display --> End(((◎)))
+```
+
+#### Search Sequence Diagram
+
+The interaction sequence for searching applications is shown below:
+
+```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    actor User
-    participant Main
-    participant SearchCommand
-    participant ApplicationList
-    participant ApplicationTable
-    participant Ui
-    User->>Main: Select 8 and enter search term
-    Main->>SearchCommand: execute(applications, ui, storage)
-    loop Every application
-        SearchCommand->>ApplicationList: get(index)
-        ApplicationList-->>SearchCommand: application
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :SearchCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+
+    user->>main: Select option 8 (Search)
+    activate main
+    main->>ui: promptNonEmpty("Enter search term:")
+    activate ui
+    ui-->>main: "engineer"
+    deactivate ui
+    main->>cmd: new SearchCommand("engineer")
+    activate cmd
+    cmd-->>main: searchCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    loop for each application
+        cmd->>list: get(i)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: "Google"
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: "Software Engineer"
+        deactivate app
     end
-    SearchCommand->>ApplicationTable: format(applications, matching indices)
-    ApplicationTable-->>SearchCommand: table with original numbers
-    SearchCommand->>Ui: showMessage(table)
-    Ui-->>User: Matching applications
+
+    alt matches found
+        cmd->>table: format(applications, matches, header)
+        activate table
+        table-->>cmd: formattedTable
+        deactivate table
+        cmd->>ui: showMessage(formattedTable)
+        activate ui
+        ui-->>user: Matching applications table
+        deactivate ui
+    else else
+        cmd->>ui: showMessage("No applications found")
+        activate ui
+        ui-->>user: No matches message
+        deactivate ui
+    end
+
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
+```
+
+#### Sort Sequence Diagram
+
+The alphabetical view follows a comparable execution path using `SortCommand`. It sorts a copy of the index array rather than mutating storage or the underlying `ApplicationList`:
+
+```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant cmd as :SortCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+    participant ui as :Ui
+
+    user->>main: Option 9 (Sort)
+    activate main
+    main->>cmd: new SortCommand()
+    activate cmd
+    cmd-->>main: sortCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+
+    Note over cmd: Copy & sort indices<br/>by company, then role
+    loop during index comparison
+        cmd->>list: get(index)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: company
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: role
+        deactivate app
+    end
+
+    cmd->>table: format(applications, sortedIndices, header)
+    activate table
+    table-->>cmd: formattedTable
+    deactivate table
+    cmd->>ui: showMessage(formattedTable)
+    activate ui
+    ui-->>user: Sorted applications table
+    deactivate ui
+
+    cmd-->>main: ​
+    deactivate cmd
+    deactivate main
 ```
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
@@ -635,34 +1167,34 @@ classDiagram
     direction TB
 
     class Main {
-        +run() void
+        + run(): void
     }
 
     class DeadlineWarnings {
-        -UPCOMING_WINDOW_DAYS int
-        +show(applications, ui) void
-        -appendWarning(warnings, application, deadline, today) void
+        - UPCOMING_WINDOW_DAYS: int$
+        + show(applications: ApplicationList, ui: Ui): void
+        - appendWarning(warnings: StringBuilder, application: Application, deadline: LocalDate, today: LocalDate): void
     }
 
     class ApplicationList {
-        +size() int
-        +get(index) Application
+        + size(): int
+        + get(index: int): Application
     }
 
     class Application {
-        +getDeadline() LocalDate
-        +isCompleted() boolean
+        + getDeadline(): LocalDate
+        + isCompleted(): boolean
     }
 
     class Ui {
-        +showMessage(message) void
+        + showMessage(message: String): void
     }
 
-    Main --> DeadlineWarnings : invokes
-    DeadlineWarnings ..> ApplicationList : reads
-    ApplicationList --> Application : contains
-    DeadlineWarnings ..> Application : inspects
-    DeadlineWarnings ..> Ui : displays summary
+    Main "1" --> "1" DeadlineWarnings : invokes
+    DeadlineWarnings "1" ..> "1" ApplicationList : reads
+    ApplicationList "1" *-- "0..*" Application : contains
+    DeadlineWarnings "1" ..> "0..*" Application : inspects
+    DeadlineWarnings "1" ..> "1" Ui : displays summary
 ```
 
 Each application's deadline is represented using `LocalDate`. A `null` deadline indicates that no deadline has been recorded. `LocalDate` supports comparisons between calendar dates without requiring a time of day.
@@ -692,38 +1224,60 @@ The private `appendWarning()` method adds each warning to a `StringBuilder`. Eac
 The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in a note to keep the diagram focused on interactions between objects.
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    participant main as main:Main
-    participant warnings as deadlineWarnings:DeadlineWarnings
-    participant list as applications:ApplicationList
-    participant app as application:Application
-    participant ui as ui:Ui
+    participant main as :Main
+    participant ui as :Ui
+    participant warnings as :DeadlineWarnings
+    participant list as :ApplicationList
+    participant app as :Application
 
+    activate main
     main->>ui: showWelcome()
+    activate ui
+    ui-->>main: ​
+    deactivate ui
+
     main->>warnings: show(applications, ui)
     activate warnings
-    Note over warnings: Obtain today's date once
+    Note over warnings: Obtain today's date<br/>via LocalDate.now()
 
-    loop Each application
+    loop for each application
         warnings->>list: get(i)
+        activate list
         list-->>warnings: application
+        deactivate list
         warnings->>app: getDeadline()
+        activate app
         app-->>warnings: deadline
+        deactivate app
         warnings->>app: isCompleted()
+        activate app
         app-->>warnings: completed
+        deactivate app
 
-        opt Incomplete and deadline exists and deadline <= today + 7 days
+        opt incomplete and deadline <= today + 7 days
             Note over warnings: Classify deadline and append warning
         end
     end
 
-    opt Warning summary is not empty
+    opt warning summary is not empty
         warnings->>ui: showMessage(summary)
+        activate ui
+        ui-->>warnings: ​
+        deactivate ui
     end
 
-    warnings-->>main: return
+    warnings-->>main: ​
     deactivate warnings
     main->>ui: showMenu(applications)
+    activate ui
+    ui-->>main: ​
+    deactivate ui
+    deactivate main
 ```
 
 #### Design considerations
@@ -766,9 +1320,60 @@ The feature involves the following classes:
 
 `Storage` uses `data/applications.txt` by default. Its constructor also accepts a custom file path, allowing tests to use temporary files without modifying the user's saved data.
 
+The class relationships within the storage subsystem are illustrated below:
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Storage {
+        - filePath: String
+        - TITLE_HEADER: String$
+        - COLUMN_HEADER: String$
+        + save(applications: ApplicationList): void
+        + load(): ApplicationList
+        - escape(value: String)$: String
+        - splitFields(line: String)$: List~String~
+    }
+
+    class ApplicationList {
+        - applications: ArrayList~Application~
+        + getAll(): List~Application~
+        + add(application: Application): void
+    }
+
+    class Application {
+        - company: String
+        - role: String
+        - isCompleted: boolean
+        - status: String
+        - deadline: LocalDate
+        - portalLink: String
+        - email: String
+        - notes: String
+        + getCompany(): String
+        + getRole(): String
+        + isCompleted(): boolean
+        + getStatus(): String
+        + getDeadline(): LocalDate
+        + getPortalLink(): String
+        + getEmail(): String
+        + getNotes(): String
+    }
+
+    class Main {
+        + loadApplications(): ApplicationList
+    }
+
+    Main "1" --> "1" Storage : uses
+    Storage "1" ..> "1" ApplicationList : saves / loads
+    ApplicationList "1" *-- "0..*" Application : contains
+    Storage "1" ..> "0..*" Application : serializes / parses
+```
+
 #### File format
 
-The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains five tab-separated fields:
+The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains eight tab-separated fields:
 
 | Field | Representation |
 |---|---|
@@ -777,12 +1382,15 @@ The file uses UTF-8 encoding and contains two header lines followed by applicati
 | Completion flag | `true` or `false` |
 | Deadline | ISO date such as `2026-11-03`, or an empty field |
 | Recruitment stage | Escaped text such as `Applied`; an empty field is read as `Applied` |
+| Company portal link | Escaped URL text, or an empty field |
+| Contact email | Escaped email address, or an empty field |
+| Notes | Escaped freeform text, or an empty field |
 
-An empty deadline field represents an application without a recorded deadline.
+An empty deadline, portal link, email, or notes field represents an application where that optional attribute has not been recorded.
 
-Backslashes, tabs, newlines and carriage returns within text fields are escaped before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company or role names from being mistaken for field or record separators.
+Backslashes, tabs, newlines and carriage returns within text fields are escaped (`\\`, `\t`, `\n`, `\r`) before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company, role, or notes from being mistaken for field or record separators.
 
-**Backward compatibility:** Files written before recruitment stages were persisted have only four fields (no stage). `load()` accepts both four- and five-field records and gives four-field records the default `Applied` stage. Existing legacy `Pending` values also migrate to `Applied`. It also accepts the older `status` column header. The next save writes the five-field format with `stage` as the final column.
+**Backward compatibility:** Files written by earlier versions have four fields (legacy, without stage) or five fields (prior stage format). `Storage.load()` accepts four-field, five-field, and modern eight-field records. Four-field records receive the default `Applied` stage, and existing `Pending` values automatically migrate to `Applied`. Missing portal link, email, and notes default to empty strings. It also accepts older column headers such as `status`. The next save rewrites the file in the full eight-field format with `stage` as the fifth column.
 
 #### Saving applications
 
@@ -796,6 +1404,52 @@ The save operation performs the following steps:
 4. Converts each application into a tab-separated record.
 5. Writes the complete contents using UTF-8 encoding.
 
+The sequence of interactions during a save operation is shown below:
+
+```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
+sequenceDiagram
+    participant cmd as :Command
+    participant storage as :Storage
+    participant list as :ApplicationList
+    participant app as :Application
+
+    activate cmd
+    cmd->>storage: save(applications)
+    activate storage
+    storage->>list: getAll()
+    activate list
+    list-->>storage: applicationList
+    deactivate list
+
+    loop for each application
+        storage->>app: getCompany()
+        activate app
+        app-->>storage: company
+        deactivate app
+        storage->>app: getRole()
+        activate app
+        app-->>storage: role
+        deactivate app
+        storage->>app: isCompleted()
+        activate app
+        app-->>storage: isCompleted
+        deactivate app
+        storage->>app: getDeadline()
+        activate app
+        app-->>storage: deadline
+        deactivate app
+    end
+
+    Note over storage: Encode records &<br/>write UTF-8 lines to disk
+    storage-->>cmd: ​
+    deactivate storage
+    deactivate cmd
+```
+
 The operation rewrites the file using the current list. Consequently, applications removed from the list are also removed from the saved data.
 
 #### Loading applications
@@ -806,36 +1460,59 @@ If the file does not exist, `load()` returns an empty `ApplicationList`. Otherwi
 
 For each application record, `Storage` checks that there are four fields (older files) or five fields, that the completion flag is either `true` or `false`, that company and role are not blank, and that the stage is a known `RecruitmentStage`. A non-empty deadline is parsed using `LocalDate.parse()`. Valid records are reconstructed as `Application` objects and added to the list. A record that fails any check is skipped and a message is added to the warnings returned by `Storage.getLoadWarnings()`.
 
-The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note.
+The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note:
 
 ```mermaid
+---
+config:
+  themeCSS: ".actor-line { stroke-dasharray: 4, 4 !important; } line.loopLine:not([style*='stroke-dasharray']) { stroke-dasharray: none !important; }"
+---
 sequenceDiagram
-    participant main as Main
-    participant storage as storage:Storage
-    participant list as applications:ApplicationList
-    participant app as application:Application
-    participant ui as ui:Ui
+    participant main as :Main
+    participant storage as :Storage
+    participant list as :ApplicationList
+    participant app as :Application
+    participant ui as :Ui
 
+    activate main
     main->>storage: load()
     activate storage
     Note over storage: Read UTF-8 file if it exists
+
     storage->>list: new ApplicationList()
-    loop Each line of the file
+    activate list
+    list-->>storage: applications
+    deactivate list
+
+    loop each line of the file
         Note over storage: Decode fields and validate record
-        alt Record is valid
-            storage->>app: new Application(company, role, completed, stage, deadline)
+        alt record is valid
+            storage->>app: new Application(co, role, done, stage, date, portal, email, notes)
+            activate app
+            app-->>storage: application
+            deactivate app
             storage->>list: add(application)
-        else Record is corrupted
-            Note over storage: Skip record and remember a warning
+            activate list
+            list-->>storage: ​
+            deactivate list
+        else record is corrupted
+            Note over storage: Skip record and remember warning
         end
     end
     storage-->>main: applications
     deactivate storage
+
     main->>storage: getLoadWarnings()
+    activate storage
     storage-->>main: warnings
-    loop Each warning
+    deactivate storage
+    loop each warning
         main->>ui: showError(warning)
+        activate ui
+        ui-->>main: ​
+        deactivate ui
     end
+    deactivate main
 ```
 
 #### Error handling
@@ -925,24 +1602,60 @@ Application information is usually spread across company portals, emails, notes 
 
 ## Instructions for manual testing
 
-These steps assume you start from a clean state. Delete `data/applications.txt` (if it exists) before launching JobSeek with `java -jar jobseek.jar`. The expected outputs are examples; wording of table spacing may differ slightly.
+These steps assume you start from a clean state. Delete `data/applications.txt` (if it exists) before launching JobSeek with `java -jar jobseek.jar`. The expected outputs are examples; wording of table spacing may differ slightly. It includes realistic input sequences, edge cases, and exact code examples of the expected console output.
 
 ### Adding an application
 
 1. Launch JobSeek with an empty list.
-2. Select `1`. When prompted for `Company:`, press Enter without typing. Confirm error `Error: Company cannot be empty.` appears and the prompt repeats.
-3. Enter `Google`. When prompted for `Role:`, enter `SWE Intern`. Confirm confirmation message:
+2. Select `1`. When prompted for `Company:`, press Enter without typing. Confirm error appears and prompt repeats:
+   ```text
+   Error: Company cannot be empty. Please enter a valid company name:
+   ```
+3. Enter `Google`. When prompted for `Role:`, enter `SWE Intern`. When prompted for optional fields (`Deadline:`, `Company Portal Link:`, `Contact Email:`, `Notes:`), press Enter to skip each. Confirm confirmation message:
    ```text
    Application added successfully.
    Company: Google
    Role: SWE Intern
    ```
-4. Choose `2` to list applications. Confirm the new record appears in the active applications table with `No.` 1, `Completed` `[ ]`, `Company` `Google`, and `Role` `SWE Intern`.
+4. Add another application with all optional fields: enter `1`, company `Microsoft`, role `Cloud Engineer`, deadline `2026-11-15`, portal link `https://careers.microsoft.com`, contact email `recruiter@microsoft.com`, and notes `First screening completed`:
+   ```text
+   Application added successfully.
+   Company: Microsoft
+   Role: Cloud Engineer
+   Deadline: 2026-11-15
+   Portal Link: https://careers.microsoft.com
+   Email: recruiter@microsoft.com
+   Notes: First screening completed
+   ```
+5. Choose `2` to list applications. Confirm the new records appear in the active applications table.
 
 ### Viewing help instructions
 
 1. Enter `7` from the main menu.
-2. Verify that all menu options `[0]` through `[10]` and the typed commands (`list`, `undo`, `add`, `edit`, `delete|mark|unmark`, `find`, `search`, `sort`, `today`, `view`) are displayed.
+2. Verify that all menu options `[0]` through `[10]` and the typed commands (`list`, `undo`, `add`, `edit`, `delete|mark|unmark`, `find`, `search`, `sort`, `today`, `view`) are displayed:
+   ```text
+   Available menu options:
+     list [completed|all]            - List active, completed, or all applications
+     undo                            - Undo the last add, delete, edit, status or mark change
+     add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
+     edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
+     delete|mark|unmark INDEX        - Delete, complete or reopen an application
+     find c/.. r/.. s/.. b/.. a/..   - Combine filters (company, role, stage, deadline)
+     search KEYWORD | sort           - Search by company/role, or view alphabetically
+     today                           - Show overdue, due-today and upcoming deadlines
+     view INDEX                      - View details for application at INDEX
+     [1] Add application             - Add a new internship or job application
+     [2] List applications           - View active applications in a numbered table
+     [3] List uncompleted apps       - View active / uncompleted applications
+     [4] Delete application          - Delete an application by index
+     [5] Mark application completed  - Mark an application as completed
+     [6] Unmark application          - Mark an application as not completed
+     [7] Help                        - Show this help message
+     [8] Search applications         - Find applications by company or role
+     [9] Sort applications           - View applications alphabetically
+     [10] Edit application           - Edit an existing application's details
+     [0] Exit                        - Exit JobSeek
+   ```
 3. Type `help` and verify that the same list is shown.
 
 ### Viewing application details
@@ -960,79 +1673,226 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    ==================================================
    ```
 3. Test invalid and boundary inputs:
-   - Enter `view` (no index). Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
-   - Enter `view 0` or `view -1`. Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
-   - Enter `view abc`. Confirm error: `Error: Please provide a valid positive application index. Usage: view INDEX`.
-   - Enter `view 99` (out of bounds). Confirm error: `Error: Application index 99 does not exist. (Total applications: 1)`.
+   - Enter `view` (no index). Confirm error:
+     ```text
+     Error: Please provide a valid positive application index. Usage: view INDEX
+     ```
+   - Enter `view 0` or `view -1`:
+     ```text
+     Error: Please provide a valid positive application index. Usage: view INDEX
+     ```
+   - Enter `view abc`:
+     ```text
+     Error: Please provide a valid positive application index. Usage: view INDEX
+     ```
+   - Enter `view 99` (out of bounds):
+     ```text
+     Error: Application index 99 does not exist. (Total applications: 1)
+     ```
 
 ### Listing and filtering applications
 
-1. Start JobSeek with an empty list. Choose `2` or type `list`. Confirm `No applications found.` appears.
+1. Start JobSeek with an empty list. Choose `2` or type `list`. Confirm empty message appears:
+   ```text
+   No applications found.
+   ```
 2. Add three applications:
    - Application 1: `Google / SWE Intern`
    - Application 2: `Shopee / Backend Intern`
    - Application 3: `GovTech / Fullstack Developer`
 3. Mark Application 2 as completed using option `5`.
-4. Test active filter (default):
-   - Choose `2` (or option `3`, or type `list`).
-   - Confirm only Application 1 and Application 3 appear in the table with their original list numbers `1` and `3`. Application 2 is not listed.
-5. Test completed filter:
-   - Type `list completed`.
-   - Confirm only Application 2 appears in the table with `No.` `2` and `recruitment stage` `[X]`.
-6. Test all filter:
-   - Type `list all`.
-   - Confirm all three applications (1, 2, 3) are displayed in the table.
-7. Test unrecognized filter:
-   - Type `list pending`.
-   - Confirm error appears: `Error: Invalid list filter: 'pending'. Usage: list [completed|all]`.
+4. Test active filter (default): Choose `2` (or option `3`, or type `list`). Confirm only active applications appear with original numbers:
+   ```text
+   Active applications:
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------------------
+   1   | [ ]       | Google  | SWE Intern
+   3   | [ ]       | GovTech | Fullstack Developer
+   ```
+5. Test completed filter: Type `list completed`. Confirm only Application 2 appears:
+   ```text
+   Completed applications:
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------------
+   2   | [X]       | Shopee  | Backend Intern
+   ```
+6. Test all filter: Type `list all`. Confirm all three applications appear:
+   ```text
+   All applications:
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------------------
+   1   | [ ]       | Google  | SWE Intern
+   2   | [X]       | Shopee  | Backend Intern
+   3   | [ ]       | GovTech | Fullstack Developer
+   ```
+7. Test unrecognized filter: Type `list pending`. Confirm error appears:
+   ```text
+   Error: Invalid list filter: 'pending'. Usage: list [completed|all]
+   ```
 
 ### Marking and unmarking applications
 
 1. Have at least one uncompleted application (e.g. Application 1 `[ ] Google`).
-2. Choose option `5` (Mark completed). Enter `1`.
-   - Confirm confirmation message:
-     ```text
-     Nice! I've marked this application as completed:
-       [X] Google | SWE Intern
-     ```
+2. Choose option `5` (Mark completed). Enter `1`. Confirm confirmation message:
+   ```text
+   Nice! I've marked this application as completed:
+     [X] Google | SWE Intern
+   ```
 3. Type `list`. Confirm Application 1 is no longer in the active list.
 4. Type `list completed`. Confirm Application 1 appears with completion icon `[X]`.
-5. Choose option `6` (Unmark). Enter `1`.
-   - Confirm confirmation message:
-     ```text
-     OK, I've marked this application as not completed yet:
-       [ ] Google | SWE Intern
-     ```
+5. Choose option `6` (Unmark). Enter `1`. Confirm confirmation message:
+   ```text
+   OK, I've marked this application as not completed yet:
+     [ ] Google | SWE Intern
+   ```
 6. Type `list`. Confirm Application 1 reappears in the active list with `[ ]`.
 7. Test invalid inputs for marking and unmarking:
-   - Enter non-numeric input `xyz` at the index prompt. Confirm error `Error: Invalid application index. Please enter a valid number.` appears.
-   - Enter out-of-bounds index `99`. Confirm error `Error: Invalid application index: 99. Please enter a number between 1 and 3.` appears.
+   - Enter non-numeric input `xyz` at the index prompt:
+     ```text
+     Error: Invalid application index. Please enter a valid number.
+     ```
+   - Enter out-of-bounds index `99`:
+     ```text
+     Error: Invalid application index: 99. Please enter a number between 1 and 3.
+     ```
+
+### Deleting an application
+
+1. Start JobSeek with an empty application list and choose `4`. Confirm empty error:
+   ```text
+   Error: Your application list is currently empty.
+   ```
+2. Add two applications: Application 1 (`Google / SWE Intern`) and Application 2 (`Shopee / Backend Intern`).
+3. Choose `4` (Delete) and enter `1`. Confirm deletion confirmation message:
+   ```text
+   OK, I've deleted this application:
+     [ ] Google | Role: SWE Intern
+   ```
+4. Choose `2` to list applications. Confirm only Application 2 remains (now at list index 1).
+5. Choose `4` and enter out-of-bounds index `5`:
+   ```text
+   Error: Invalid application index: 5. Please enter a number between 1 and 1.
+   ```
 
 ### Editing application fields
 
-1. Start JobSeek with an empty application list and choose `10`. Confirm `Error: Your application list is currently empty.` appears.
+1. Start JobSeek with an empty application list and choose `10`. Confirm error appears:
+   ```text
+   Error: Your application list is currently empty.
+   ```
 2. Add an application using `1` with company `Googl` and role `SWE Intern`.
 3. Choose `10` and enter application index `1`.
-4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays `Company: Google`, `Role: SWE Intern`, and `Recruitment stage: Applied`.
-5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm role is updated to `Backend Intern` while company remains `Google` and stage remains `Applied`.
-6. Choose `10` and test invalid inputs: enter non-numeric index `abc` or out-of-bounds `99`. Confirm clear error messages are displayed.
+4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays updated company:
+   ```text
+   Application updated successfully.
+   Company: Google
+   Role: SWE Intern
+   Recruitment stage: Applied
+   ```
+5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm updated role:
+   ```text
+   Application updated successfully.
+   Company: Google
+   Role: Backend Intern
+   Recruitment stage: Applied
+   ```
+6. Choose `10`, index `1`, and field `4` (Deadline). Enter `2026-11-20`. Confirm updated deadline.
+7. Choose `10`, index `1`, and field `5` (Portal Link). Enter `https://careers.google.com`. Confirm updated portal link.
+8. Choose `10`, index `1`, and field `6` (Email). Enter `recruiter@google.com`. Confirm updated email.
+9. Choose `10`, index `1`, and field `7` (Notes). Enter `Passed interview round 1`. Confirm updated notes.
+10. Choose `10`, index `1`, and field `8` (All). Enter company `Alphabet`, role `Senior SWE Intern`, stage `5` (Accepted), deadline `2026-12-15`, portal `https://abc.xyz/jobs`, email `lead@abc.xyz`, and notes `Offer accepted!`. Confirm full update output:
+    ```text
+    Application updated successfully.
+    Company: Alphabet
+    Role: Senior SWE Intern
+    Recruitment stage: Accepted
+    Deadline: 2026-12-15
+    Portal Link: https://abc.xyz/jobs
+    Email: lead@abc.xyz
+    Notes: Offer accepted!
+    ```
+11. Test clearing optional fields: Choose `10`, index `1`, and field `5` (Portal Link). Press Enter without typing. Confirm the portal link is cleared and no longer appears in the confirmation message:
+    ```text
+    Application updated successfully.
+    Company: Alphabet
+    Role: Senior SWE Intern
+    Recruitment stage: Accepted
+    Deadline: 2026-12-15
+    Email: lead@abc.xyz
+    Notes: Offer accepted!
+    ```
+12. Choose `10` and test invalid inputs: enter non-numeric index `abc`, out-of-bounds `99`, or invalid field choice `99`:
+    ```text
+    Error: Invalid field choice: '99'. Enter a number from 1 to 8.
+    ```
 
 ### Managing recruitment stage
 
 1. Add an application with company `Shopee` and role `Backend Intern`.
 2. Enter `view 1`. Verify `Recruitment stage: Applied` is displayed by default.
-3. Choose `10`, index `1`, and field `3` (Recruitment stage). Enter `2` (Online Assessment).
-4. Enter `view 1`. Verify `Recruitment stage: Online Assessment` is now displayed.
-5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify `Recruitment stage: Rejected`.
-6. Choose `10`, index `1`, field `4` (All). Enter company `Sea`, role `Data Analyst`, and stage `1` (Applied). Verify all fields updated correctly.
+3. Choose `10`, index `1`, and field `3` (Recruitment stage). Enter `2` (Online Assessment). Confirm output:
+   ```text
+   Application recruitment stage updated successfully.
+   Company: Shopee
+   Role: Backend Intern
+   Recruitment stage: Online Assessment
+   ```
+4. Enter `view 1`. Verify updated card details show `Recruitment stage: Online Assessment`.
+5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify:
+   ```text
+   Application recruitment stage updated successfully.
+   Company: Shopee
+   Role: Backend Intern
+   Recruitment stage: Rejected
+   ```
+6. Choose `10`, index `1`, field `8` (All). Enter company `Sea`, role `Data Analyst`, stage `1` (Applied), and press enter for the optional fields. Verify all fields updated correctly:
+   ```text
+   Application updated successfully.
+   Company: Sea
+   Role: Data Analyst
+   Recruitment stage: Applied
+   ```
 
 ### Search and sort
 
 1. Start JobSeek with an empty application list and add `Zulu / Engineer`, `Acme / Designer`, and `Acme / Analyst` using option `1`.
-2. Choose `8` and search for `ENG`. Confirm that only `Zulu / Engineer` appears with number `1`. Search for `acm` and confirm that both Acme applications appear with their original numbers `2` and `3`.
-3. Search for a term that does not occur in any company or role. Confirm that a no-matches message appears. Enter a blank term and confirm that the program asks again.
-4. Choose `9`. Confirm the view shows `Acme / Analyst` (`3`), `Acme / Designer` (`2`), then `Zulu / Engineer` (`1`).
-5. Type `list all`. Confirm the original order is still `Zulu`, `Acme / Designer`, `Acme / Analyst`.
+2. Choose `8` and search for `ENG`. Confirm matching results table:
+   ```text
+   Search results for 'ENG':
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   1   | [ ]    | Zulu    | Engineer
+   ```
+3. Search for `acm` and confirm that both Acme applications appear with their original numbers `2` and `3`:
+   ```text
+   Search results for 'acm':
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   2   | [ ]    | Acme    | Designer
+   3   | [ ]    | Acme    | Analyst
+   ```
+4. Search for a term that does not occur (e.g. `marketing`). Confirm no-matches message:
+   ```text
+   No applications found matching 'marketing'.
+   ```
+5. Choose `9` (Sort). Confirm alphabetical order by company, then role, while preserving original indices:
+   ```text
+   Sorted applications:
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   3   | [ ]    | Acme    | Analyst
+   2   | [ ]    | Acme    | Designer
+   1   | [ ]    | Zulu    | Engineer
+   ```
+6. Type `list all`. Confirm the original storage order is unaffected:
+   ```text
+   All applications:
+   No. | Status | Company | Role
+   ----+--------+---------+---------
+   1   | [ ]    | Zulu    | Engineer
+   2   | [ ]    | Acme    | Designer
+   3   | [ ]    | Acme    | Analyst
+   ```
 
 ### Typed commands
 
@@ -1066,12 +1926,16 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 
 1. Add an application with a deadline in the past, one with today's date, one 3 days from today, and one 30 days from today. Mark none as completed.
 2. Type `today`. Confirm the first appears under `OVERDUE`, the second under `DUE TODAY`, the third under `UPCOMING`, and the fourth does not appear in any section. Confirm the `SUMMARY` shows `4 active`.
-3. Type `exit` and restart JobSeek. Confirm that `Deadline warnings:` lists the same first three applications before the menu.
+3. Type `exit` and restart JobSeek. Confirm that `Deadline warnings:` lists the same first three applications before the menu:
+   ```text
+   Deadline warnings:
+   UPCOMING: Google - SWE Intern (deadline 2026-11-01)
+   ```
 4. Mark the overdue application as completed and type `today`. Confirm it no longer appears in `OVERDUE` and the summary shows `1 completed`.
 
 ### Saving and loading data
 
-1. Add two applications, set one to stage `Interview`, then exit. Open `data/applications.txt` and confirm each line has five tab-separated columns, ending with the stage.
-2. Restart JobSeek. Confirm that both applications, their deadlines and the stage are restored.
+1. Add two applications, set one to stage `Interview`, then exit. Open `data/applications.txt` and confirm each line has eight tab-separated columns, including stage, portal link, email, and notes.
+2. Restart JobSeek. Confirm that both applications, their deadlines and details are restored.
 3. Exit, edit the file and change one line so that it has only two columns. Restart JobSeek. Confirm that a warning names the skipped line and that the other application still loads.
-4. Exit, delete the `status` column from the header and from every line (an old four-column file). Restart and confirm that the applications load with stage `Applied`.
+4. Exit, delete the optional columns (an older four-column or five-column legacy file). Restart and confirm that the applications load correctly with stage `Applied` or their saved stages, and blank optional fields.

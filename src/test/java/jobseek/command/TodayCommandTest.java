@@ -65,8 +65,8 @@ public class TodayCommandTest {
     public void execute_activeApplications_groupedByRecruitmentStageInSummary() {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("A", "R", false, "Accepted", null));
-        applications.add(new Application("B", "R", false, "Pending", null));
-        applications.add(new Application("C", "R", false, "Pending", null));
+        applications.add(new Application("B", "R", false, "Applied", null));
+        applications.add(new Application("C", "R", false, "Applied", null));
         RecordingUi ui = new RecordingUi();
 
         new TodayCommand(TODAY).execute(applications, ui, new Storage());

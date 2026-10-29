@@ -107,4 +107,55 @@ public class ApplicationTest {
         assertEquals(RecruitmentStage.ACCEPTED, application.getRecruitmentStage());
         assertTrue(application.isCompleted());
     }
+
+    @Test
+    public void constructor_allParameters_initializesCorrectly() {
+        java.time.LocalDate deadline = java.time.LocalDate.of(2026, 12, 1);
+        Application application = new Application("Google", "SWE", true, "Accepted",
+                deadline, "https://careers.google.com", "recruiter@google.com", "Referred by Alice");
+        assertEquals("Google", application.getCompany());
+        assertEquals("SWE", application.getRole());
+        assertTrue(application.isCompleted());
+        assertEquals("Accepted", application.getStatus());
+        assertEquals(deadline, application.getDeadline());
+        assertEquals("https://careers.google.com", application.getPortalLink());
+        assertEquals("recruiter@google.com", application.getEmail());
+        assertEquals("Referred by Alice", application.getNotes());
+    }
+
+    @Test
+    public void setPortalLink_validAndNull_updatesCorrectly() {
+        Application application = new Application("Google", "SWE");
+        assertEquals("", application.getPortalLink());
+
+        application.setPortalLink("  https://jobs.apple.com  ");
+        assertEquals("https://jobs.apple.com", application.getPortalLink());
+
+        application.setPortalLink(null);
+        assertEquals("", application.getPortalLink());
+    }
+
+    @Test
+    public void setEmail_validAndNull_updatesCorrectly() {
+        Application application = new Application("Google", "SWE");
+        assertEquals("", application.getEmail());
+
+        application.setEmail("  hr@shopee.com  ");
+        assertEquals("hr@shopee.com", application.getEmail());
+
+        application.setEmail(null);
+        assertEquals("", application.getEmail());
+    }
+
+    @Test
+    public void setNotes_validAndNull_updatesCorrectly() {
+        Application application = new Application("Google", "SWE");
+        assertEquals("", application.getNotes());
+
+        application.setNotes("  Passed screening round.  ");
+        assertEquals("Passed screening round.", application.getNotes());
+
+        application.setNotes(null);
+        assertEquals("", application.getNotes());
+    }
 }
