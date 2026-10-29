@@ -23,6 +23,7 @@ public class HelpCommand extends Command {
                 + "  add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line\n"
                 + "  edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line\n"
                 + "  delete|mark|unmark INDEX        - Delete, complete or reopen an application\n"
+                + "  find c/.. r/.. s/.. b/.. a/..   - Combine filters (company, role, stage, deadline)\n"
                 + "  search KEYWORD | sort           - Search by company/role, or view alphabetically\n"
                 + "  today                           - Show overdue, due-today and upcoming deadlines\n"
                 + "  view INDEX                     - View details for application at INDEX\n"
