@@ -21,7 +21,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.Scanner;
+import java.util.UUID;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,8 +58,14 @@ public class MainTest {
     private Main createMainWithInput(String input, ApplicationList applications) {
         Scanner scanner = new Scanner(input);
         Ui ui = new Ui(scanner);
-        Storage storage = new Storage();
+        Storage storage = createTestStorage();
         return new Main(ui, storage, applications);
+    }
+
+    /** Gives each workflow test an isolated save path. */
+    private Storage createTestStorage() {
+        return new Storage(Path.of(System.getProperty("java.io.tmpdir"), "jobseek-main-tests",
+                UUID.randomUUID().toString(), "applications.txt").toString());
     }
 
     /** Verifies that selecting Exit terminates the application cleanly. */
@@ -512,7 +520,7 @@ public class MainTest {
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
         assertTrue(output.contains("Enter application index to edit:\n> "));
-        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Status, 4: All):\n> "));
+        assertTrue(output.contains("Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: All):\n> "));
         assertTrue(output.contains("Enter new company:\n> "));
         assertTrue(output.contains("Application updated successfully."));
     }
@@ -612,13 +620,14 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
 
-        String input = "10\n1\n3\n2\n0\n";
+        String input = "10\n1\n3\n5\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Enter recruitment status (1: Pending, 2: Accepted, 3: Rejected):\n> "));
+        assertTrue(output.contains("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
+                + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> "));
         assertTrue(output.contains("Application status updated successfully."));
         assertTrue(output.contains("Status: Accepted"));
     }
@@ -628,7 +637,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Grab", "Data Analyst", false, "Pending"));
 
-        String input = "10\n1\n3\n3\n0\n";
+        String input = "10\n1\n3\n6\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -660,7 +669,7 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
     }
 
     @Test
@@ -668,13 +677,13 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
-        String input = "10\n1\n3\n99\n2\n0\n";
+        String input = "10\n1\n3\n99\n5\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
         assertTrue(output.contains("Application status updated successfully."));
         assertTrue(output.contains("Status: Accepted"));
     }
@@ -684,7 +693,7 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
 
-        String input = "10\n1\n4\nNewCorp\nNewRole\n2\n0\n";
+        String input = "10\n1\n4\nNewCorp\nNewRole\n5\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -747,7 +756,7 @@ public class MainTest {
         assertInstanceOf(ExitCommand.class, main.parseCommand("0"));
 
         Scanner addScanner = new Scanner("Google\nSWE Intern\n");
-        Main addMain = new Main(new Ui(addScanner), new Storage(), new ApplicationList());
+        Main addMain = new Main(new Ui(addScanner), createTestStorage(), new ApplicationList());
         Command addCmd = addMain.parseCommand("1");
         assertInstanceOf(AddCommand.class, addCmd);
         assertEquals("Google", ((AddCommand) addCmd).getCompany());
@@ -757,27 +766,27 @@ public class MainTest {
         list.add(new Application("Google", "SWE Intern"));
 
         Scanner delScanner = new Scanner("1\n");
-        Main delMain = new Main(new Ui(delScanner), new Storage(), list);
+        Main delMain = new Main(new Ui(delScanner), createTestStorage(), list);
         Command deleteCmd = delMain.parseCommand("4");
         assertInstanceOf(DeleteCommand.class, deleteCmd);
         assertEquals(0, ((DeleteCommand) deleteCmd).getTargetIndex());
 
         Scanner markScanner = new Scanner("1\n");
-        Main markMain = new Main(new Ui(markScanner), new Storage(), list);
+        Main markMain = new Main(new Ui(markScanner), createTestStorage(), list);
         Command markCmd = markMain.parseCommand("5");
         assertInstanceOf(MarkCommand.class, markCmd);
         assertEquals(0, ((MarkCommand) markCmd).getTargetIndex());
         assertTrue(((MarkCommand) markCmd).isCompleted());
 
         Scanner unmarkScanner = new Scanner("1\n");
-        Main unmarkMain = new Main(new Ui(unmarkScanner), new Storage(), list);
+        Main unmarkMain = new Main(new Ui(unmarkScanner), createTestStorage(), list);
         Command unmarkCmd = unmarkMain.parseCommand("6");
         assertInstanceOf(MarkCommand.class, unmarkCmd);
         assertEquals(0, ((MarkCommand) unmarkCmd).getTargetIndex());
         assertFalse(((MarkCommand) unmarkCmd).isCompleted());
 
         Scanner editScanner = new Scanner("1\n1\nGoogle LLC\n");
-        Main editMain = new Main(new Ui(editScanner), new Storage(), list);
+        Main editMain = new Main(new Ui(editScanner), createTestStorage(), list);
         Command editCmd = editMain.parseCommand("10");
         assertInstanceOf(EditCommand.class, editCmd);
         assertEquals(0, ((EditCommand) editCmd).getTargetIndex());
@@ -785,7 +794,7 @@ public class MainTest {
         assertNull(((EditCommand) editCmd).getNewRole());
 
         Scanner searchScanner = new Scanner("goo\n");
-        Main searchMain = new Main(new Ui(searchScanner), new Storage(), list);
+        Main searchMain = new Main(new Ui(searchScanner), createTestStorage(), list);
         assertInstanceOf(SearchCommand.class, searchMain.parseCommand("8"));
 
         Command viewCmd = main.parseCommand("view 1");
@@ -851,7 +860,7 @@ public class MainTest {
         Main mainDefault = new Main();
         assertNotNull(mainDefault.getApplications());
 
-        Main mainCustom = new Main(new Ui(), new Storage(), null);
+        Main mainCustom = new Main(new Ui(), createTestStorage(), null);
         assertNotNull(mainCustom.getApplications());
     }
 
@@ -909,14 +918,14 @@ public class MainTest {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));
 
-        String input = "10\n1\n3\ninvalid\n99\n???\nfoo\nbar\n-1\n4\n0\nAccepted\n0\n";
+        String input = "10\n1\n3\ninvalid\n99\n???\nfoo\nbar\n-1\n8\n0\nAccepted\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
         assertEquals("Accepted", applications.get(0).getStatus());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Invalid status choice: 'invalid'."));
-        assertTrue(output.contains("Error: Invalid status choice: '99'."));
+        assertTrue(output.contains("Error: Invalid recruitment stage: 'invalid'."));
+        assertTrue(output.contains("Error: Invalid recruitment stage: '99'."));
         assertTrue(output.contains("Application status updated successfully."));
     }
 

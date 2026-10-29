@@ -2,6 +2,7 @@ package jobseek.command;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
@@ -67,7 +68,8 @@ public class StatusCommand extends Command {
         assert application != null : "Application at valid index should not be null";
 
         application.setStatus(status);
-        assert application.getStatus().equals(status) : "Application status should match the updated status";
+        assert application.getRecruitmentStage() == RecruitmentStage.fromLabel(status)
+                : "Application stage should match the updated stage";
 
         String message = "Application status updated successfully.\n"
                 + "Company: " + application.getCompany() + "\n"

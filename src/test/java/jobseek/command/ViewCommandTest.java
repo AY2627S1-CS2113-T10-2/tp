@@ -93,7 +93,7 @@ public class ViewCommandTest {
     }
 
     @Test
-    public void execute_validIndexDefaultStatus_displaysCardCorrectly() throws Exception {
+    public void execute_validIndexDefaultStage_displaysCardCorrectly() throws Exception {
         ApplicationList list = new ApplicationList();
         list.add(new Application("Google", "SWE Intern", false));
 
@@ -106,7 +106,7 @@ public class ViewCommandTest {
         assertTrue(output.contains("--------------------------------------------------"));
         assertTrue(output.contains("Company:   Google"));
         assertTrue(output.contains("Role:      SWE Intern"));
-        assertTrue(output.contains("Status:    Pending"));
+        assertTrue(output.contains("Status:    Applied"));
         assertTrue(output.contains("Completed: No"));
     }
 
@@ -126,6 +126,16 @@ public class ViewCommandTest {
         assertTrue(output.contains("Role:      Backend Intern"));
         assertTrue(output.contains("Status:    Accepted"));
         assertTrue(output.contains("Completed: Yes"));
+    }
+
+    @Test
+    public void execute_onlineAssessmentStage_displaysStageLabel() throws Exception {
+        ApplicationList list = new ApplicationList();
+        list.add(new Application("Google", "SWE Intern", false, "Online Assessment"));
+
+        new ViewCommand(0).execute(list, new Ui(), new Storage());
+
+        assertTrue(outputStream.toString().contains("Status:    Online Assessment"));
     }
 
     @Test
