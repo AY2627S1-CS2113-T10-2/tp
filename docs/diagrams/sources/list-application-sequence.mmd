@@ -1,19 +1,19 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
-    participant main as :Main
     participant ui as :Ui
+    participant main as :Main
     participant cmd as :ListCommand
     participant list as :ApplicationList
     participant app as :Application
     participant table as :ApplicationTable
 
-    user->>main: Enter "list completed" (or option 2/3)
+    user->>main: list completed
     main->>cmd: ListCommand.parse("completed")
     activate cmd
     cmd-->>main: listCommand
     deactivate cmd
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
 
     loop for each application
@@ -28,7 +28,7 @@ sequenceDiagram
     end
 
     alt matches found
-        cmd->>table: format(applications, matchingIndices)
+        cmd->>table: format(apps, matches)
         activate table
         table-->>cmd: formattedTable
         deactivate table
@@ -37,7 +37,7 @@ sequenceDiagram
         ui-->>user: Formatted table output
         deactivate ui
     else else
-        cmd->>ui: showMessage("No completed applications")
+        cmd->>ui: showMessage("None found")
         activate ui
         ui-->>user: Status message
         deactivate ui

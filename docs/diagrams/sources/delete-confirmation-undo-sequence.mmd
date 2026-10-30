@@ -1,16 +1,17 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 80, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
-    participant history as :CommandHistory
-    participant undo as :UndoCommand
     participant del as :DeleteCommand
     participant list as :ApplicationList
+    participant undo as :UndoCommand
+    participant history as :CommandHistory
 
     user->>main: delete 2
-    main->>del: execute(applications, ui, storage)
+    main->>del: execute(...)
     activate del
-    del->>user: "Delete [ ] Google | SWE Intern? (y/n)"
+    del->>user: "Delete Google? (y/n)"
     user-->>del: "y"
     del->>list: delete(1)
     activate list
@@ -23,7 +24,7 @@ sequenceDiagram
     deactivate history
 
     user->>main: undo
-    main->>undo: execute(applications, ui, storage)
+    main->>undo: execute(...)
     activate undo
     undo->>history: pop()
     activate history
@@ -34,7 +35,7 @@ sequenceDiagram
     del->>list: insert(1, deletedApplication)
     activate list
     deactivate list
-    del-->>undo: "Undid delete: ..."
+    del-->>undo: "Undid delete"
     deactivate del
     undo-->>main: result
     deactivate undo

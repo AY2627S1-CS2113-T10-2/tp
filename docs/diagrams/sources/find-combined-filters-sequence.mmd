@@ -1,8 +1,9 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 80, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
-    participant main as :Main
     participant ui as :Ui
+    participant main as :Main
     participant parser as :CommandParser
     participant cmd as :FindCommand
     participant table as :ApplicationTable
@@ -12,7 +13,7 @@ sequenceDiagram
     activate parser
     parser-->>main: findCommand
     deactivate parser
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
     cmd->>cmd: filter.test(application)
     activate cmd

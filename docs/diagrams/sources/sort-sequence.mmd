@@ -1,8 +1,8 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
-    participant main as :Main
     participant ui as :Ui
+    participant main as :Main
     participant cmd as :SortCommand
     participant list as :ApplicationList
     participant app as :Application
@@ -13,10 +13,10 @@ sequenceDiagram
     activate cmd
     cmd-->>main: sortCommand
     deactivate cmd
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
 
-    cmd->>cmd: sortIndices(applications)
+    cmd->>cmd: sortIndices(...)
     activate cmd
     deactivate cmd
 
@@ -35,11 +35,11 @@ sequenceDiagram
         deactivate app
     end
 
-    cmd->>table: format(applications, sortedIndices, header)
+    cmd->>table: format(apps, sorted)
     activate table
     table-->>cmd: formattedTable
     deactivate table
-    cmd->>ui: showMessage(formattedTable)
+    cmd->>ui: showMessage(table)
     activate ui
     ui-->>user: Sorted applications table
     deactivate ui

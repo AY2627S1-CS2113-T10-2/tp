@@ -1,4 +1,5 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 80, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -8,7 +9,7 @@ sequenceDiagram
     user->>main: add c/Google r/SWE Intern d/2026-11-30
     main->>parser: parse(input)
     activate parser
-    parser->>parser: parseFields(arguments, "crd")
+    parser->>parser: parseFields(args, "crd")
     activate parser
     deactivate parser
     parser->>cmd: new AddCommand(...)
@@ -17,7 +18,7 @@ sequenceDiagram
     deactivate cmd
     parser-->>main: addCommand
     deactivate parser
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
     cmd-->>main: 
     deactivate cmd

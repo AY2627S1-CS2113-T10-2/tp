@@ -1,8 +1,9 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 80, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
-    participant main as :Main
     participant ui as :Ui
+    participant main as :Main
     participant cmd as :EditCommand
     participant list as :ApplicationList
     participant app as :Application
@@ -25,7 +26,7 @@ sequenceDiagram
     activate cmd
     cmd-->>main: editCommand
     deactivate cmd
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
     cmd->>list: get(0)
     activate list
@@ -41,7 +42,7 @@ sequenceDiagram
         activate app
         deactivate app
     else choice == 3 (Recruitment stage)
-        cmd->>app: setRecruitmentStage(newStage)
+        cmd->>app: setStage(newStage)
         activate app
         deactivate app
     else choice == 4 (Deadline)
@@ -49,7 +50,7 @@ sequenceDiagram
         activate app
         deactivate app
     else choice == 5 (Portal Link)
-        cmd->>app: setPortalLink(newPortalLink)
+        cmd->>app: setPortalLink(link)
         activate app
         deactivate app
     else choice == 6 (Email)

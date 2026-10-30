@@ -1,8 +1,8 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
-    participant main as :Main
     participant ui as :Ui
+    participant main as :Main
     participant cmd as :MarkCommand
     participant list as :ApplicationList
     participant app as :Application
@@ -17,7 +17,7 @@ sequenceDiagram
     activate cmd
     cmd-->>main: markCommand
     deactivate cmd
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
     cmd->>list: isValidIndex(0)
     activate list
@@ -35,12 +35,12 @@ sequenceDiagram
     deactivate storage
 
     alt isCompleted == true
-        cmd->>ui: showMessage("Marked as completed")
+        cmd->>ui: showMessage("Completed")
         activate ui
         ui-->>user: Marked confirmation message
         deactivate ui
     else else
-        cmd->>ui: showMessage("Marked as incomplete")
+        cmd->>ui: showMessage("Incomplete")
         activate ui
         ui-->>user: Unmarked confirmation message
         deactivate ui

@@ -1,8 +1,8 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
-    participant main as :Main
     participant ui as :Ui
+    participant main as :Main
     participant cmd as :DeleteCommand
     participant list as :ApplicationList
     participant storage as :Storage
@@ -16,7 +16,7 @@ sequenceDiagram
     activate cmd
     cmd-->>main: deleteCommand
     deactivate cmd
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
 
     alt 0 <= targetIndex < size
@@ -31,7 +31,7 @@ sequenceDiagram
         cmd->>storage: save(applications)
         activate storage
         deactivate storage
-        cmd->>ui: showMessage("Application removed")
+        cmd->>ui: showMessage("Deleted")
         activate ui
         ui-->>user: Confirmation message
         deactivate ui

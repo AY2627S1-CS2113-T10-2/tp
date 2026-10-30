@@ -1,8 +1,8 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
-    participant main as :Main
     participant ui as :Ui
+    participant main as :Main
     participant cmd as :SearchCommand
     participant list as :ApplicationList
     participant app as :Application
@@ -17,7 +17,7 @@ sequenceDiagram
     activate cmd
     cmd-->>main: searchCommand
     deactivate cmd
-    main->>cmd: execute(applications, ui, storage)
+    main->>cmd: execute(...)
     activate cmd
 
     loop for each application
@@ -36,7 +36,7 @@ sequenceDiagram
     end
 
     alt matches found
-        cmd->>table: format(applications, matches, header)
+        cmd->>table: format(apps, matches)
         activate table
         table-->>cmd: formattedTable
         deactivate table
