@@ -8,7 +8,6 @@ sequenceDiagram
     participant storage as :Storage
 
     user->>main: Enter 1
-    activate main
     main->>ui: promptNonEmpty("Company:")
     activate ui
     ui-->>main: "Google"
@@ -56,4 +55,3 @@ sequenceDiagram
     ui-->>user: Confirmation message
     deactivate ui
     deactivate cmd
-    deactivate main

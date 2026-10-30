@@ -8,7 +8,6 @@ sequenceDiagram
     participant ui as :Ui
 
     user->>main: Enter "list completed" (or option 2/3)
-    activate main
     main->>cmd: ListCommand.parse("completed")
     activate cmd
     cmd-->>main: listCommand
@@ -44,4 +43,3 @@ sequenceDiagram
     end
 
     deactivate cmd
-    deactivate main

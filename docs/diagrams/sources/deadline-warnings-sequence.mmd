@@ -5,7 +5,6 @@ sequenceDiagram
     participant list as :ApplicationList
     participant app as :Application
 
-    activate main
     main->>ui: showWelcome()
     activate ui
     deactivate ui
@@ -45,4 +44,3 @@ sequenceDiagram
     main->>ui: showMenu(applications)
     activate ui
     deactivate ui
-    deactivate main

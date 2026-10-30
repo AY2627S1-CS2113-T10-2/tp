@@ -4,7 +4,6 @@ sequenceDiagram
     participant list as :ApplicationList
     participant app as :Application
 
-    activate cmd
     cmd->>storage: save(applications)
     activate storage
     storage->>list: getAll()
@@ -37,4 +36,3 @@ sequenceDiagram
 
     storage-->>cmd: 
     deactivate storage
-    deactivate cmd

@@ -5,7 +5,6 @@ sequenceDiagram
     participant app as :Application
     participant ui as :Ui
 
-    activate main
     main->>storage: load()
     activate storage
 
@@ -41,4 +40,3 @@ sequenceDiagram
         activate ui
         deactivate ui
     end
-    deactivate main

@@ -7,7 +7,6 @@ sequenceDiagram
     participant ui as :Ui
 
     user->>main: find c/google s/interview
-    activate main
     main->>parser: parse(input)
     activate parser
     parser-->>main: findCommand
@@ -27,4 +26,3 @@ sequenceDiagram
     deactivate ui
     cmd-->>main: 
     deactivate cmd
-    deactivate main

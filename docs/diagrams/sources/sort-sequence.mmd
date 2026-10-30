@@ -8,7 +8,6 @@ sequenceDiagram
     participant ui as :Ui
 
     user->>main: Option 9 (Sort)
-    activate main
     main->>cmd: new SortCommand()
     activate cmd
     cmd-->>main: sortCommand
@@ -45,4 +44,3 @@ sequenceDiagram
     deactivate ui
 
     deactivate cmd
-    deactivate main

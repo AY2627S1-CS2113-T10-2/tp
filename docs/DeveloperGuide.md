@@ -27,9 +27,7 @@ JobSeek is a command-line desktop application for managing internship and job ap
 
 The high-level interaction between the user, UI, logic controller, domain model, and storage subsystem is shown below:
 
-<p align="center">
-  <img src="diagrams/architecture-overview.png" width="360" alt="Architecture Overview Diagram">
-</p>
+![Architecture Overview Diagram](diagrams/architecture-overview.png)
 
 #### Application Lifecycle Activity Diagram
 
@@ -71,9 +69,7 @@ The class diagram below illustrates the structural relationships, associations, 
 
 **Data model.** `ApplicationList` owns the `Application` objects. `RecruitmentStage` is an enum, so an application can only be in one of the known stages.
 
-<p align="center">
-  <img src="diagrams/application-model-class.png" width="580" alt="Application Data Model Class Diagram">
-</p>
+![Application Data Model Class Diagram](diagrams/application-model-class.png)
 
 ### Add application feature
 
@@ -493,9 +489,7 @@ The feature involves the following classes:
 
 The class relationships within the storage subsystem are illustrated below:
 
-<p align="center">
-  <img src="diagrams/storage-class.png" width="580" alt="Storage Class Diagram">
-</p>
+![Storage Class Diagram](diagrams/storage-class.png)
 
 #### File format
 

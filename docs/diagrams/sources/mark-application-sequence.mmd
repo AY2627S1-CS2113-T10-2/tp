@@ -8,7 +8,6 @@ sequenceDiagram
     participant storage as :Storage
 
     user->>main: Option 5 (Mark) / Option 6 (Unmark)
-    activate main
     main->>ui: promptApplicationIndex()
     activate ui
     ui-->>main: 1 (0-based: 0)
@@ -47,4 +46,3 @@ sequenceDiagram
     end
 
     deactivate cmd
-    deactivate main

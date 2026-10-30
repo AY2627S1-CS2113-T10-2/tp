@@ -7,7 +7,6 @@ sequenceDiagram
     participant ui as :Ui
 
     user->>main: Enter "view 1"
-    activate main
     main->>cmd: ViewCommand.parse("1")
     activate cmd
     cmd-->>main: viewCommand
@@ -45,4 +44,3 @@ sequenceDiagram
     end
 
     deactivate cmd
-    deactivate main

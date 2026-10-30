@@ -8,7 +8,6 @@ sequenceDiagram
     participant table as :ApplicationTable
 
     user->>main: Select option 8 (Search)
-    activate main
     main->>ui: promptNonEmpty("Enter search term:")
     activate ui
     ui-->>main: "engineer"
@@ -52,4 +51,3 @@ sequenceDiagram
     end
 
     deactivate cmd
-    deactivate main

@@ -7,7 +7,6 @@ sequenceDiagram
     participant list as :ApplicationList
 
     user->>main: delete 2
-    activate main
     main->>del: execute(applications, ui, storage)
     activate del
     del->>user: "Delete [ ] Google | SWE Intern? (y/n)"
@@ -21,10 +20,8 @@ sequenceDiagram
     main->>history: record(deleteCommand)
     activate history
     deactivate history
-    deactivate main
 
     user->>main: undo
-    activate main
     main->>undo: execute(applications, ui, storage)
     activate undo
     undo->>history: pop()
@@ -40,4 +37,3 @@ sequenceDiagram
     deactivate del
     undo-->>main: result
     deactivate undo
-    deactivate main

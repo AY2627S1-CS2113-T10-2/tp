@@ -5,7 +5,6 @@ sequenceDiagram
     participant cmd as :AddCommand
 
     user->>main: add c/Google r/SWE Intern d/2026-11-30
-    activate main
     main->>parser: parse(input)
     activate parser
     parser->>parser: parseFields(arguments, "crd")
@@ -21,4 +20,3 @@ sequenceDiagram
     activate cmd
     cmd-->>main: 
     deactivate cmd
-    deactivate main
