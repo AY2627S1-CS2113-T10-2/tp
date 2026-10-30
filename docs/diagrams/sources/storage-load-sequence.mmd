@@ -1,9 +1,10 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     participant main as :Main
+    participant ui as :Ui
     participant storage as :Storage
     participant list as :ApplicationList
     participant app as :Application
-    participant ui as :Ui
 
     main->>storage: load()
     activate storage
@@ -15,7 +16,7 @@ sequenceDiagram
 
     loop each line of the file
         alt record is valid
-            storage->>app: new Application(co, role, done, stage, date, portal, email, notes)
+            storage->>app: new Application(...)
             activate app
             app-->>storage: application
             deactivate app

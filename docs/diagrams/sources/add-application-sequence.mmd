@@ -1,3 +1,4 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
@@ -33,14 +34,14 @@ sequenceDiagram
     ui-->>main: "OA passed"
     deactivate ui
 
-    main->>cmd: new AddCommand(co, role, date, portal, email, notes)
+    main->>cmd: new AddCommand(...)
     activate cmd
     cmd-->>main: addCommand
     deactivate cmd
 
     main->>cmd: execute(applications, ui, storage)
     activate cmd
-    cmd->>app: new Application(co, role, false, "Applied", date, portal, email, notes)
+    cmd->>app: new Application(...)
     activate app
     app-->>cmd: application
     deactivate app
@@ -50,7 +51,7 @@ sequenceDiagram
     cmd->>storage: save(applications)
     activate storage
     deactivate storage
-    cmd->>ui: showMessage("Application added...")
+    cmd->>ui: showMessage("Application added")
     activate ui
     ui-->>user: Confirmation message
     deactivate ui

@@ -1,10 +1,11 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
+    participant ui as :Ui
     participant cmd as :ViewCommand
     participant list as :ApplicationList
     participant app as :Application
-    participant ui as :Ui
 
     user->>main: Enter "view 1"
     main->>cmd: ViewCommand.parse("1")

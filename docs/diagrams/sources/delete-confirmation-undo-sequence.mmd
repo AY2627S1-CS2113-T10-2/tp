@@ -1,9 +1,10 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
-    participant del as :DeleteCommand
     participant history as :CommandHistory
     participant undo as :UndoCommand
+    participant del as :DeleteCommand
     participant list as :ApplicationList
 
     user->>main: delete 2

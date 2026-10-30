@@ -1,9 +1,10 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     participant main as :Main
-    participant ui as :Ui
     participant warnings as :DeadlineWarnings
     participant list as :ApplicationList
     participant app as :Application
+    participant ui as :Ui
 
     main->>ui: showWelcome()
     activate ui
@@ -27,7 +28,7 @@ sequenceDiagram
         deactivate app
 
         opt incomplete and deadline <= today + 7 days
-            warnings->>warnings: appendWarning(application)
+            warnings->>warnings: appendWarning(...)
             activate warnings
             deactivate warnings
         end

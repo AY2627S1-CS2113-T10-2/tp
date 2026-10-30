@@ -1,11 +1,12 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
+    participant ui as :Ui
     participant cmd as :ListCommand
     participant list as :ApplicationList
     participant app as :Application
     participant table as :ApplicationTable
-    participant ui as :Ui
 
     user->>main: Enter "list completed" (or option 2/3)
     main->>cmd: ListCommand.parse("completed")

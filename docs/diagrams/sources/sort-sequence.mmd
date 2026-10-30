@@ -1,11 +1,12 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
+    participant ui as :Ui
     participant cmd as :SortCommand
     participant list as :ApplicationList
     participant app as :Application
     participant table as :ApplicationTable
-    participant ui as :Ui
 
     user->>main: Option 9 (Sort)
     main->>cmd: new SortCommand()

@@ -1,10 +1,11 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 70, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant main as :Main
+    participant ui as :Ui
     participant parser as :CommandParser
     participant cmd as :FindCommand
     participant table as :ApplicationTable
-    participant ui as :Ui
 
     user->>main: find c/google s/interview
     main->>parser: parse(input)
@@ -16,7 +17,7 @@ sequenceDiagram
     cmd->>cmd: filter.test(application)
     activate cmd
     deactivate cmd
-    cmd->>table: format(applications, matchIndices, heading)
+    cmd->>table: format(applications, matchIndices)
     activate table
     table-->>cmd: table with original numbers
     deactivate table
