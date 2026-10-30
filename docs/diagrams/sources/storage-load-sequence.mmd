@@ -1,0 +1,44 @@
+sequenceDiagram
+    participant main as :Main
+    participant storage as :Storage
+    participant list as :ApplicationList
+    participant app as :Application
+    participant ui as :Ui
+
+    activate main
+    main->>storage: load()
+    activate storage
+
+    storage->>list: new ApplicationList()
+    activate list
+    list-->>storage: applications
+    deactivate list
+
+    loop each line of the file
+        alt record is valid
+            storage->>app: new Application(co, role, done, stage, date, portal, email, notes)
+            activate app
+            app-->>storage: application
+            deactivate app
+            storage->>list: add(application)
+            activate list
+            deactivate list
+        else record is corrupted
+            storage->>storage: rememberWarning(warning)
+            activate storage
+            deactivate storage
+        end
+    end
+    storage-->>main: applications
+    deactivate storage
+
+    main->>storage: getLoadWarnings()
+    activate storage
+    storage-->>main: warnings
+    deactivate storage
+    loop each warning
+        main->>ui: showError(warning)
+        activate ui
+        deactivate ui
+    end
+    deactivate main

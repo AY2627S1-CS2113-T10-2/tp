@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant parser as :CommandParser
+    participant cmd as :AddCommand
+
+    user->>main: add c/Google r/SWE Intern d/2026-11-30
+    activate main
+    main->>parser: parse(input)
+    activate parser
+    parser->>parser: parseFields(arguments, "crd")
+    activate parser
+    deactivate parser
+    parser->>cmd: new AddCommand("Google", "SWE Intern", 2026-11-30)
+    activate cmd
+    cmd-->>parser: addCommand
+    deactivate cmd
+    parser-->>main: addCommand
+    deactivate parser
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd-->>main: 
+    deactivate cmd
+    deactivate main

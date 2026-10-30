@@ -1,0 +1,34 @@
+classDiagram
+    direction LR
+
+    class Main {
+        + loadApplications(): ApplicationList
+    }
+
+    class Storage {
+        - filePath: String
+        + save(applications: ApplicationList): void
+        + load(): ApplicationList
+    }
+
+    class ApplicationList {
+        - applications: ArrayList~Application~
+        + getAll(): List~Application~
+        + add(app: Application): void
+    }
+
+    class Application {
+        - company: String
+        - role: String
+        - isCompleted: boolean
+        - recruitmentStage: RecruitmentStage
+        - deadline: LocalDate
+        - portalLink: String
+        - email: String
+        - notes: String
+    }
+
+    Main "1" --> "1" Storage : uses
+    Storage "1" ..> "1" ApplicationList : saves / loads
+    ApplicationList "1" *-- "0..*" Application : contains
+    Storage "1" ..> "0..*" Application : serializes / parses

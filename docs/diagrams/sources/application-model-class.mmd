@@ -1,0 +1,33 @@
+classDiagram
+    direction LR
+    class ApplicationList {
+        - applications: ArrayList~Application~
+        + add(app: Application): void
+        + delete(index: int): Application
+        + get(index: int): Application
+        + size(): int
+    }
+    class Application {
+        - company: String
+        - role: String
+        - isCompleted: boolean
+        - recruitmentStage: RecruitmentStage
+        - deadline: LocalDate
+        - portalLink: String
+        - email: String
+        - notes: String
+        + isCompleted(): boolean
+        + setCompleted(completed: boolean): void
+    }
+    class RecruitmentStage {
+        <<enumeration>>
+        APPLIED
+        ONLINE_ASSESSMENT
+        INTERVIEW
+        OFFER
+        ACCEPTED
+        REJECTED
+        WITHDRAWN
+    }
+    ApplicationList "1" *-- "0..*" Application : contains
+    Application "1" --> "1" RecruitmentStage : stage

@@ -1,0 +1,24 @@
+classDiagram
+    direction LR
+    class main[":Main"]
+    class ui[":Ui"]
+    class storage[":Storage"] {
+        filePath = "data/applications.txt"
+    }
+    class applications[":ApplicationList"]
+    class app1["app1:Application"] {
+        company = "Google"
+        role = "SWE Intern"
+        isCompleted = false
+    }
+    class app2["app2:Application"] {
+        company = "Shopee"
+        role = "Backend Intern"
+        isCompleted = true
+    }
+
+    main --> ui : uses
+    main --> storage : uses
+    main --> applications : owns
+    applications --> app1 : contains
+    applications --> app2 : contains

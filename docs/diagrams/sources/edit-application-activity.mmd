@@ -1,0 +1,15 @@
+flowchart LR
+    Start((●)) --> PromptIdx["Prompt & validate<br/>index"]
+    PromptIdx --> PromptField["Prompt field choice<br/>(1-8)"]
+    PromptField --> Branch{"Field choice"}
+    Branch -->|"[1: Co]"| UpdCo["Update company"] --> Merge{ }
+    Branch -->|"[2: Role]"| UpdRole["Update role"] --> Merge
+    Branch -->|"[3: Stat]"| UpdStat["Update status"] --> Merge
+    Branch -->|"[4: Due]"| UpdDue["Update deadline"] --> Merge
+    Branch -->|"[5: Portal]"| UpdPort["Update portal link"] --> Merge
+    Branch -->|"[6: Email]"| UpdMail["Update email"] --> Merge
+    Branch -->|"[7: Notes]"| UpdNote["Update notes"] --> Merge
+    Branch -->|"[8: All]"| UpdAll["Update all fields"] --> Merge
+    Merge --> Save["Storage.save<br/>applications"]
+    Save --> Confirm["Show confirmation<br/>message"]
+    Confirm --> End(((◎)))

@@ -1,0 +1,43 @@
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant del as :DeleteCommand
+    participant history as :CommandHistory
+    participant undo as :UndoCommand
+    participant list as :ApplicationList
+
+    user->>main: delete 2
+    activate main
+    main->>del: execute(applications, ui, storage)
+    activate del
+    del->>user: "Delete [ ] Google | SWE Intern? (y/n)"
+    user-->>del: "y"
+    del->>list: delete(1)
+    activate list
+    list-->>del: deletedApplication
+    deactivate list
+    del-->>main: result
+    deactivate del
+    main->>history: record(deleteCommand)
+    activate history
+    deactivate history
+    deactivate main
+
+    user->>main: undo
+    activate main
+    main->>undo: execute(applications, ui, storage)
+    activate undo
+    undo->>history: pop()
+    activate history
+    history-->>undo: deleteCommand
+    deactivate history
+    undo->>del: undo(applications)
+    activate del
+    del->>list: insert(1, deletedApplication)
+    activate list
+    deactivate list
+    del-->>undo: "Undid delete: ..."
+    deactivate del
+    undo-->>main: result
+    deactivate undo
+    deactivate main

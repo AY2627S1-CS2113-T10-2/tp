@@ -27,7 +27,9 @@ JobSeek is a command-line desktop application for managing internship and job ap
 
 The high-level interaction between the user, UI, logic controller, domain model, and storage subsystem is shown below:
 
-![Architecture Overview Diagram](diagrams/architecture-overview.png)
+<p align="center">
+  <img src="diagrams/architecture-overview.png" width="360" alt="Architecture Overview Diagram">
+</p>
 
 #### Application Lifecycle Activity Diagram
 
@@ -69,7 +71,9 @@ The class diagram below illustrates the structural relationships, associations, 
 
 **Data model.** `ApplicationList` owns the `Application` objects. `RecruitmentStage` is an enum, so an application can only be in one of the known stages.
 
-![Command Hierarchy Class Diagram](diagrams/command-hierarchy-class.png)
+<p align="center">
+  <img src="diagrams/application-model-class.png" width="580" alt="Application Data Model Class Diagram">
+</p>
 
 ### Add application feature
 
@@ -365,7 +369,7 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 | `UndoCommand` | Pops the newest command, calls its `undo`, shows what was undone and saves. |
 | `Main` | Owns the `CommandHistory`, records each executed command, and creates `UndoCommand` for the text command `undo`. |
 
-![Combined Filters Class Diagram](diagrams/find-filters-class.png)
+![Command History and Undo Class Diagram](diagrams/command-history-undo-class.png)
 
 ![Delete Confirmation and Undo Sequence Diagram](diagrams/delete-confirmation-undo-sequence.png)
 
@@ -415,7 +419,7 @@ The feature involves the following classes:
 
 The following class diagram shows the relationships relevant to deadline checking. Unrelated fields and methods are omitted.
 
-![Command History and Undo Class Diagram](diagrams/command-history-undo-class.png)
+![Deadline Warnings Class Diagram](diagrams/deadline-warnings-class.png)
 
 Each application's deadline is represented using `LocalDate`. A `null` deadline indicates that no deadline has been recorded. `LocalDate` supports comparisons between calendar dates without requiring a time of day.
 
@@ -489,7 +493,9 @@ The feature involves the following classes:
 
 The class relationships within the storage subsystem are illustrated below:
 
-![Storage Class Diagram](diagrams/storage-class.png)
+<p align="center">
+  <img src="diagrams/storage-class.png" width="580" alt="Storage Class Diagram">
+</p>
 
 #### File format
 

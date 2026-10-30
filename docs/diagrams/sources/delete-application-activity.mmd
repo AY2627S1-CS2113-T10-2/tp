@@ -1,0 +1,10 @@
+flowchart LR
+    Start((●)) --> Prompt["Prompt application<br/>index"]
+    Prompt --> Check{"Valid index?"}
+    Check -->|"[yes]"| Del["Delete from<br/>ApplicationList"]
+    Check -->|"[no]"| ShowErr["Show error<br/>message"]
+    Del --> Save["Storage.save<br/>applications"]
+    Save --> Show["Display confirmation<br/>message"]
+    Show --> MergeEnd{ }
+    ShowErr --> MergeEnd
+    MergeEnd --> End(((◎)))

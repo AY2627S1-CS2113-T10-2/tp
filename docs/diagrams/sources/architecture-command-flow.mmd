@@ -1,0 +1,11 @@
+flowchart LR
+    User([User]) --> Ui
+    Ui --> Main
+    Main -->|typed text| CommandParser
+    Main -->|menu choice or prompts| Command
+    CommandParser --> Command
+    Command --> ApplicationList
+    Command --> Storage
+    Command --> Ui
+    Storage --> ApplicationList
+    ApplicationList --> Application

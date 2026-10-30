@@ -1,0 +1,50 @@
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant ui as :Ui
+    participant cmd as :MarkCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Option 5 (Mark) / Option 6 (Unmark)
+    activate main
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>cmd: new MarkCommand(0, true)
+    activate cmd
+    cmd-->>main: markCommand
+    deactivate cmd
+    main->>cmd: execute(applications, ui, storage)
+    activate cmd
+    cmd->>list: isValidIndex(0)
+    activate list
+    list-->>cmd: true
+    deactivate list
+    cmd->>list: get(0)
+    activate list
+    list-->>cmd: application
+    deactivate list
+    cmd->>app: setCompleted(true)
+    activate app
+    deactivate app
+    cmd->>storage: save(applications)
+    activate storage
+    deactivate storage
+
+    alt isCompleted == true
+        cmd->>ui: showMessage("Marked as completed")
+        activate ui
+        ui-->>user: Marked confirmation message
+        deactivate ui
+    else else
+        cmd->>ui: showMessage("Marked as incomplete")
+        activate ui
+        ui-->>user: Unmarked confirmation message
+        deactivate ui
+    end
+
+    deactivate cmd
+    deactivate main

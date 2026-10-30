@@ -1,0 +1,40 @@
+sequenceDiagram
+    participant cmd as :Command
+    participant storage as :Storage
+    participant list as :ApplicationList
+    participant app as :Application
+
+    activate cmd
+    cmd->>storage: save(applications)
+    activate storage
+    storage->>list: getAll()
+    activate list
+    list-->>storage: applicationList
+    deactivate list
+
+    loop for each application
+        storage->>app: getCompany()
+        activate app
+        app-->>storage: company
+        deactivate app
+        storage->>app: getRole()
+        activate app
+        app-->>storage: role
+        deactivate app
+        storage->>app: isCompleted()
+        activate app
+        app-->>storage: isCompleted
+        deactivate app
+        storage->>app: getDeadline()
+        activate app
+        app-->>storage: deadline
+        deactivate app
+    end
+
+    storage->>storage: writeToFile(file, lines)
+    activate storage
+    deactivate storage
+
+    storage-->>cmd: 
+    deactivate storage
+    deactivate cmd

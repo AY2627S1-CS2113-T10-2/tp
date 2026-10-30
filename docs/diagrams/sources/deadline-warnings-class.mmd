@@ -1,0 +1,32 @@
+classDiagram
+    direction TB
+
+    class Main {
+        + run(): void
+    }
+
+    class DeadlineWarnings {
+        - UPCOMING_WINDOW_DAYS: int$
+        + show(applications: ApplicationList, ui: Ui)$: void
+        - appendWarning(warnings: StringBuilder, application: Application, deadline: LocalDate, today: LocalDate)$: void
+    }
+
+    class ApplicationList {
+        + size(): int
+        + get(index: int): Application
+    }
+
+    class Application {
+        + getDeadline(): LocalDate
+        + isCompleted(): boolean
+    }
+
+    class Ui {
+        + showMessage(message: String): void
+    }
+
+    Main "1" --> "1" DeadlineWarnings : invokes
+    DeadlineWarnings "1" ..> "1" ApplicationList : reads
+    ApplicationList "1" *-- "0..*" Application : contains
+    DeadlineWarnings "1" ..> "0..*" Application : inspects
+    DeadlineWarnings "1" ..> "1" Ui : displays summary
