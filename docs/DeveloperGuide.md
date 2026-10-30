@@ -27,19 +27,19 @@ JobSeek is a command-line desktop application for managing internship and job ap
 
 The high-level interaction between the user, UI, logic controller, domain model, and storage subsystem is shown below:
 
-![Architecture Overview Diagram](diagrams/architecture-overview.png)
+![Architecture Overview Diagram](diagrams/architecture-overview.png?v=2)
 
 #### Application Lifecycle Activity Diagram
 
 The control flow from startup, file loading, deadline inspection, command execution, and termination is illustrated in the activity diagram below:
 
-![Application Lifecycle Activity Diagram](diagrams/application-lifecycle.png)
+![Application Lifecycle Activity Diagram](diagrams/application-lifecycle.png?v=2)
 
 #### Runtime Object Structure (Object Diagram)
 
 The following object diagram illustrates a concrete runtime snapshot of JobSeek after two applications have been loaded and tracked in memory:
 
-![Runtime Object Structure Diagram](diagrams/runtime-object-structure.png)
+![Runtime Object Structure Diagram](diagrams/runtime-object-structure.png?v=2)
 
 ### Architecture and Command pattern
 
@@ -47,7 +47,7 @@ The following object diagram illustrates a concrete runtime snapshot of JobSeek 
 
 JobSeek is a single-user command-line application. `Main` reads one line at a time from `Ui`, turns it into a `Command`, and runs it. Every action inherits from the abstract `Command` class and implements the polymorphic `execute(ApplicationList, Ui, Storage)` method. This is the Command pattern: `Main` (which dispatches) does not need to know what each command does.
 
-![Architecture and Command Pattern Flow](diagrams/architecture-command-flow.png)
+![Architecture and Command Pattern Flow](diagrams/architecture-command-flow.png?v=2)
 
 | Component | Package | Responsibility |
 |---|---|---|
@@ -65,11 +65,11 @@ JobSeek is a single-user command-line application. `Main` reads one line at a ti
 
 The class diagram below illustrates the structural relationships, associations, dependencies, and explicit UML multiplicities across the core components (`Main`, `Ui`, `Storage`, domain model, and `Command`):
 
-![Overall Architecture Class Diagram](diagrams/overall-architecture-class.png)
+![Overall Architecture Class Diagram](diagrams/overall-architecture-class.png?v=2)
 
 **Data model.** `ApplicationList` owns the `Application` objects. `RecruitmentStage` is an enum, so an application can only be in one of the known stages.
 
-![Application Data Model Class Diagram](diagrams/application-model-class.png)
+![Application Data Model Class Diagram](diagrams/application-model-class.png?v=2)
 
 ### Add application feature
 
@@ -88,11 +88,11 @@ The `AddCommand` allows job seekers to add a new internship or job record with a
 
 The user input validation, prompt looping, and execution lifecycle for adding an application is illustrated in the activity diagram below:
 
-![Add Application Activity Diagram](diagrams/add-application-activity.png)
+![Add Application Activity Diagram](diagrams/add-application-activity.png?v=2)
 
 #### Add Application Sequence Diagram
 
-![Add Application Sequence Diagram](diagrams/add-application-sequence.png)
+![Add Application Sequence Diagram](diagrams/add-application-sequence.png?v=2)
 
 ### View application feature
 
@@ -111,7 +111,7 @@ The `ViewCommand` displays all recorded information for an individual applicatio
   5. The card is rendered via `Ui.showMessage()`.
   6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
 
-![View Application Sequence Diagram](diagrams/view-application-sequence.png)
+![View Application Sequence Diagram](diagrams/view-application-sequence.png?v=2)
 
 #### Design considerations
 - **Card view vs tabular view**:
@@ -146,7 +146,7 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
   5. Renders each matching row, preserving the application's original 1-based index (`index + 1`).
   6. Displays the formatted table via `Ui.showMessage()`.
 
-![List Application Sequence Diagram](diagrams/list-application-sequence.png)
+![List Application Sequence Diagram](diagrams/list-application-sequence.png?v=2)
 
 #### Design considerations
 - **Preserving original 1-based indices**:
@@ -177,7 +177,7 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
      - Unmarked: `"OK, I've marked this application as not completed yet:\n  " + application`
   7. Persists the modification to disk immediately via `Storage.save(applications)`.
 
-![Mark Application Sequence Diagram](diagrams/mark-application-sequence.png)
+![Mark Application Sequence Diagram](diagrams/mark-application-sequence.png?v=2)
 
 #### Design considerations
 - **Single unified command vs separate commands**:
@@ -208,11 +208,11 @@ The `DeleteCommand` allows users to permanently remove an application by its 1-b
 
 The decision flow, bounds validation, and deletion logic is shown in the activity diagram below:
 
-![Delete Application Activity Diagram](diagrams/delete-application-activity.png)
+![Delete Application Activity Diagram](diagrams/delete-application-activity.png?v=2)
 
 #### Delete Application Sequence Diagram
 
-![Delete Application Sequence Diagram](diagrams/delete-application-sequence.png)
+![Delete Application Sequence Diagram](diagrams/delete-application-sequence.png?v=2)
 
 ### Edit application and recruitment stage tracking
 
@@ -242,11 +242,11 @@ The edit feature allows users to modify existing applications without deleting a
 
 The user interaction and validation workflow for updating application fields is illustrated in the activity diagram below:
 
-![Edit Application Activity Diagram](diagrams/edit-application-activity.png)
+![Edit Application Activity Diagram](diagrams/edit-application-activity.png?v=2)
 
 #### Edit Application Sequence Diagram
 
-![Edit Application Sequence Diagram](diagrams/edit-application-sequence.png)
+![Edit Application Sequence Diagram](diagrams/edit-application-sequence.png?v=2)
 
 ### Help feature
 
@@ -266,19 +266,19 @@ The commands collect zero-based indices of matching applications. `SearchCommand
 
 The flow of user input, matching/sorting logic, and display formatting for both search and sort operations is shown below:
 
-![Search and Sort Activity Diagram](diagrams/search-sort-activity.png)
+![Search and Sort Activity Diagram](diagrams/search-sort-activity.png?v=2)
 
 #### Search Sequence Diagram
 
 The interaction sequence for searching applications is shown below:
 
-![Search Sequence Diagram](diagrams/search-sequence.png)
+![Search Sequence Diagram](diagrams/search-sequence.png?v=2)
 
 #### Sort Sequence Diagram
 
 The alphabetical view follows a comparable execution path using `SortCommand`. It sorts a copy of the index array rather than mutating storage or the underlying `ApplicationList`:
 
-![Sort Sequence Diagram](diagrams/sort-sequence.png)
+![Sort Sequence Diagram](diagrams/sort-sequence.png?v=2)
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
 
@@ -306,7 +306,7 @@ Besides the numbered menu, users can type a full command on one line, such as `a
 
 `Main.parseCommand` first handles `view`, `list`, `undo` and `today` itself, then calls `CommandParser.parse`, and finally falls back to the numbered `switch`. The parser returns `null` when the first word is not a typed command (for example `1`), so the menu keeps working unchanged. If the first word is a typed command but its arguments are wrong, the parser throws a `JobSeekException` whose message contains the correct usage, and `Main` shows it as an error.
 
-![Typed Command Parser Sequence Diagram](diagrams/typed-command-sequence.png)
+![Typed Command Parser Sequence Diagram](diagrams/typed-command-sequence.png?v=2)
 
 Fields are found with the regular expression `(?:^|\s)([a-z])/`, which matches a single letter and a slash at the start of the text or after whitespace. Everything between one prefix and the next is that field's value, so values can contain spaces. Text before the first prefix is kept separately; `edit` treats it as the index, and `add` and `find` reject it. Because the prefix must follow whitespace, slashes inside words such as `AT&T/Intel` are ordinary text. The parser also rejects unknown prefixes, repeated prefixes and empty values.
 
@@ -334,7 +334,7 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 | `CommandParser` (`parser`) | `parseFind` turns each prefix (`c/ r/ s/ b/ a/ m/`) into a predicate and joins them with `Predicate.and`. It also builds a readable description of the conditions. |
 | `FindCommand` (`command`) | Holds one combined `Predicate<Application>` and a description. It tests every application, then shows the matches through `ApplicationTable`. |
 
-![Combined Filters Sequence Diagram](diagrams/find-combined-filters-sequence.png)
+![Combined Filters Sequence Diagram](diagrams/find-combined-filters-sequence.png?v=2)
 
 `FindCommand` never needs to know which filters were chosen, because the parser has already combined them into a single predicate. Adding a new filter therefore means adding one factory method to `ApplicationFilters` and one prefix to `parseFind`; `FindCommand` stays unchanged. This is the strategy pattern, using Java's functional interface `Predicate` instead of a hand-written interface. `FindCommand` is read-only, so it does not call `Storage.save`.
 
@@ -365,9 +365,9 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 | `UndoCommand` | Pops the newest command, calls its `undo`, shows what was undone and saves. |
 | `Main` | Owns the `CommandHistory`, records each executed command, and creates `UndoCommand` for the text command `undo`. |
 
-![Command History and Undo Class Diagram](diagrams/command-history-undo-class.png)
+![Command History and Undo Class Diagram](diagrams/command-history-undo-class.png?v=2)
 
-![Delete Confirmation and Undo Sequence Diagram](diagrams/delete-confirmation-undo-sequence.png)
+![Delete Confirmation and Undo Sequence Diagram](diagrams/delete-confirmation-undo-sequence.png?v=2)
 
 Confirmation happens inside `DeleteCommand.execute` by calling `ui.readCommand()`, so it applies however the command was created (menu option `4` or the typed `delete INDEX`). Only `y` or `yes` (case-insensitive) confirms; anything else, including end of input, cancels.
 
@@ -415,7 +415,7 @@ The feature involves the following classes:
 
 The following class diagram shows the relationships relevant to deadline checking. Unrelated fields and methods are omitted.
 
-![Deadline Warnings Class Diagram](diagrams/deadline-warnings-class.png)
+![Deadline Warnings Class Diagram](diagrams/deadline-warnings-class.png?v=2)
 
 Each application's deadline is represented using `LocalDate`. A `null` deadline indicates that no deadline has been recorded. `LocalDate` supports comparisons between calendar dates without requiring a time of day.
 
@@ -443,7 +443,7 @@ The private `appendWarning()` method adds each warning to a `StringBuilder`. Eac
 
 The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in a note to keep the diagram focused on interactions between objects.
 
-![Deadline Warnings Sequence Diagram](diagrams/deadline-warnings-sequence.png)
+![Deadline Warnings Sequence Diagram](diagrams/deadline-warnings-sequence.png?v=2)
 
 #### Design considerations
 
@@ -489,7 +489,7 @@ The feature involves the following classes:
 
 The class relationships within the storage subsystem are illustrated below:
 
-![Storage Class Diagram](diagrams/storage-class.png)
+![Storage Class Diagram](diagrams/storage-class.png?v=2)
 
 #### File format
 
@@ -526,7 +526,7 @@ The save operation performs the following steps:
 
 The sequence of interactions during a save operation is shown below:
 
-![Storage Save Sequence Diagram](diagrams/storage-save-sequence.png)
+![Storage Save Sequence Diagram](diagrams/storage-save-sequence.png?v=2)
 
 The operation rewrites the file using the current list. Consequently, applications removed from the list are also removed from the saved data.
 
@@ -540,7 +540,7 @@ For each application record, `Storage` checks that there are four fields (older 
 
 The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note:
 
-![Storage Load Sequence Diagram](diagrams/storage-load-sequence.png)
+![Storage Load Sequence Diagram](diagrams/storage-load-sequence.png?v=2)
 
 #### Error handling
 
