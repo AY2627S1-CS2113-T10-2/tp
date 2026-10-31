@@ -1,5 +1,10 @@
 package jobseek;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.logging.Logger;
+
 import jobseek.command.AddCommand;
 import jobseek.command.Command;
 import jobseek.command.CommandHistory;
@@ -19,13 +24,12 @@ import jobseek.parser.CommandParser;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-
 /**
  * Main entry point for the JobSeek CLI application.
  */
 public class Main {
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
     private final Ui ui;
     private final Storage storage;
     private final ApplicationList applications;
@@ -74,12 +78,14 @@ public class Main {
      */
     private static ApplicationList loadApplications(Ui ui, Storage storage) {
         try {
+            LOGGER.info("Attempting to load applications from storage.");
             ApplicationList loaded = storage.load();
             for (String warning : storage.getLoadWarnings()) {
                 ui.showError(warning);
             }
             return loaded;
-        } catch (Exception e) {
+        } catch (IOException e) {
+            LOGGER.warning("IOException encountered during application load: " + e.getMessage());
             ui.showError("Failed to load applications: " + e.getMessage());
             return new ApplicationList();
         }
@@ -98,6 +104,7 @@ public class Main {
      * Starts and executes the application workflow.
      */
     public void run() {
+        LOGGER.info("Starting JobSeek application loop.");
         ui.showWelcome();
         deadlineWarnings.show(applications, ui);
         ui.showMenu(applications);
@@ -122,8 +129,9 @@ public class Main {
                     isExit = command.isExit();
                 } catch (JobSeekException e) {
                     ui.showError(e.getMessage());
-                } catch (Exception e) {
-                    ui.showError("An error occurred while executing command: " + e.getMessage());
+                } catch (IOException e) {
+                    LOGGER.warning("Storage operation failed: " + e.getMessage());
+                    ui.showError("Storage operation failed: " + e.getMessage());
                 }
             }
             if (!isExit) {
@@ -131,6 +139,7 @@ public class Main {
             }
         }
 
+        LOGGER.info("Exiting JobSeek application cleanly.");
         ui.showGoodbye();
     }
 

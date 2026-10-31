@@ -1,11 +1,12 @@
 package jobseek.command;
 
+import java.io.IOException;
+import java.time.LocalDate;
+
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
-
-import java.time.LocalDate;
 
 /**
  * Handles adding a new job or internship application to the list.
@@ -100,7 +101,7 @@ public class AddCommand extends UndoableCommand {
      * @throws Exception If an error occurs during saving.
      */
     @Override
-    public void execute(ApplicationList applications, Ui ui, Storage storage) throws Exception {
+    public void execute(ApplicationList applications, Ui ui, Storage storage) throws IOException {
         assert applications != null : "Applications list cannot be null";
         assert ui != null : "Ui instance cannot be null";
         assert storage != null : "Storage instance cannot be null";

@@ -1,5 +1,6 @@
 package jobseek.command;
 
+import java.io.IOException;
 import java.time.LocalDate;
 
 import jobseek.model.Application;
@@ -209,7 +210,7 @@ public class EditCommand extends UndoableCommand {
      * @throws Exception If an error occurs during saving.
      */
     @Override
-    public void execute(ApplicationList applications, Ui ui, Storage storage) throws Exception {
+    public void execute(ApplicationList applications, Ui ui, Storage storage) throws IOException {
         assert applications != null : "Applications list cannot be null";
         assert ui != null : "Ui instance cannot be null";
         assert storage != null : "Storage instance cannot be null";

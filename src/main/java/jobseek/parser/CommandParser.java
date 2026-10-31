@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
@@ -60,6 +61,8 @@ public class CommandParser {
     /** A field prefix is a lowercase letter and a slash at the start of the text or after a space. */
     private static final Pattern FIELD_PREFIX = Pattern.compile("(?:^|\\s)([a-z])/");
 
+    private static final Logger LOGGER = Logger.getLogger(CommandParser.class.getName());
+
     private CommandParser() {
         // Utility class: all methods are static.
     }
@@ -90,6 +93,7 @@ public class CommandParser {
         String[] parts = input.trim().split("\\s+", 2);
         String word = parts[0].toLowerCase(Locale.ROOT);
         String arguments = parts.length > 1 ? parts[1].trim() : "";
+        LOGGER.fine("Parsing typed command word: " + word);
 
         switch (word) {
         case "add":

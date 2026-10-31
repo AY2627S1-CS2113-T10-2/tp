@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
@@ -17,6 +18,7 @@ import jobseek.model.RecruitmentStage;
  * Handles persistence by loading and saving job application data to local storage.
  */
 public class Storage {
+    private static final Logger LOGGER = Logger.getLogger(Storage.class.getName());
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
     private static final String COLUMN_HEADER =
@@ -81,9 +83,9 @@ public class Storage {
      * Saves the application list to local storage.
      *
      * @param applications The ApplicationList to save.
-     * @throws Exception If an I/O or serialization error occurs.
+     * @throws IOException If a file writing error occurs.
      */
-    public void save(ApplicationList applications) throws Exception {
+    public void save(ApplicationList applications) throws IOException {
         Path path = Path.of(filePath);
         Path parent = path.getParent();
         if (parent != null) {
@@ -104,6 +106,7 @@ public class Storage {
                     + escape(application.getNotes()));
         }
         Files.write(path, lines, StandardCharsets.UTF_8);
+        LOGGER.info("Saved " + applications.size() + " applications to " + filePath);
     }
 
     /**
@@ -111,12 +114,13 @@ public class Storage {
      * Supports modern 8-field format and backwards-compatible 4-field / 5-field records.
      *
      * @return The loaded ApplicationList containing all recoverable records.
-     * @throws Exception If an unrecoverable file reading error occurs.
+     * @throws IOException If an unrecoverable file reading error occurs.
      */
-    public ApplicationList load() throws Exception {
+    public ApplicationList load() throws IOException {
         loadWarnings.clear();
         Path path = Path.of(filePath);
         if (!Files.exists(path)) {
+            LOGGER.info("Storage file not found at " + filePath + ". Returning empty list.");
             return new ApplicationList();
         }
 
@@ -134,6 +138,7 @@ public class Storage {
                 applications.add(application);
             }
         }
+        LOGGER.info("Loaded " + applications.size() + " applications from " + filePath);
         return applications;
     }
 

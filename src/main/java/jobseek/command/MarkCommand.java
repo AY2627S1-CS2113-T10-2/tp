@@ -1,5 +1,7 @@
 package jobseek.command;
 
+import java.io.IOException;
+
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
@@ -42,7 +44,7 @@ public class MarkCommand extends UndoableCommand {
      * @throws Exception If an error occurs during saving.
      */
     @Override
-    public void execute(ApplicationList applications, Ui ui, Storage storage) throws Exception {
+    public void execute(ApplicationList applications, Ui ui, Storage storage) throws IOException {
         if (applications.isEmpty()) {
             ui.showError("Your application list is currently empty.");
             return;
