@@ -30,10 +30,20 @@
   - *Justification*: Gives students a central repository for application links and contact points, avoiding scattered bookmarks and spreadsheets.
   - *Highlights*: Engineered full backward compatibility in `Storage` to seamlessly load legacy 4-column and 5-column files while writing the new 8-column tab-separated format, backed by comprehensive unit and integration tests.
 
-- **Recruitment Stage Tracking (`RecruitmentStageCommand` / `StatusCommand`)**:
-  - *What it does*: Introduces recruitment stage tracking (`Pending`, `Applied`, `Interview`, `Offered`, `Accepted`, `Rejected`) for all applications.
-  - *Justification*: Allows students to monitor their application pipeline and immediately identify which opportunities resulted in offers or rejections.
-  - *Highlights*: Added stage normalization supporting numeric shortcuts and case-insensitive text strings, with integration into `view INDEX` detailed cards.
+- **Recruitment Stage Tracking (`RecruitmentStageCommand`, `RecruitmentStage`)**:
+  - *What it does*: Implemented recruitment stage tracking (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`) for all applications.
+  - *Justification*: Allows students to monitor their application pipeline and immediately identify which opportunities resulted in assessments, interviews, offers, or rejections.
+  - *Highlights*: Built `RecruitmentStage.fromChoice()` and `fromLabel()` supporting flexible inputs: numbers `1`–`7`, case-insensitive names (with whitespace/hyphens/underscores ignored), and shortcuts (`oa` for Online Assessment, `pending` for legacy Applied, `offer accepted` for Accepted). Integrated terminal status indicators and stage display into `view INDEX` detailed cards.
+
+- **CommandParser Centralization & Architectural Principles (SRP & SLAP)**:
+  - *What it does*: Centralized all typed command parsing in `CommandParser.parse(String)` and `CommandParser.parse(String, CommandHistory)`, making it the single source of truth for all typed user commands (`add`, `edit`, `delete`, `mark`, `unmark`, `find`, `search`, `sort`, `help`, `exit`, `view`, `list`, `today`, `undo`).
+  - *Justification*: Upholds the Single Responsibility Principle (SRP) and Separation of Concerns, ensuring command parsing is completely decoupled from UI execution loops and easily testable in isolation.
+  - *Highlights*: Implemented seamless fallback from typed commands to numeric menu dispatch when `parse()` returns `null`, and structured `Storage.load()` according to SLAP by delegating record parsing and validation to `parseRecord()`.
+
+- **Formal Test Case Design (EP & BVA) & Code Coverage Engineering (PR #62)**:
+  - *What it does*: Engineered a rigorous automated testing suite applying Equivalence Partitioning (EP) and Boundary Value Analysis (BVA), while configuring JaCoCo code coverage reporting in Gradle.
+  - *Justification*: Ensures enterprise-grade reliability, prevents off-by-one errors across index bounds and warning date ranges, and verifies robust recovery from corrupted data.
+  - *Highlights*: Authored `TestCaseDesignTest.java` covering EP (leap years, stage options, boolean flags) and BVA (0, 1, N, N+1, overflow indices; warning date offsets D-1, D, D+1, D+7, D+8; storage field counts 3, 4, 5, 8, 9). Overhauled `DeadlineWarnings.show()` to use dependency injection of reference dates for deterministic time testing. Elevated the test suite to **302 automated tests**, achieving **100% class coverage** and **97.5% line coverage**.
 
 - **UI Pages & Console Presentation Architecture (`Ui.java`)**:
   - *What it does*: Designed and built JobSeek's console visual presentation: ASCII welcome banner, main summary dashboard (`showApplicationsSummary`), menu options layout (`showMenuOptions`), and structured card views with divider boundaries.
@@ -50,8 +60,8 @@
   - **Adding an application**: Documented prompt sequences, whitespace trimming, input validation, and optional fields.
   - **Listing applications**: Documented menu options `[2]` and `[3]`, text filter commands (`list`, `list completed`, `list all`), and detailed card view (`view INDEX`).
   - **Editing an application**: Documented field selection choices (`[1]`–`[8]`), bounds validation, optional field clearing, and sample confirmation outputs.
-  - **Recruitment status/stage tracking**: Documented recruitment stages, numeric/text input methods, and status inspection via `view INDEX`.
-  - **Help instructions**: Added the complete command and menu options cheat sheet.
+  - **Recruitment status/stage tracking**: Documented recruitment stages, the 3 flexible input methods (numbers `1`–`7`, case-insensitive names, and shortcuts like `oa`), runtime error validation, and status inspection via `view INDEX`.
+  - **Help instructions & Command Summary**: Added the complete command and menu options cheat sheet and standardized the Command Summary table.
 - Structured and refined the User Guide into a logical end-to-end user journey sequence: **Add $\rightarrow$ List $\rightarrow$ Edit $\rightarrow$ Status $\rightarrow$ Search $\rightarrow$ Data $\rightarrow$ Help**.
 
 ### Contributions to the Developer Guide (DG)
@@ -64,6 +74,13 @@
   - Authored the Add Application feature design section and accompanying Mermaid Sequence Diagram.
   - Authored the Edit Application and Recruitment Status tracking section with accompanying Mermaid Sequence Diagram and design considerations.
   - Authored the Help feature implementation overview.
+- **CommandParser & Storage Architectural Refactoring**:
+  - Documented `CommandParser` centralization as the single source of truth for all typed commands (SRP, Separation of Concerns).
+  - Documented `Storage` SLAP refactoring (`parseRecord()`), 8-field support, narrowing to `IOException`, and diagnostic logging.
+- **Error Handling & Logging Architecture**:
+  - Authored the comprehensive error handling and logging section detailing the separation between checked domain exceptions (`JobSeekException`) and operational exceptions (`IOException`), defensive invariants using Java `assert`, and `java.util.logging.Logger` logging levels (`INFO`, `WARNING`, `FINE`).
+- **Automated Testing, Code Coverage & Test Case Design**:
+  - Authored the automated testing and code coverage section documenting test running commands (`./gradlew test`, `./gradlew check`), JaCoCo coverage metrics (**100% class**, **97.5% line**), Equivalence Partitioning (EP), Boundary Value Analysis (BVA), and dependency injection in `DeadlineWarnings.show()`.
 - **Manual Testing Instructions**: Authored comprehensive manual testing procedures with exact expected console output code blocks covering adding, listing, editing, viewing, and status updates.
 - **User Stories**: Formulated and documented key user stories for v1.0 and v2.0.
 
@@ -73,13 +90,16 @@
   - **Created the release for Milestone 2 (`v2.0.0`)**, publishing the release notes and standalone JAR on GitHub.
   - **Packaged and created the release for Milestone 1 (`v1.0.0`)**.
 - **Milestone & Project Management**:
-  - Set up, configured, and tracked deliverables for Milestone 1 (`v1.0`) and Milestone 2 (`v2.0`) on the team's GitHub repository.
-  - Actively maintained the issue tracker across milestones, triaging tasks, creating milestone issues, assigning responsibilities, and setting labels.
+  - **Created Milestone `v2.1` on GitHub** to steer final code quality, architectural principles, error handling, testing, and documentation deliverables.
+  - Set up, configured, and tracked deliverables across Milestones `v1.0`, `v2.0`, and `v2.1` on the team's GitHub repository.
+  - Actively maintained the issue tracker across milestones, creating milestone issues (e.g. Issue #60 "Update the DG, UG and PPP", Issue #61 "Add more testing for Jobseek"), triaging tasks, assigning responsibilities, setting labels, and delivering PR #62.
 - **UI Architecture & Layout Alignment**:
   - Established unified console layout conventions and designed the numbered menu system.
   - Coordinated menu scalability as features expanded to 10 options, ensuring a clean and consistent CLI experience.
 - **Quality Assurance & Testing Leadership**:
-  - Expanded automated test coverage across the application (authored/maintained test classes including `AddCommandTest`, `EditCommandTest`, `RecruitmentStageCommandTest`, `MainTest`, `HelpCommandTest`, `ExitCommandTest`, `ApplicationTest`, `ApplicationListTest`, `ViewCommandTest`, `ListCommandTest`, `SearchCommandTest`, `SortCommandTest`, and `UiTest`).
+  - Led test case design and code coverage expansion, engineering `TestCaseDesignTest.java` applying formal EP and BVA methodologies.
+  - Configured JaCoCo code coverage plugin in Gradle, driving test suite to **302 automated tests** with **100% class coverage** and **97.5% line coverage**.
+  - Authored and maintained automated test suites across the application (`AddCommandTest`, `EditCommandTest`, `RecruitmentStageCommandTest`, `MainTest`, `HelpCommandTest`, `ExitCommandTest`, `ApplicationTest`, `ApplicationListTest`, `ViewCommandTest`, `ListCommandTest`, `SearchCommandTest`, `SortCommandTest`, and `UiTest`).
   - Enforced strict Java 25 and Checkstyle compliance across PRs, keeping the build warning-free.
 - **Product Documentation**:
   - Authored and restructured [`README.md`](../README.md), transforming it from the starter template into a product-focused overview.

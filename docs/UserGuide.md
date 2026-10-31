@@ -223,7 +223,7 @@ Choose `10` to update details of an existing application in place without deleti
   - Non-numeric index input is rejected with `Error: Invalid application index. Please enter a valid number.`.
   - Out-of-bounds indices are rejected (`Error: Invalid application index: X. Please enter a number between 1 and Y.`).
   - Empty company or role values are rejected and reprompted.
-  - Invalid stage choices are rejected and reprompted (`Error: Invalid recruitment stage: '...'. Enter a number from 1 to 7 or a known stage name.`).
+  - Invalid stage choices are rejected and reprompted (`Error: Invalid recruitment stage: '...'. Enter a stage name or a number from 1 to 7.`).
   - Entering an invalid field choice (anything other than 1 through 8) displays `Error: Invalid field choice: '<choice>'. Enter a number from 1 to 8.` and returns to the menu.
   - Unedited fields preserve their current values and completion flags (`[ ]` or `[X]`).
 - **Typed alternative**: `edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE]` changes only the fields you give, for example `edit 2 r/Backend Intern s/Interview`.
@@ -261,7 +261,22 @@ Choose `10` to update details of an existing application in place without deleti
 Each application has one of these stages: `Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`. `Accepted`, `Rejected`, and `Withdrawn` are terminal stages. You can still edit a stage at any time to correct a mistake or reflect a company process; stages do not enforce a fixed transition order.
 
 #### Updating a stage
-Under menu option `10`, select field `3` (Recruitment stage) or `8` (All). Enter one of the numbered choices shown by the prompt (`1` for Applied, `2` for Online Assessment, `3` for Interview, `4` for Offer, `5` for Accepted, `6` for Rejected, `7` for Withdrawn), or type a stage name such as `Interview`. The shortcut `OA` is also accepted for `Online Assessment`. Inputs are case-insensitive. You can also type `edit INDEX s/STAGE`, for example `edit 1 s/oa`.
+Under menu option `10`, select field `3` (Recruitment stage) or `8` (All). You can specify the stage in three flexible ways:
+1. **By number (1 to 7)**:
+   - `1`: `Applied`
+   - `2`: `Online Assessment`
+   - `3`: `Interview`
+   - `4`: `Offer`
+   - `5`: `Accepted`
+   - `6`: `Rejected`
+   - `7`: `Withdrawn`
+2. **By stage name**: Case-insensitive names are accepted, with spaces, hyphens, or underscores ignored (e.g. `Interview`, `online assessment`, `online-assessment`, `withdrawn`).
+3. **By shortcut or alias**:
+   - `OA` or `oa` for `Online Assessment`
+   - `pending` for `Applied` (migrates legacy files)
+   - `offer accepted` for `Accepted`
+
+You can also update the stage directly using the typed command `edit INDEX s/STAGE`, for example `edit 1 s/oa` or `edit 2 s/Interview`.
 
 #### Inspecting an application stage
 Use the `view INDEX` command to view the comprehensive card for any application, including its recruitment stage:
@@ -488,7 +503,7 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **List active applications** | `list` or `2` or `3` | `list` or choose `2` or `3` |
 | **List completed applications** | `list completed` | `list completed` |
 | **List all applications** | `list all` | `list all` |
-| **View application details** | `view <application_number>` | `view 1` |
+| **View application details** | `view INDEX` | `view 1` |
 | **Delete application** | `4` or `delete INDEX` | Choose `4`, or `delete 2`; then confirm with `y` |
 | **Undo last change** | `undo` | `undo` |
 | **Mark application completed** | `5` or `mark INDEX` | Choose `5`, then enter application index (e.g. `1`), or `mark 1` |
