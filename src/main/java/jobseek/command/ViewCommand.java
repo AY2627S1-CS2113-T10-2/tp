@@ -10,6 +10,8 @@ import jobseek.ui.Ui;
  * Handles displaying detailed information about a single job application in a card format.
  */
 public class ViewCommand extends Command {
+    public static final String MESSAGE_INVALID_INDEX =
+            "Please provide a valid positive application number (e.g. 'view 1').";
     private static final String DIVIDER = "==================================================";
     private static final String SUB_DIVIDER = "--------------------------------------------------";
     private final int targetIndex;
@@ -28,7 +30,7 @@ public class ViewCommand extends Command {
     }
 
     /**
-     * Parses the arguments string from a 'view INDEX' command into a ViewCommand instance.
+     * Parses the arguments string from a 'view' command into a ViewCommand instance.
      *
      * @param args The user argument string following the command word.
      * @return A ViewCommand targeting the specified 0-based application index.
@@ -36,18 +38,17 @@ public class ViewCommand extends Command {
      */
     public static ViewCommand parse(String args) throws JobSeekException {
         if (args == null || args.trim().isEmpty()) {
-            throw new JobSeekException("Please provide a valid positive application index. Usage: view INDEX");
+            throw new JobSeekException(MESSAGE_INVALID_INDEX);
         }
 
         try {
             int oneBasedIndex = Integer.parseInt(args.trim());
             if (oneBasedIndex <= 0) {
-                throw new JobSeekException("Please provide a valid positive application index. "
-                        + "Usage: view INDEX");
+                throw new JobSeekException(MESSAGE_INVALID_INDEX);
             }
             return new ViewCommand(oneBasedIndex - 1);
         } catch (NumberFormatException e) {
-            throw new JobSeekException("Please provide a valid positive application index. Usage: view INDEX");
+            throw new JobSeekException(MESSAGE_INVALID_INDEX);
         }
     }
 

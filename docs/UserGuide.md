@@ -188,7 +188,7 @@ Notes:     Passed round 1 OA
 > * `<application_number>` must be a valid positive integer corresponding to an existing entry in your application list (e.g., `1`, `2`).
 > * Optional fields (`Deadline:`, `Portal:`, `Email:`, `Notes:`) only appear if recorded.
 > * If `<application_number>` is missing, non-numeric, or `<= 0`, JobSeek notifies you:
->   `Error: Please provide a valid positive application index. Usage: view INDEX`
+>   `Error: Please provide a valid positive application number (e.g. 'view 1').`
 > * If `<application_number>` is greater than the total number of applications, JobSeek displays:
 >   `Error: Application index X does not exist. (Total applications: Y)`
 

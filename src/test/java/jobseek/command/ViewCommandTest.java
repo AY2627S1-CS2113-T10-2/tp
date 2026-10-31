@@ -47,44 +47,37 @@ public class ViewCommandTest {
     @Test
     public void parse_nullOrEmptyArgument_throwsJobSeekException() {
         JobSeekException nullException = assertThrows(JobSeekException.class, () -> ViewCommand.parse(null));
-        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
-                nullException.getMessage());
+        assertEquals(ViewCommand.MESSAGE_INVALID_INDEX, nullException.getMessage());
 
         JobSeekException emptyException = assertThrows(JobSeekException.class, () -> ViewCommand.parse("   "));
-        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
-                emptyException.getMessage());
+        assertEquals(ViewCommand.MESSAGE_INVALID_INDEX, emptyException.getMessage());
     }
 
     @Test
     public void parse_nonNumericArgument_throwsJobSeekException() {
         JobSeekException exception = assertThrows(JobSeekException.class, () -> ViewCommand.parse("abc"));
-        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
-                exception.getMessage());
+        assertEquals(ViewCommand.MESSAGE_INVALID_INDEX, exception.getMessage());
     }
 
     @Test
     public void parse_zeroOrNegativeArgument_throwsJobSeekException() {
         JobSeekException zeroException = assertThrows(JobSeekException.class, () -> ViewCommand.parse("0"));
-        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
-                zeroException.getMessage());
+        assertEquals(ViewCommand.MESSAGE_INVALID_INDEX, zeroException.getMessage());
 
         JobSeekException negativeException = assertThrows(JobSeekException.class, () -> ViewCommand.parse("-5"));
-        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
-                negativeException.getMessage());
+        assertEquals(ViewCommand.MESSAGE_INVALID_INDEX, negativeException.getMessage());
     }
 
     @Test
     public void parse_integerOverflow_throwsJobSeekException() {
         JobSeekException exception = assertThrows(JobSeekException.class, () -> ViewCommand.parse("2147483648"));
-        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
-                exception.getMessage());
+        assertEquals(ViewCommand.MESSAGE_INVALID_INDEX, exception.getMessage());
     }
 
     @Test
     public void parse_extraTokens_throwsJobSeekException() {
         JobSeekException exception = assertThrows(JobSeekException.class, () -> ViewCommand.parse("1 2"));
-        assertEquals("Please provide a valid positive application index. Usage: view INDEX",
-                exception.getMessage());
+        assertEquals(ViewCommand.MESSAGE_INVALID_INDEX, exception.getMessage());
     }
 
     @Test

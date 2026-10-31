@@ -102,7 +102,7 @@ The user input validation, prompt looping, and execution lifecycle for adding an
 The `ViewCommand` displays all recorded information for an individual application as a structured, visual card. It is executed via the `view <application_number>` standalone command.
 
 #### Design and implementation
-- **Parsing**: `ViewCommand.parse(String args)` parses user input following the `view` command prefix. It validates that the argument is a non-empty, positive integer (`1`-based). If the argument is invalid or non-numeric, it throws a `JobSeekException` with helpful usage instructions (`Usage: view INDEX`).
+- **Parsing**: `ViewCommand.parse(String args)` parses user input following the `view` command prefix. It validates that the argument is a non-empty, positive integer (`1`-based). If the argument is invalid or non-numeric, it throws a `JobSeekException` with helpful usage guidance (`Please provide a valid positive application number (e.g. 'view 1').`).
 - **Execution**:
   1. `ViewCommand.execute(ApplicationList, Ui, Storage)` validates that the zero-based target index satisfies `0 <= targetIndex < applications.size()`.
   2. If the index is out of bounds, it throws a `JobSeekException` reporting the invalid index and the current list size (e.g., `Application index 5 does not exist. (Total applications: 3)`).
@@ -805,15 +805,15 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 3. Test invalid and boundary inputs:
    - Enter `view` (no index). Confirm error:
      ```text
-     Error: Please provide a valid positive application index. Usage: view INDEX
+     Error: Please provide a valid positive application number (e.g. 'view 1').
      ```
    - Enter `view 0` or `view -1`:
      ```text
-     Error: Please provide a valid positive application index. Usage: view INDEX
+     Error: Please provide a valid positive application number (e.g. 'view 1').
      ```
    - Enter `view abc`:
      ```text
-     Error: Please provide a valid positive application index. Usage: view INDEX
+     Error: Please provide a valid positive application number (e.g. 'view 1').
      ```
    - Enter `view 99` (out of bounds):
      ```text

@@ -302,7 +302,7 @@ public class MainTest {
         main.run();
 
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: Please provide a valid positive application index. Usage: view INDEX"));
+        assertTrue(output.contains("Error: " + jobseek.command.ViewCommand.MESSAGE_INVALID_INDEX));
         assertTrue(output.contains("Error: Application index 5 does not exist. (Total applications: 1)"));
     }
 
