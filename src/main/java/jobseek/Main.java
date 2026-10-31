@@ -337,28 +337,33 @@ public class Main {
             String notes = promptOptional("Enter new notes (leave blank to clear):");
             return EditCommand.editNotes(index, notes);
         case "8":
-            String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
-            if (allCompany == null) {
-                return null;
-            }
-            String allRole = promptNonEmpty("Enter new role:", "Role cannot be empty.");
-            if (allRole == null) {
-                return null;
-            }
-            RecruitmentStage allStage = promptRecruitmentStage();
-            if (allStage == null) {
-                return null;
-            }
-            LocalDate allDeadline = promptDeadline();
-            String allPortalLink = promptOptional("Company Portal Link (leave blank to clear):");
-            String allEmail = promptOptional("Contact Email (leave blank to clear):");
-            String allNotes = promptOptional("Notes (leave blank to clear):");
-            return EditCommand.editAll(index, allCompany, allRole, allStage,
-                    allDeadline, allPortalLink, allEmail, allNotes);
+            return handleEditAllFields(index);
         default:
             ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter a number from 1 to 8.");
             return null;
         }
+    }
+
+    /** Prompts sequentially for all application fields to update an application record completely. */
+    private Command handleEditAllFields(int index) {
+        String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
+        if (allCompany == null) {
+            return null;
+        }
+        String allRole = promptNonEmpty("Enter new role:", "Role cannot be empty.");
+        if (allRole == null) {
+            return null;
+        }
+        RecruitmentStage allStage = promptRecruitmentStage();
+        if (allStage == null) {
+            return null;
+        }
+        LocalDate allDeadline = promptDeadline();
+        String allPortalLink = promptOptional("Company Portal Link (leave blank to clear):");
+        String allEmail = promptOptional("Contact Email (leave blank to clear):");
+        String allNotes = promptOptional("Notes (leave blank to clear):");
+        return EditCommand.editAll(index, allCompany, allRole, allStage,
+                allDeadline, allPortalLink, allEmail, allNotes);
     }
 
     private RecruitmentStage promptRecruitmentStage() {
