@@ -1,0 +1,40 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant del as :DeleteCommand
+    participant list as :ApplicationList
+    participant undo as :UndoCommand
+    participant history as :CommandHistory
+
+    user->>main: delete 2
+    main->>del: execute(...)
+    activate del
+    del->>user: "Delete Google? (y/n)"
+    user-->>del: "y"
+    del->>list: delete(1)
+    activate list
+    list-->>del: deletedApplication
+    deactivate list
+    del-->>main: result
+    deactivate del
+    main->>history: record(deleteCommand)
+    activate history
+    deactivate history
+
+    user->>main: undo
+    main->>undo: execute(...)
+    activate undo
+    undo->>history: pop()
+    activate history
+    history-->>undo: deleteCommand
+    deactivate history
+    undo->>del: undo(applications)
+    activate del
+    del->>list: insert(1, deletedApplication)
+    activate list
+    deactivate list
+    del-->>undo: "Undid delete"
+    deactivate del
+    undo-->>main: result
+    deactivate undo

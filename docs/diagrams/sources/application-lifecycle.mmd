@@ -1,0 +1,12 @@
+flowchart LR
+    Start((●)) --> Init["Initialize UI<br/>& Storage"]
+    Init --> Load["Load applications"]
+    Load --> CheckLoad{"Load<br/>success?"}
+    CheckLoad -->|"[yes]"| Warn["Check deadlines<br/>& show menu"]
+    CheckLoad -->|"[no]"| Fallback["Show error &<br/>use empty list"]
+    Fallback --> Warn
+    Warn --> MergeRead{ }
+    MergeRead --> Read["Read & execute<br/>command"]
+    Read --> CheckExit{"Exit<br/>command?"}
+    CheckExit -->|"[no]"| MergeRead
+    CheckExit -->|"[yes]"| End(((◎)))

@@ -1,0 +1,47 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    participant main as :Main
+    participant warnings as :DeadlineWarnings
+    participant list as :ApplicationList
+    participant app as :Application
+    participant ui as :Ui
+
+    main->>ui: showWelcome()
+    activate ui
+    deactivate ui
+
+    main->>warnings: show(applications, ui)
+    activate warnings
+
+    loop for each application
+        warnings->>list: get(i)
+        activate list
+        list-->>warnings: application
+        deactivate list
+        warnings->>app: getDeadline()
+        activate app
+        app-->>warnings: deadline
+        deactivate app
+        warnings->>app: isCompleted()
+        activate app
+        app-->>warnings: completed
+        deactivate app
+
+        opt incomplete and deadline <= today + 7 days
+            warnings->>warnings: appendWarning(...)
+            activate warnings
+            deactivate warnings
+        end
+    end
+
+    opt warning summary is not empty
+        warnings->>ui: showMessage(summary)
+        activate ui
+        deactivate ui
+    end
+
+    warnings-->>main: 
+    deactivate warnings
+    main->>ui: showMenu(applications)
+    activate ui
+    deactivate ui

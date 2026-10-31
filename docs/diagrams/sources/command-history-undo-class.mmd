@@ -1,0 +1,31 @@
+classDiagram
+    class Command {
+        <<abstract>>
+        +execute(applications: ApplicationList, ui: Ui, storage: Storage)*: void
+        +isExit(): boolean
+    }
+    class UndoableCommand {
+        <<abstract>>
+        -hasChanged: boolean
+        +undo(applications: ApplicationList)*: String
+        +hasChanged(): boolean
+        #markChanged(): void
+    }
+    class CommandHistory {
+        -history: Deque~UndoableCommand~
+        +record(command: UndoableCommand): void
+        +pop(): UndoableCommand
+        +isEmpty(): boolean
+    }
+    class UndoCommand {
+        +execute(applications: ApplicationList, ui: Ui, storage: Storage): void
+    }
+    Command <|-- UndoableCommand
+    Command <|-- UndoCommand
+    UndoableCommand <|-- AddCommand
+    UndoableCommand <|-- DeleteCommand
+    UndoableCommand <|-- EditCommand
+    UndoableCommand <|-- RecruitmentStageCommand
+    UndoableCommand <|-- MarkCommand
+    CommandHistory "1" o-- "*" UndoableCommand : stores
+    UndoCommand "1" --> "1" CommandHistory : uses

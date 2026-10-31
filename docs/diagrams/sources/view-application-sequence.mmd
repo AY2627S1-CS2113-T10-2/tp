@@ -1,0 +1,47 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant cmd as :ViewCommand
+    participant list as :ApplicationList
+    participant app as :Application
+
+    user->>main: Enter "view 1"
+    main->>cmd: ViewCommand.parse("1")
+    activate cmd
+    cmd-->>main: viewCommand
+    deactivate cmd
+    main->>cmd: execute(...)
+    activate cmd
+
+    alt 0 <= targetIndex < size
+        cmd->>list: get(0)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: "Google"
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: "SWE Intern"
+        deactivate app
+        cmd->>app: getRecruitmentStage()
+        activate app
+        app-->>cmd: ACCEPTED
+        deactivate app
+        cmd->>app: isCompleted()
+        activate app
+        app-->>cmd: false
+        deactivate app
+        cmd->>ui: showMessage(card)
+        activate ui
+        ui-->>user: Structured card display
+        deactivate ui
+    else invalid index
+        cmd-->>main: throw JobSeekException
+    end
+
+    deactivate cmd

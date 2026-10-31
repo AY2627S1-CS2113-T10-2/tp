@@ -1,0 +1,23 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant main as :Main
+    participant parser as :CommandParser
+    participant cmd as :AddCommand
+
+    user->>main: add c/Google r/SWE Intern d/2026-11-30
+    main->>parser: parse(input)
+    activate parser
+    parser->>parser: parseFields(args, "crd")
+    activate parser
+    deactivate parser
+    parser->>cmd: new AddCommand(...)
+    activate cmd
+    cmd-->>parser: addCommand
+    deactivate cmd
+    parser-->>main: addCommand
+    deactivate parser
+    main->>cmd: execute(...)
+    activate cmd
+    cmd-->>main: 
+    deactivate cmd

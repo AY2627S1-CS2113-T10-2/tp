@@ -1,0 +1,41 @@
+flowchart TB
+    User(["User (Terminal)"])
+
+    subgraph UI["UI Component"]
+        direction LR
+        Ui["Ui"]
+        Table["ApplicationTable"]
+        Ui -.-> Table
+    end
+
+    subgraph Logic["Logic / Command Component"]
+        direction TB
+        Main["Main (Controller)"]
+        Parser["CommandParser"]
+        Commands["Command Hierarchy<br/>(Add, Delete, Edit, View, etc.)"]
+        Main --> Parser
+        Parser --> Commands
+    end
+
+    subgraph Storage["Storage Component"]
+        direction TB
+        StorageClass["Storage"]
+        File[("applications.txt")]
+        StorageClass <--> File
+    end
+
+    subgraph Model["Model Component"]
+        direction TB
+        Warnings["DeadlineWarnings"]
+        AppList["ApplicationList"]
+        App["Application"]
+        Warnings --> AppList
+        AppList --> App
+    end
+
+    User <--> UI
+    UI <--> Logic
+    Logic --> Storage
+    Logic --> Model
+    Storage -.->|loads / saves| Model
+    Model -.->|supplies data| UI

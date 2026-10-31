@@ -1,0 +1,58 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant cmd as :AddCommand
+    participant app as :Application
+    participant list as :ApplicationList
+    participant storage as :Storage
+
+    user->>main: Enter 1
+    main->>ui: promptNonEmpty("Company:")
+    activate ui
+    ui-->>main: "Google"
+    deactivate ui
+    main->>ui: promptNonEmpty("Role:")
+    activate ui
+    ui-->>main: "SWE Intern"
+    deactivate ui
+    main->>ui: promptDeadline()
+    activate ui
+    ui-->>main: "2026-11-15"
+    deactivate ui
+    main->>ui: promptOptional("Company Portal Link:")
+    activate ui
+    ui-->>main: "https://careers.google.com"
+    deactivate ui
+    main->>ui: promptOptional("Contact Email:")
+    activate ui
+    ui-->>main: "recruiter@google.com"
+    deactivate ui
+    main->>ui: promptOptional("Notes:")
+    activate ui
+    ui-->>main: "OA passed"
+    deactivate ui
+
+    main->>cmd: new AddCommand(...)
+    activate cmd
+    cmd-->>main: addCommand
+    deactivate cmd
+
+    main->>cmd: execute(...)
+    activate cmd
+    cmd->>app: new Application(...)
+    activate app
+    app-->>cmd: application
+    deactivate app
+    cmd->>list: add(application)
+    activate list
+    deactivate list
+    cmd->>storage: save(applications)
+    activate storage
+    deactivate storage
+    cmd->>ui: showMessage("Application added")
+    activate ui
+    ui-->>user: Confirmation message
+    deactivate ui
+    deactivate cmd

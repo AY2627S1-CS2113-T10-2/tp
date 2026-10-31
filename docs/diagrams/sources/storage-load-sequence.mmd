@@ -1,0 +1,43 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    participant ui as :Ui
+    participant main as :Main
+    participant storage as :Storage
+    participant list as :ApplicationList
+    participant app as :Application
+
+    main->>storage: load()
+    activate storage
+
+    storage->>list: new ApplicationList()
+    activate list
+    list-->>storage: applications
+    deactivate list
+
+    loop each line of the file
+        alt record is valid
+            storage->>app: new Application(...)
+            activate app
+            app-->>storage: application
+            deactivate app
+            storage->>list: add(application)
+            activate list
+            deactivate list
+        else record is corrupted
+            storage->>storage: rememberWarning(warning)
+            activate storage
+            deactivate storage
+        end
+    end
+    storage-->>main: applications
+    deactivate storage
+
+    main->>storage: getLoadWarnings()
+    activate storage
+    storage-->>main: warnings
+    deactivate storage
+    loop each warning
+        main->>ui: showError(warning)
+        activate ui
+        deactivate ui
+    end

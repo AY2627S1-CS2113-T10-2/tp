@@ -1,0 +1,29 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant parser as :CommandParser
+    participant cmd as :FindCommand
+    participant table as :ApplicationTable
+
+    user->>main: find c/google s/interview
+    main->>parser: parse(input)
+    activate parser
+    parser-->>main: findCommand
+    deactivate parser
+    main->>cmd: execute(...)
+    activate cmd
+    cmd->>cmd: filter.test(application)
+    activate cmd
+    deactivate cmd
+    cmd->>table: format(applications, matchIndices)
+    activate table
+    table-->>cmd: table with original numbers
+    deactivate table
+    cmd->>ui: showMessage(table)
+    activate ui
+    ui-->>user: Matching applications
+    deactivate ui
+    cmd-->>main: 
+    deactivate cmd

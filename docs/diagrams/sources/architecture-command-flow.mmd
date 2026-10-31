@@ -1,0 +1,11 @@
+flowchart LR
+    User(["User (Terminal)"]) --> Ui["Ui"]
+    Ui --> Main["Main (Controller)"]
+    Main -->|typed command| CommandParser["CommandParser"]
+    Main -->|menu choice / prompt| Command["Command (execute)"]
+    CommandParser --> Command
+    Command --> ApplicationList["ApplicationList"]
+    Command --> Storage["Storage"]
+    Command -.->|display| Ui
+    Storage <-->|persist / load| ApplicationList
+    ApplicationList --> Application["Application"]

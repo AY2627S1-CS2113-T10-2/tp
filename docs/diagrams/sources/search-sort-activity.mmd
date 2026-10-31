@@ -1,0 +1,9 @@
+flowchart LR
+    Start((●)) --> Choice{"Option 8 or 9?"}
+    Choice -->|"[8: Search]"| Prompt["Prompt keyword &<br/>filter matches"]
+    Choice -->|"[9: Sort]"| Sort["Sort index copy by<br/>company & role"]
+    Prompt --> MergeTable{ }
+    Sort --> MergeTable
+    MergeTable --> Table["Format table via<br/>ApplicationTable"]
+    Table --> Display["Display table<br/>via Ui"]
+    Display --> End(((◎)))

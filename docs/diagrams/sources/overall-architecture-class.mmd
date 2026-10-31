@@ -1,0 +1,66 @@
+classDiagram
+    direction TB
+    class Main {
+        - ui: Ui
+        - storage: Storage
+        - applications: ApplicationList
+        + run(): void
+        + parseCommand(option: String): Command
+    }
+    class Ui {
+        + showWelcome(): void
+        + showMenu(applications: ApplicationList): void
+        + showMessage(message: String): void
+        + showError(errorMessage: String): void
+        + showPrompt(prompt: String): void
+        + readCommand(): String
+        + showGoodbye(): void
+    }
+    class Storage {
+        - filePath: String
+        + save(applications: ApplicationList): void
+        + load(): ApplicationList
+    }
+    class ApplicationList {
+        - applications: ArrayList~Application~
+        + add(app: Application): void
+        + getAll(): ArrayList~Application~
+    }
+    class DeadlineWarnings {
+        + show(applications: ApplicationList, ui: Ui)$: void
+    }
+    class JobSeekException {
+        + JobSeekException(message: String)
+    }
+    class Command {
+        <<abstract>>
+        - isExit: boolean
+        + execute(applications: ApplicationList, ui: Ui, storage: Storage)*: void
+        + isExit(): boolean
+    }
+    class UndoableCommand {
+        <<abstract>>
+        - hasChanged: boolean
+        # markChanged(): void
+        + hasChanged(): boolean
+        + undo(applications: ApplicationList)*: String
+    }
+    Main "1" --> "1" Ui
+    Main "1" --> "1" Storage
+    Main "1" --> "1" ApplicationList
+    Main ..> Command : creates
+    Command <|-- UndoableCommand
+    UndoableCommand <|-- AddCommand
+    UndoableCommand <|-- DeleteCommand
+    UndoableCommand <|-- EditCommand
+    UndoableCommand <|-- RecruitmentStageCommand
+    UndoableCommand <|-- MarkCommand
+    Command <|-- UndoCommand
+    Command <|-- ListCommand
+    Command <|-- ViewCommand
+    Command <|-- SearchCommand
+    Command <|-- SortCommand
+    Command <|-- FindCommand
+    Command <|-- TodayCommand
+    Command <|-- HelpCommand
+    Command <|-- ExitCommand

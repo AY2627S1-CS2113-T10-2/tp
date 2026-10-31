@@ -1,0 +1,10 @@
+flowchart LR
+    Start((●)) --> MergePrompt{ }
+    MergePrompt --> Prompt["Prompt company, role,<br/>deadline, portal, email, notes"]
+    Prompt --> Validate{"Valid required<br/>fields & date?"}
+    Validate -->|"[valid]"| Create["Create Application<br/>& add to list"]
+    Validate -->|"[else]"| ShowErr["Show error<br/>message"]
+    ShowErr --> MergePrompt
+    Create --> Save["Storage.save<br/>applications"]
+    Save --> Show["Display confirmation<br/>message"]
+    Show --> End(((◎)))

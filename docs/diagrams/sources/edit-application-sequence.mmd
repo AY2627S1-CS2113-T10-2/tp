@@ -1,0 +1,76 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant cmd as :EditCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant storage as :Storage
+
+    user->>main: Option 10 (Edit)
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>ui: showPrompt(field choice 1-8)
+    activate ui
+    ui-->>main: 5 (Portal Link)
+    deactivate ui
+    main->>ui: promptOptional("Enter new company portal link:")
+    activate ui
+    ui-->>main: "https://careers.google.com"
+    deactivate ui
+    main->>cmd: editPortalLink(0, link)
+    activate cmd
+    cmd-->>main: editCommand
+    deactivate cmd
+    main->>cmd: execute(...)
+    activate cmd
+    cmd->>list: get(0)
+    activate list
+    list-->>cmd: application
+    deactivate list
+
+    alt choice == 1 (Company)
+        cmd->>app: setCompany(newCompany)
+        activate app
+        deactivate app
+    else choice == 2 (Role)
+        cmd->>app: setRole(newRole)
+        activate app
+        deactivate app
+    else choice == 3 (Recruitment stage)
+        cmd->>app: setStage(newStage)
+        activate app
+        deactivate app
+    else choice == 4 (Deadline)
+        cmd->>app: setDeadline(newDeadline)
+        activate app
+        deactivate app
+    else choice == 5 (Portal Link)
+        cmd->>app: setPortalLink(link)
+        activate app
+        deactivate app
+    else choice == 6 (Email)
+        cmd->>app: setEmail(newEmail)
+        activate app
+        deactivate app
+    else choice == 7 (Notes)
+        cmd->>app: setNotes(newNotes)
+        activate app
+        deactivate app
+    else choice == 8 (All)
+        cmd->>app: update all fields
+        activate app
+        deactivate app
+    end
+
+    cmd->>storage: save(applications)
+    activate storage
+    deactivate storage
+    cmd->>ui: showMessage("Application updated")
+    activate ui
+    ui-->>user: Confirmation message
+    deactivate ui
+    deactivate cmd

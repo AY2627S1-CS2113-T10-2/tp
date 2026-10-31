@@ -1,0 +1,47 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant cmd as :SortCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+
+    user->>main: Option 9 (Sort)
+    main->>cmd: new SortCommand()
+    activate cmd
+    cmd-->>main: sortCommand
+    deactivate cmd
+    main->>cmd: execute(...)
+    activate cmd
+
+    cmd->>cmd: sortIndices(...)
+    activate cmd
+    deactivate cmd
+
+    loop during index comparison
+        cmd->>list: get(index)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: company
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: role
+        deactivate app
+    end
+
+    cmd->>table: format(apps, sorted)
+    activate table
+    table-->>cmd: formattedTable
+    deactivate table
+    cmd->>ui: showMessage(table)
+    activate ui
+    ui-->>user: Sorted applications table
+    deactivate ui
+
+    deactivate cmd

@@ -1,0 +1,45 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant cmd as :DeleteCommand
+    participant list as :ApplicationList
+    participant storage as :Storage
+
+    user->>main: Option 4 (Delete)
+    main->>ui: promptApplicationIndex()
+    activate ui
+    ui-->>main: 1 (0-based: 0)
+    deactivate ui
+    main->>cmd: new DeleteCommand(0)
+    activate cmd
+    cmd-->>main: deleteCommand
+    deactivate cmd
+    main->>cmd: execute(...)
+    activate cmd
+
+    alt 0 <= targetIndex < size
+        cmd->>list: isValidIndex(0)
+        activate list
+        list-->>cmd: true
+        deactivate list
+        cmd->>list: delete(0)
+        activate list
+        list-->>cmd: deletedApplication
+        deactivate list
+        cmd->>storage: save(applications)
+        activate storage
+        deactivate storage
+        cmd->>ui: showMessage("Deleted")
+        activate ui
+        ui-->>user: Confirmation message
+        deactivate ui
+    else else
+        cmd->>ui: showError("Invalid index: 4")
+        activate ui
+        ui-->>user: Error message
+        deactivate ui
+    end
+
+    deactivate cmd

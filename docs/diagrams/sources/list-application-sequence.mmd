@@ -1,0 +1,46 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant cmd as :ListCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+
+    user->>main: list completed
+    main->>cmd: ListCommand.parse("completed")
+    activate cmd
+    cmd-->>main: listCommand
+    deactivate cmd
+    main->>cmd: execute(...)
+    activate cmd
+
+    loop for each application
+        cmd->>list: get(i)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: isCompleted()
+        activate app
+        app-->>cmd: isCompleted
+        deactivate app
+    end
+
+    alt matches found
+        cmd->>table: format(apps, matches)
+        activate table
+        table-->>cmd: formattedTable
+        deactivate table
+        cmd->>ui: showMessage(formattedTable)
+        activate ui
+        ui-->>user: Formatted table output
+        deactivate ui
+    else else
+        cmd->>ui: showMessage("None found")
+        activate ui
+        ui-->>user: Status message
+        deactivate ui
+    end
+
+    deactivate cmd

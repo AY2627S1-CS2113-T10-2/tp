@@ -1,0 +1,54 @@
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+sequenceDiagram
+    actor user as User
+    participant ui as :Ui
+    participant main as :Main
+    participant cmd as :SearchCommand
+    participant list as :ApplicationList
+    participant app as :Application
+    participant table as :ApplicationTable
+
+    user->>main: Select option 8 (Search)
+    main->>ui: promptNonEmpty("Enter search term:")
+    activate ui
+    ui-->>main: "engineer"
+    deactivate ui
+    main->>cmd: new SearchCommand("engineer")
+    activate cmd
+    cmd-->>main: searchCommand
+    deactivate cmd
+    main->>cmd: execute(...)
+    activate cmd
+
+    loop for each application
+        cmd->>list: get(i)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>app: getCompany()
+        activate app
+        app-->>cmd: "Google"
+        deactivate app
+        cmd->>app: getRole()
+        activate app
+        app-->>cmd: "Software Engineer"
+        deactivate app
+    end
+
+    alt matches found
+        cmd->>table: format(apps, matches)
+        activate table
+        table-->>cmd: formattedTable
+        deactivate table
+        cmd->>ui: showMessage(formattedTable)
+        activate ui
+        ui-->>user: Matching applications table
+        deactivate ui
+    else else
+        cmd->>ui: showMessage("No applications found")
+        activate ui
+        ui-->>user: No matches message
+        deactivate ui
+    end
+
+    deactivate cmd
