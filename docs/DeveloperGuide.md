@@ -28,17 +28,43 @@ The high-level interaction between the user, UI, logic controller, domain model,
 ```mermaid
 flowchart TB
     User(["User (Terminal)"])
-    UI["UI Component<br/>(Ui, ApplicationTable)"]
-    Logic["Logic / Command Component<br/>(Main, CommandParser, Command Hierarchy)"]
-    Storage["Storage Component<br/>(Storage)"]
-    Model["Model Component<br/>(ApplicationList, Application, DeadlineWarnings)"]
-    File[("applications.txt")]
+
+    subgraph UI["UI Component"]
+        direction LR
+        Ui["Ui"]
+        Table["ApplicationTable"]
+        Ui -.-> Table
+    end
+
+    subgraph Logic["Logic / Command Component"]
+        direction TB
+        Main["Main (Controller)"]
+        Parser["CommandParser"]
+        Commands["Command Hierarchy<br/>(Add, Delete, Edit, View, etc.)"]
+        Main --> Parser
+        Parser --> Commands
+    end
+
+    subgraph Storage["Storage Component"]
+        direction TB
+        StorageClass["Storage"]
+        File[("applications.txt")]
+        StorageClass <--> File
+    end
+
+    subgraph Model["Model Component"]
+        direction TB
+        Warnings["DeadlineWarnings"]
+        AppList["ApplicationList"]
+        App["Application"]
+        Warnings --> AppList
+        AppList --> App
+    end
 
     User <--> UI
     UI <--> Logic
     Logic --> Storage
     Logic --> Model
-    Storage <--> File
     Storage -.->|loads / saves| Model
     Model -.->|supplies data| UI
 ```
