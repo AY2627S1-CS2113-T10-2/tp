@@ -14,6 +14,11 @@ public enum RecruitmentStage {
     REJECTED("Rejected", true),
     WITHDRAWN("Withdrawn", true);
 
+    /** The prompt message displaying all available numeric choices and stage names. */
+    public static final String SELECTION_PROMPT =
+            "Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
+            + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ";
+
     private final String label;
     private final boolean terminal;
 
@@ -30,6 +35,39 @@ public enum RecruitmentStage {
     /** Returns whether the hiring process has reached an ending stage. */
     public boolean isTerminal() {
         return terminal;
+    }
+
+    /**
+     * Resolves a user selection—either a 1-based numeric option ("1" to "7") or a stage name/shortcut—
+     * into the corresponding RecruitmentStage.
+     *
+     * @param choice Numeric menu option or stage name.
+     * @return The resolved RecruitmentStage.
+     * @throws IllegalArgumentException If the choice does not correspond to a valid stage.
+     */
+    public static RecruitmentStage fromChoice(String choice) {
+        if (choice == null || choice.isBlank()) {
+            throw new IllegalArgumentException("Recruitment stage cannot be blank.");
+        }
+        String trimmed = choice.trim();
+        switch (trimmed) {
+        case "1":
+            return APPLIED;
+        case "2":
+            return ONLINE_ASSESSMENT;
+        case "3":
+            return INTERVIEW;
+        case "4":
+            return OFFER;
+        case "5":
+            return ACCEPTED;
+        case "6":
+            return REJECTED;
+        case "7":
+            return WITHDRAWN;
+        default:
+            return fromLabel(trimmed);
+        }
     }
 
     /**

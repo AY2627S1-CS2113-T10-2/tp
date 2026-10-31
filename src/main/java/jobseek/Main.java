@@ -9,16 +9,13 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.RecruitmentStageCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
-import jobseek.command.RecruitmentStageCommand;
-import jobseek.command.TodayCommand;
-import jobseek.command.UndoCommand;
-import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
-import jobseek.parser.CommandParser;
 import jobseek.model.RecruitmentStage;
+import jobseek.parser.CommandParser;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 
@@ -151,37 +148,9 @@ public class Main {
 
         String trimmedOption = option.trim();
 
-        if (trimmedOption.equalsIgnoreCase("view") || trimmedOption.matches("(?i)^view\\s+.*")) {
-            try {
-                String args = trimmedOption.replaceFirst("(?i)^view", "").trim();
-                return ViewCommand.parse(args);
-            } catch (JobSeekException e) {
-                ui.showError(e.getMessage());
-                return null;
-            }
-        }
-
-        if (trimmedOption.equalsIgnoreCase("undo")) {
-            return new UndoCommand(history);
-        }
-
-        if (trimmedOption.equalsIgnoreCase("today")) {
-            return new TodayCommand();
-        }
-
-        if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.matches("(?i)^list\\s+.*")) {
-            try {
-                String args = trimmedOption.replaceFirst("(?i)^list", "").trim();
-                return ListCommand.parse(args);
-            } catch (JobSeekException e) {
-                ui.showError(e.getMessage());
-                return null;
-            }
-        }
-
-        // Typed commands such as "add c/Google r/SWE" are tried before falling back to the numbered menu.
+        // Typed commands (e.g. "add c/Google", "view 1", "list active", "today", "undo") are parsed first.
         try {
-            Command typedCommand = CommandParser.parse(trimmedOption);
+            Command typedCommand = CommandParser.parse(trimmedOption, history);
             if (typedCommand != null) {
                 return typedCommand;
             }
@@ -368,47 +337,17 @@ public class Main {
 
     private RecruitmentStage promptRecruitmentStage() {
         while (true) {
-            ui.showPrompt("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
-                    + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ");
+            ui.showPrompt(RecruitmentStage.SELECTION_PROMPT);
             String input = ui.readCommand();
             if (input == null) {
                 return null;
             }
-            String trimmed = input.trim();
-            RecruitmentStage stage;
-            switch (trimmed) {
-            case "1":
-                stage = RecruitmentStage.APPLIED;
-                break;
-            case "2":
-                stage = RecruitmentStage.ONLINE_ASSESSMENT;
-                break;
-            case "3":
-                stage = RecruitmentStage.INTERVIEW;
-                break;
-            case "4":
-                stage = RecruitmentStage.OFFER;
-                break;
-            case "5":
-                stage = RecruitmentStage.ACCEPTED;
-                break;
-            case "6":
-                stage = RecruitmentStage.REJECTED;
-                break;
-            case "7":
-                stage = RecruitmentStage.WITHDRAWN;
-                break;
-            default:
-                try {
-                    stage = RecruitmentStage.fromLabel(trimmed);
-                    break;
-                } catch (IllegalArgumentException e) {
-                    ui.showError("Invalid recruitment stage: '" + trimmed
-                            + "'. Enter a stage name or a number from 1 to 7.");
-                }
-                continue;
+            try {
+                return RecruitmentStage.fromChoice(input);
+            } catch (IllegalArgumentException e) {
+                ui.showError("Invalid recruitment stage: '" + input.trim()
+                        + "'. Enter a stage name or a number from 1 to 7.");
             }
-            return stage;
         }
     }
 
