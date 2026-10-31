@@ -13,13 +13,24 @@ public class DeadlineWarnings {
     private static final int UPCOMING_WINDOW_DAYS = 7;
 
     /**
-     * Displays overdue, due-today, and near-term deadlines for active applications.
+     * Displays overdue, due-today, and near-term deadlines for active applications based on today's date.
      *
      * @param applications Applications to inspect.
      * @param ui User interface used to display any warnings.
      */
     public void show(ApplicationList applications, Ui ui) {
-        LocalDate today = LocalDate.now();
+        show(applications, ui, LocalDate.now());
+    }
+
+    /**
+     * Displays overdue, due-today, and near-term deadlines using an explicit reference date.
+     *
+     * @param applications Applications to inspect.
+     * @param ui User interface used to display any warnings.
+     * @param today Reference date for deadline calculations.
+     */
+    public void show(ApplicationList applications, Ui ui, LocalDate today) {
+        assert today != null : "Reference date cannot be null";
         StringBuilder warnings = new StringBuilder();
         for (int i = 0; i < applications.size(); i++) {
             Application application = applications.get(i);

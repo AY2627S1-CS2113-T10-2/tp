@@ -1,5 +1,7 @@
 package jobseek.command;
 
+import java.io.IOException;
+
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.model.RecruitmentStage;
@@ -45,7 +47,7 @@ public class RecruitmentStageCommand extends UndoableCommand {
      * @throws Exception If an error occurs during saving.
      */
     @Override
-    public void execute(ApplicationList applications, Ui ui, Storage storage) throws Exception {
+    public void execute(ApplicationList applications, Ui ui, Storage storage) throws IOException {
         assert applications != null : "Applications list cannot be null";
         assert ui != null : "Ui instance cannot be null";
         assert storage != null : "Storage instance cannot be null";

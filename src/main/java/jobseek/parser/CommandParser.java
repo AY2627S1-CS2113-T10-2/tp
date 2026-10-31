@@ -2,14 +2,19 @@ package jobseek.parser;
 
 import jobseek.command.AddCommand;
 import jobseek.command.Command;
+import jobseek.command.CommandHistory;
 import jobseek.command.DeleteCommand;
 import jobseek.command.EditCommand;
 import jobseek.command.ExitCommand;
 import jobseek.command.FindCommand;
 import jobseek.command.HelpCommand;
+import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
+import jobseek.command.TodayCommand;
+import jobseek.command.UndoCommand;
+import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.Application;
 import jobseek.model.ApplicationFilters;
@@ -23,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
@@ -55,25 +61,39 @@ public class CommandParser {
     /** A field prefix is a lowercase letter and a slash at the start of the text or after a space. */
     private static final Pattern FIELD_PREFIX = Pattern.compile("(?:^|\\s)([a-z])/");
 
+    private static final Logger LOGGER = Logger.getLogger(CommandParser.class.getName());
+
     private CommandParser() {
         // Utility class: all methods are static.
     }
 
     /**
-     * Parses a typed command.
+     * Parses a line of user input without access to command history.
      *
      * @param input Full line entered by the user.
-     * @return The matching command, or null when the first word is not a typed command
-     *         (for example a menu number), so the caller can try other ways to interpret it.
-     * @throws JobSeekException If the first word is a typed command but its arguments are invalid.
+     * @return The matching command, or null when the first word is not a typed command.
+     * @throws JobSeekException If the command syntax or arguments are invalid.
      */
     public static Command parse(String input) throws JobSeekException {
+        return parse(input, null);
+    }
+
+    /**
+     * Parses a line of user input, supporting commands that inspect command history (such as undo).
+     *
+     * @param input Full line entered by the user.
+     * @param history The command history instance, or null if undo is unavailable.
+     * @return The matching command, or null when the first word is not a typed command.
+     * @throws JobSeekException If the command syntax or arguments are invalid.
+     */
+    public static Command parse(String input, CommandHistory history) throws JobSeekException {
         if (input == null || input.trim().isEmpty()) {
             return null;
         }
         String[] parts = input.trim().split("\\s+", 2);
         String word = parts[0].toLowerCase(Locale.ROOT);
         String arguments = parts.length > 1 ? parts[1].trim() : "";
+        LOGGER.fine("Parsing typed command word: " + word);
 
         switch (word) {
         case "add":
@@ -99,6 +119,14 @@ public class CommandParser {
             return new HelpCommand();
         case "exit":
             return new ExitCommand();
+        case "view":
+            return ViewCommand.parse(arguments);
+        case "list":
+            return ListCommand.parse(arguments);
+        case "today":
+            return new TodayCommand();
+        case "undo":
+            return history != null ? new UndoCommand(history) : null;
         default:
             return null;
         }

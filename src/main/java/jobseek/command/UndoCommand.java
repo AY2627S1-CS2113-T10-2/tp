@@ -1,5 +1,7 @@
 package jobseek.command;
 
+import java.io.IOException;
+
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -30,7 +32,7 @@ public class UndoCommand extends Command {
      * @throws Exception If an error occurs during saving.
      */
     @Override
-    public void execute(ApplicationList applications, Ui ui, Storage storage) throws Exception {
+    public void execute(ApplicationList applications, Ui ui, Storage storage) throws IOException {
         UndoableCommand last = history.pop();
         if (last == null) {
             ui.showError("Nothing to undo.");

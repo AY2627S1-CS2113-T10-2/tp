@@ -1,5 +1,10 @@
 package jobseek;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.logging.Logger;
+
 import jobseek.command.AddCommand;
 import jobseek.command.Command;
 import jobseek.command.CommandHistory;
@@ -9,26 +14,22 @@ import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
 import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
+import jobseek.command.RecruitmentStageCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
-import jobseek.command.RecruitmentStageCommand;
-import jobseek.command.TodayCommand;
-import jobseek.command.UndoCommand;
-import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
-import jobseek.parser.CommandParser;
 import jobseek.model.RecruitmentStage;
+import jobseek.parser.CommandParser;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 
 /**
  * Main entry point for the JobSeek CLI application.
  */
 public class Main {
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
     private final Ui ui;
     private final Storage storage;
     private final ApplicationList applications;
@@ -77,12 +78,14 @@ public class Main {
      */
     private static ApplicationList loadApplications(Ui ui, Storage storage) {
         try {
+            LOGGER.info("Attempting to load applications from storage.");
             ApplicationList loaded = storage.load();
             for (String warning : storage.getLoadWarnings()) {
                 ui.showError(warning);
             }
             return loaded;
-        } catch (Exception e) {
+        } catch (IOException e) {
+            LOGGER.warning("IOException encountered during application load: " + e.getMessage());
             ui.showError("Failed to load applications: " + e.getMessage());
             return new ApplicationList();
         }
@@ -101,6 +104,7 @@ public class Main {
      * Starts and executes the application workflow.
      */
     public void run() {
+        LOGGER.info("Starting JobSeek application loop.");
         ui.showWelcome();
         deadlineWarnings.show(applications, ui);
         ui.showMenu(applications);
@@ -125,8 +129,9 @@ public class Main {
                     isExit = command.isExit();
                 } catch (JobSeekException e) {
                     ui.showError(e.getMessage());
-                } catch (Exception e) {
-                    ui.showError("An error occurred while executing command: " + e.getMessage());
+                } catch (IOException e) {
+                    LOGGER.warning("Storage operation failed: " + e.getMessage());
+                    ui.showError("Storage operation failed: " + e.getMessage());
                 }
             }
             if (!isExit) {
@@ -134,6 +139,7 @@ public class Main {
             }
         }
 
+        LOGGER.info("Exiting JobSeek application cleanly.");
         ui.showGoodbye();
     }
 
@@ -151,37 +157,9 @@ public class Main {
 
         String trimmedOption = option.trim();
 
-        if (trimmedOption.equalsIgnoreCase("view") || trimmedOption.matches("(?i)^view\\s+.*")) {
-            try {
-                String args = trimmedOption.replaceFirst("(?i)^view", "").trim();
-                return ViewCommand.parse(args);
-            } catch (JobSeekException e) {
-                ui.showError(e.getMessage());
-                return null;
-            }
-        }
-
-        if (trimmedOption.equalsIgnoreCase("undo")) {
-            return new UndoCommand(history);
-        }
-
-        if (trimmedOption.equalsIgnoreCase("today")) {
-            return new TodayCommand();
-        }
-
-        if (trimmedOption.equalsIgnoreCase("list") || trimmedOption.matches("(?i)^list\\s+.*")) {
-            try {
-                String args = trimmedOption.replaceFirst("(?i)^list", "").trim();
-                return ListCommand.parse(args);
-            } catch (JobSeekException e) {
-                ui.showError(e.getMessage());
-                return null;
-            }
-        }
-
-        // Typed commands such as "add c/Google r/SWE" are tried before falling back to the numbered menu.
+        // Typed commands (e.g. "add c/Google", "view 1", "list active", "today", "undo") are parsed first.
         try {
-            Command typedCommand = CommandParser.parse(trimmedOption);
+            Command typedCommand = CommandParser.parse(trimmedOption, history);
             if (typedCommand != null) {
                 return typedCommand;
             }
@@ -337,73 +315,48 @@ public class Main {
             String notes = promptOptional("Enter new notes (leave blank to clear):");
             return EditCommand.editNotes(index, notes);
         case "8":
-            String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
-            if (allCompany == null) {
-                return null;
-            }
-            String allRole = promptNonEmpty("Enter new role:", "Role cannot be empty.");
-            if (allRole == null) {
-                return null;
-            }
-            RecruitmentStage allStage = promptRecruitmentStage();
-            if (allStage == null) {
-                return null;
-            }
-            LocalDate allDeadline = promptDeadline();
-            String allPortalLink = promptOptional("Company Portal Link (leave blank to clear):");
-            String allEmail = promptOptional("Contact Email (leave blank to clear):");
-            String allNotes = promptOptional("Notes (leave blank to clear):");
-            return EditCommand.editAll(index, allCompany, allRole, allStage,
-                    allDeadline, allPortalLink, allEmail, allNotes);
+            return handleEditAllFields(index);
         default:
             ui.showError("Invalid field choice: '" + trimmedChoice + "'. Enter a number from 1 to 8.");
             return null;
         }
     }
 
+    /** Prompts sequentially for all application fields to update an application record completely. */
+    private Command handleEditAllFields(int index) {
+        String allCompany = promptNonEmpty("Enter new company:", "Company cannot be empty.");
+        if (allCompany == null) {
+            return null;
+        }
+        String allRole = promptNonEmpty("Enter new role:", "Role cannot be empty.");
+        if (allRole == null) {
+            return null;
+        }
+        RecruitmentStage allStage = promptRecruitmentStage();
+        if (allStage == null) {
+            return null;
+        }
+        LocalDate allDeadline = promptDeadline();
+        String allPortalLink = promptOptional("Company Portal Link (leave blank to clear):");
+        String allEmail = promptOptional("Contact Email (leave blank to clear):");
+        String allNotes = promptOptional("Notes (leave blank to clear):");
+        return EditCommand.editAll(index, allCompany, allRole, allStage,
+                allDeadline, allPortalLink, allEmail, allNotes);
+    }
+
     private RecruitmentStage promptRecruitmentStage() {
         while (true) {
-            ui.showPrompt("Enter recruitment stage (1: Applied, 2: Online Assessment, 3: Interview, "
-                    + "4: Offer, 5: Accepted, 6: Rejected, 7: Withdrawn):\n> ");
+            ui.showPrompt(RecruitmentStage.SELECTION_PROMPT);
             String input = ui.readCommand();
             if (input == null) {
                 return null;
             }
-            String trimmed = input.trim();
-            RecruitmentStage stage;
-            switch (trimmed) {
-            case "1":
-                stage = RecruitmentStage.APPLIED;
-                break;
-            case "2":
-                stage = RecruitmentStage.ONLINE_ASSESSMENT;
-                break;
-            case "3":
-                stage = RecruitmentStage.INTERVIEW;
-                break;
-            case "4":
-                stage = RecruitmentStage.OFFER;
-                break;
-            case "5":
-                stage = RecruitmentStage.ACCEPTED;
-                break;
-            case "6":
-                stage = RecruitmentStage.REJECTED;
-                break;
-            case "7":
-                stage = RecruitmentStage.WITHDRAWN;
-                break;
-            default:
-                try {
-                    stage = RecruitmentStage.fromLabel(trimmed);
-                    break;
-                } catch (IllegalArgumentException e) {
-                    ui.showError("Invalid recruitment stage: '" + trimmed
-                            + "'. Enter a stage name or a number from 1 to 7.");
-                }
-                continue;
+            try {
+                return RecruitmentStage.fromChoice(input);
+            } catch (IllegalArgumentException e) {
+                ui.showError("Invalid recruitment stage: '" + input.trim()
+                        + "'. Enter a stage name or a number from 1 to 7.");
             }
-            return stage;
         }
     }
 

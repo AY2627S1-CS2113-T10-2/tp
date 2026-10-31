@@ -26,6 +26,26 @@ public class RecruitmentStageTest {
     }
 
     @Test
+    public void fromChoice_validOptionsAndLabels_resolvesCorrectly() {
+        assertEquals(RecruitmentStage.APPLIED, RecruitmentStage.fromChoice("1"));
+        assertEquals(RecruitmentStage.ONLINE_ASSESSMENT, RecruitmentStage.fromChoice("2"));
+        assertEquals(RecruitmentStage.INTERVIEW, RecruitmentStage.fromChoice("3"));
+        assertEquals(RecruitmentStage.OFFER, RecruitmentStage.fromChoice("4"));
+        assertEquals(RecruitmentStage.ACCEPTED, RecruitmentStage.fromChoice("5"));
+        assertEquals(RecruitmentStage.REJECTED, RecruitmentStage.fromChoice("6"));
+        assertEquals(RecruitmentStage.WITHDRAWN, RecruitmentStage.fromChoice("7"));
+        assertEquals(RecruitmentStage.INTERVIEW, RecruitmentStage.fromChoice("Interview"));
+    }
+
+    @Test
+    public void fromChoice_invalidOptions_throws() {
+        assertThrows(IllegalArgumentException.class, () -> RecruitmentStage.fromChoice("0"));
+        assertThrows(IllegalArgumentException.class, () -> RecruitmentStage.fromChoice("8"));
+        assertThrows(IllegalArgumentException.class, () -> RecruitmentStage.fromChoice(""));
+        assertThrows(IllegalArgumentException.class, () -> RecruitmentStage.fromChoice(null));
+    }
+
+    @Test
     public void fromLabel_rejectsUnknownStages() {
         assertThrows(IllegalArgumentException.class, () -> RecruitmentStage.fromLabel("Screening"));
     }

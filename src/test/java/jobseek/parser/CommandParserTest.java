@@ -2,13 +2,18 @@ package jobseek.parser;
 
 import jobseek.command.AddCommand;
 import jobseek.command.Command;
+import jobseek.command.CommandHistory;
 import jobseek.command.DeleteCommand;
 import jobseek.command.EditCommand;
 import jobseek.command.ExitCommand;
 import jobseek.command.HelpCommand;
+import jobseek.command.ListCommand;
 import jobseek.command.MarkCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
+import jobseek.command.TodayCommand;
+import jobseek.command.UndoCommand;
+import jobseek.command.ViewCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.RecruitmentStage;
 import org.junit.jupiter.api.Test;
@@ -181,6 +186,13 @@ public class CommandParserTest {
     public void parse_simpleWords_buildMatchingCommands() throws Exception {
         assertInstanceOf(SortCommand.class, CommandParser.parse("sort"));
         assertInstanceOf(HelpCommand.class, CommandParser.parse("HELP"));
+        assertInstanceOf(TodayCommand.class, CommandParser.parse("today"));
+        assertInstanceOf(ListCommand.class, CommandParser.parse("list"));
+        assertInstanceOf(ListCommand.class, CommandParser.parse("list completed"));
+        assertInstanceOf(ViewCommand.class, CommandParser.parse("view 1"));
+        CommandHistory history = new CommandHistory();
+        assertInstanceOf(UndoCommand.class, CommandParser.parse("undo", history));
+        assertNull(CommandParser.parse("undo")); // Null when history is omitted
         Command exit = CommandParser.parse("exit");
         assertInstanceOf(ExitCommand.class, exit);
         assertTrue(exit.isExit());
@@ -191,7 +203,7 @@ public class CommandParserTest {
         assertNull(CommandParser.parse("1"));
         assertNull(CommandParser.parse("10"));
         assertNull(CommandParser.parse("foobar"));
-        assertNull(CommandParser.parse("list"));
+        assertNull(CommandParser.parse("unknown"));
         assertNull(CommandParser.parse(""));
         assertNull(CommandParser.parse(null));
     }

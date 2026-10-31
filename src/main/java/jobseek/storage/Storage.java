@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
@@ -17,6 +18,7 @@ import jobseek.model.RecruitmentStage;
  * Handles persistence by loading and saving job application data to local storage.
  */
 public class Storage {
+    private static final Logger LOGGER = Logger.getLogger(Storage.class.getName());
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
     private static final String COLUMN_HEADER =
@@ -81,9 +83,9 @@ public class Storage {
      * Saves the application list to local storage.
      *
      * @param applications The ApplicationList to save.
-     * @throws Exception If an I/O or serialization error occurs.
+     * @throws IOException If a file writing error occurs.
      */
-    public void save(ApplicationList applications) throws Exception {
+    public void save(ApplicationList applications) throws IOException {
         Path path = Path.of(filePath);
         Path parent = path.getParent();
         if (parent != null) {
@@ -104,6 +106,7 @@ public class Storage {
                     + escape(application.getNotes()));
         }
         Files.write(path, lines, StandardCharsets.UTF_8);
+        LOGGER.info("Saved " + applications.size() + " applications to " + filePath);
     }
 
     /**
@@ -111,12 +114,13 @@ public class Storage {
      * Supports modern 8-field format and backwards-compatible 4-field / 5-field records.
      *
      * @return The loaded ApplicationList containing all recoverable records.
-     * @throws Exception If an unrecoverable file reading error occurs.
+     * @throws IOException If an unrecoverable file reading error occurs.
      */
-    public ApplicationList load() throws Exception {
+    public ApplicationList load() throws IOException {
         loadWarnings.clear();
         Path path = Path.of(filePath);
         if (!Files.exists(path)) {
+            LOGGER.info("Storage file not found at " + filePath + ". Returning empty list.");
             return new ApplicationList();
         }
 
@@ -124,85 +128,90 @@ public class Storage {
         List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
             String line = lines.get(lineNumber);
-            if (line.isBlank() || line.startsWith("#")) {
-                continue;
-            }
-            if (TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)
-                    || LEGACY_STATUS_8_COLUMN_HEADER.equals(line)
-                    || LEGACY_STAGE_5_COLUMN_HEADER.equals(line)
-                    || LEGACY_STATUS_5_COLUMN_HEADER.equals(line)
-                    || LEGACY_4_COLUMN_HEADER.equals(line)) {
+            if (line.isBlank() || line.startsWith("#") || isHeaderLine(line)) {
                 continue;
             }
 
             int lineIndex = lineNumber + 1;
-            List<String> fields;
-            try {
-                fields = splitFields(line);
-            } catch (IOException e) {
-                loadWarnings.add("Skipping line " + lineIndex + " in " + filePath + ": " + e.getMessage());
-                continue;
+            Application application = parseRecord(lineIndex, line);
+            if (application != null) {
+                applications.add(application);
             }
-
-            boolean hasValidFieldCount = fields.size() == FIELD_COUNT
-                    || fields.size() == LEGACY_FIELD_COUNT_5
-                    || fields.size() == LEGACY_FIELD_COUNT_4;
-            if (!hasValidFieldCount || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
-                loadWarnings.add("Skipping invalid record on line " + lineIndex + " in " + filePath + ".");
-                continue;
-            }
-
-            String company = fields.get(0);
-            String role = fields.get(1);
-            if (company.isBlank() || role.isBlank()) {
-                loadWarnings.add("Skipping record with empty company or role on line " + lineIndex
-                        + " in " + filePath + ".");
-                continue;
-            }
-
-            LocalDate deadline = null;
-            if (!fields.get(3).isEmpty()) {
-                try {
-                    deadline = LocalDate.parse(fields.get(3));
-                } catch (DateTimeParseException e) {
-                    loadWarnings.add("Skipping record with invalid deadline on line " + lineIndex
-                            + " in " + filePath + ".");
-                    continue;
-                }
-            }
-
-            boolean isCompleted = Boolean.parseBoolean(fields.get(2));
-            String stageLabel = fields.size() >= 5 ? fields.get(4) : null;
-            RecruitmentStage stage;
-            try {
-                stage = stageLabel == null || stageLabel.isBlank()
-                        ? Application.DEFAULT_STAGE : RecruitmentStage.fromLabel(stageLabel);
-            } catch (IllegalArgumentException e) {
-                loadWarnings.add("Skipping record with unknown recruitment stage on line " + lineIndex
-                        + " in " + filePath + ".");
-                continue;
-            }
-
-            String portalLink = fields.size() >= 8 ? fields.get(5) : "";
-            String email = fields.size() >= 8 ? fields.get(6) : "";
-            String notes = fields.size() >= 8 ? fields.get(7) : "";
-
-            applications.add(new Application(company, role, isCompleted, stage, deadline,
-                    portalLink, email, notes));
         }
+        LOGGER.info("Loaded " + applications.size() + " applications from " + filePath);
         return applications;
     }
 
-    /** Parses a raw date string into a LocalDate, throwing an IOException on format failure. */
-    private LocalDate parseDeadline(String rawDate, int lineNumber) throws IOException {
-        if (rawDate == null || rawDate.isEmpty()) {
+    /** Checks whether a line matches any known active or legacy column header. */
+    private boolean isHeaderLine(String line) {
+        return TITLE_HEADER.equals(line) || COLUMN_HEADER.equals(line)
+                || LEGACY_STATUS_8_COLUMN_HEADER.equals(line)
+                || LEGACY_STAGE_5_COLUMN_HEADER.equals(line)
+                || LEGACY_STATUS_5_COLUMN_HEADER.equals(line)
+                || LEGACY_4_COLUMN_HEADER.equals(line);
+    }
+
+    /**
+     * Parses a single line from the storage file into an Application record.
+     * Records a warning in loadWarnings and returns null if the line is invalid or corrupted.
+     *
+     * @param lineIndex 1-based index of the line in the file.
+     * @param line Raw line text.
+     * @return Parsed Application instance, or null if line should be skipped.
+     */
+    private Application parseRecord(int lineIndex, String line) {
+        List<String> fields;
+        try {
+            fields = splitFields(line);
+        } catch (IOException e) {
+            loadWarnings.add("Skipping line " + lineIndex + " in " + filePath + ": " + e.getMessage());
             return null;
         }
-        try {
-            return LocalDate.parse(rawDate);
-        } catch (DateTimeParseException e) {
-            throw new IOException("Invalid deadline on line " + (lineNumber + 1) + " in " + filePath + ".", e);
+
+        boolean hasValidFieldCount = fields.size() == FIELD_COUNT
+                || fields.size() == LEGACY_FIELD_COUNT_5
+                || fields.size() == LEGACY_FIELD_COUNT_4;
+        if (!hasValidFieldCount || (!"true".equals(fields.get(2)) && !"false".equals(fields.get(2)))) {
+            loadWarnings.add("Skipping invalid record on line " + lineIndex + " in " + filePath + ".");
+            return null;
         }
+
+        String company = fields.get(0);
+        String role = fields.get(1);
+        if (company.isBlank() || role.isBlank()) {
+            loadWarnings.add("Skipping record with empty company or role on line " + lineIndex
+                    + " in " + filePath + ".");
+            return null;
+        }
+
+        LocalDate deadline = null;
+        if (!fields.get(3).isEmpty()) {
+            try {
+                deadline = LocalDate.parse(fields.get(3));
+            } catch (DateTimeParseException e) {
+                loadWarnings.add("Skipping record with invalid deadline on line " + lineIndex
+                        + " in " + filePath + ".");
+                return null;
+            }
+        }
+
+        boolean isCompleted = Boolean.parseBoolean(fields.get(2));
+        String stageLabel = fields.size() >= 5 ? fields.get(4) : null;
+        RecruitmentStage stage;
+        try {
+            stage = stageLabel == null || stageLabel.isBlank()
+                    ? Application.DEFAULT_STAGE : RecruitmentStage.fromLabel(stageLabel);
+        } catch (IllegalArgumentException e) {
+            loadWarnings.add("Skipping record with unknown recruitment stage on line " + lineIndex
+                    + " in " + filePath + ".");
+            return null;
+        }
+
+        String portalLink = fields.size() >= 8 ? fields.get(5) : "";
+        String email = fields.size() >= 8 ? fields.get(6) : "";
+        String notes = fields.size() >= 8 ? fields.get(7) : "";
+
+        return new Application(company, role, isCompleted, stage, deadline, portalLink, email, notes);
     }
 
     /** Escapes characters that would otherwise conflict with the tab-separated format. */

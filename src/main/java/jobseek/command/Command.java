@@ -1,5 +1,8 @@
 package jobseek.command;
 
+import java.io.IOException;
+
+import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -17,9 +20,11 @@ public abstract class Command {
      * @param applications In-memory list of applications.
      * @param ui User interface for displaying messages.
      * @param storage Storage interface for persisting data.
-     * @throws Exception If an error occurs during command execution.
+     * @throws IOException If a file persistence error occurs.
+     * @throws JobSeekException If a domain validation or command execution error occurs.
      */
-    public abstract void execute(ApplicationList applications, Ui ui, Storage storage) throws Exception;
+    public abstract void execute(ApplicationList applications, Ui ui, Storage storage)
+            throws IOException, JobSeekException;
 
     /**
      * Checks if this command requests termination of the application loop.
