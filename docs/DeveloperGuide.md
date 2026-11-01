@@ -8,6 +8,7 @@
 * **Documentation & Tools**:
   * [Mermaid](https://mermaid.js.org/) for rendering UML class and sequence diagrams.
   * [Gradle](https://gradle.org/) and [Checkstyle](https://checkstyle.sourceforge.io/) for building, testing and enforcing code style.
+* **AI assistance**: Beal Ng used OpenAI Codex to assist with the listing, search, sort, and menu/input changes, their tests and documentation, and his portfolio page.
 
 ## Design & implementation
 
