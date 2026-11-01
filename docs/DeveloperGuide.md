@@ -20,7 +20,7 @@ JobSeek is a command-line desktop application for managing internship and job ap
 * **`Main`**: Acts as the central coordinator and entry point. It initializes core dependencies, checks deadline alerts, parses user input into commands, and manages the execution loop.
 * **`UI`**: Consists of `Ui` and `ApplicationTable`. It reads console inputs, renders formatted tables, application cards, deadline warning banners, and error notifications.
 * **`Logic / Command`**: Built upon the Command pattern. Encapsulates all executable actions (`AddCommand`, `DeleteCommand`, `EditCommand`, `ListCommand`, etc.) inheriting from the common abstract `Command` base class.
-* **`Model`**: Comprises `ApplicationList`, `Application`, and `DeadlineWarnings`. Represents in-memory domain entities, their validation rules, and lifecycle states (`Pending`, `Accepted`, `Rejected`, and completion flags).
+* **`Model`**: Comprises `ApplicationList`, `Application`, and `DeadlineWarnings`. Represents in-memory domain entities, their validation rules, and lifecycle stages (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`, and completion flags).
 * **`Storage`**: Encapsulated by `Storage`. Handles file encoding/decoding and persistent reading/writing to `data/applications.txt`.
 
 #### Architecture Diagram
@@ -134,7 +134,7 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
   - `ALL`: Displays all applications regardless of completion state.
 - **Triggering mechanisms**:
   - Standalone text commands: `list` (defaults to `ACTIVE`), `list completed`, `list all`. Parsed by `ListCommand.parse(String args)`. Unrecognized filters throw a `JobSeekException` with usage instructions.
-  - Numeric menu options: Menu option `2` (`List applications`) and menu option `3` (`List uncompleted applications`) both instantiate `ListCommand(FilterType.ACTIVE)`.
+  - Numeric menu options: Menu option `2` (`List all applications`) instantiates `ListCommand(FilterType.ALL)`, and menu option `3` (`List uncompleted applications`) instantiates `ListCommand(FilterType.ACTIVE)`.
 - **Workflow**:
   1. `ListCommand.execute()` checks if `applications.isEmpty()`. If the list is empty, it outputs `"No applications found."`.
   2. Iterates over all applications and collects the zero-based indices of matching records into an `ArrayList<Integer> matchingIndices` using `matchesFilter(app)`.
@@ -232,7 +232,7 @@ The edit feature allows users to modify existing applications without deleting a
     - `6`: Contact Email only (`EditCommand`)
     - `7`: Notes only (`EditCommand`)
     - `8`: All fields in sequence (Company, Role, Recruitment Stage, Deadline, Portal Link, Email, Notes) (`EditCommand`)
-  - The typed command `edit INDEX [c/..] [r/..] [s/..]` is parsed by `CommandParser.parseEdit()` and always creates an `EditCommand`.
+  - The typed command `edit INDEX [c/..] [r/..] [s/..] [d/..] [p/..] [e/..] [n/..]` is parsed by `CommandParser.parseEdit()` and always creates an `EditCommand`.
   - Stage input normalization in `Main.promptRecruitmentStage()` accepts numbered choices (`1` for Applied, `2` for Online Assessment, `3` for Interview, `4` for Offer, `5` for Accepted, `6` for Rejected, `7` for Withdrawn) and case-insensitive stage names (e.g. `OA`). The legacy label `Pending` is read as `Applied`.
   - Optional fields (deadline, portal link, email, notes) can be updated or cleared with blank inputs.
   - Both commands extend `UndoableCommand` and remember previous values, so `undo` can restore them.
@@ -735,7 +735,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 1. Launch JobSeek with an empty list.
 2. Select `1`. When prompted for `Company:`, press Enter without typing. Confirm error appears and prompt repeats:
    ```text
-   Error: Company cannot be empty. Please enter a valid company name:
+   Error: Company cannot be empty.
    ```
 3. Enter `Google`. When prompted for `Role:`, enter `SWE Intern`. When prompted for optional fields (`Deadline:`, `Company Portal Link:`, `Contact Email:`, `Notes:`), press Enter to skip each. Confirm confirmation message:
    ```text
@@ -753,7 +753,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    Email: recruiter@microsoft.com
    Notes: First screening completed
    ```
-5. Choose `2` to list applications. Confirm the new records appear in the active applications table.
+5. Choose `2` to list all applications (or `3` for active applications). Confirm the new records appear in the table.
 
 ### Viewing help instructions
 
@@ -764,7 +764,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    ```text
    Available menu options:
      list [completed|all]            - List active, completed, or all applications
-     undo                            - Undo the last add, delete, edit, status or mark change
+     undo                            - Undo the last add, delete, edit, stage or mark change
      add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
      edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
      delete|mark|unmark INDEX        - Delete, complete or reopen an application
@@ -773,14 +773,14 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
      today                           - Show overdue, due-today and upcoming deadlines
      view INDEX                      - View details for application at INDEX
      [1] Add application             - Add a new internship or job application
-     [2] List applications           - View active applications in a numbered table
-     [3] List uncompleted apps       - View active / uncompleted applications
+     [2] List all applications       - View all applications in a numbered table
+     [3] List uncompleted applications - View active / uncompleted applications
      [4] Delete application          - Delete an application by index
-     [5] Mark application completed  - Mark an application as completed
+     [5] Mark application as completed - Mark an application as completed
      [6] Unmark application          - Mark an application as not completed
      [7] Help                        - Show this help message
      [8] Search applications         - Find applications by company or role
-     [9] Sort applications           - View applications alphabetically
+     [9] Sort applications alphabetically - View applications alphabetically
      [10] Edit application           - Edit an existing application's details
      [0] Exit                        - Exit JobSeek
    ```
@@ -833,29 +833,29 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    - Application 2: `Shopee / Backend Intern`
    - Application 3: `GovTech / Fullstack Developer`
 3. Mark Application 2 as completed using option `5`.
-4. Test active filter (default): Choose `2` (or option `3`, or type `list`). Confirm only active applications appear with original numbers:
+4. Test active filter (default): Choose `3` (or type `list`). Confirm only active applications appear with original numbers:
    ```text
-   Active applications:
-   No. | Completed | Company | Role
-   ----+-----------+---------+---------------------
-   1   | [ ]       | Google  | SWE Intern
-   3   | [ ]       | GovTech | Fullstack Developer
+   Here are your applications:
+   No. | Completed | Company | Role                | Deadline
+   ----+-----------+---------+---------------------+---------
+   1   | [ ]       | Google  | SWE Intern          | -
+   3   | [ ]       | GovTech | Fullstack Developer | -
    ```
 5. Test completed filter: Type `list completed`. Confirm only Application 2 appears:
    ```text
-   Completed applications:
-   No. | Completed | Company | Role
-   ----+-----------+---------+---------------
-   2   | [X]       | Shopee  | Backend Intern
+   Here are your applications:
+   No. | Completed | Company | Role           | Deadline
+   ----+-----------+---------+----------------+---------
+   2   | [X]       | Shopee  | Backend Intern | -
    ```
-6. Test all filter: Type `list all`. Confirm all three applications appear:
+6. Test all filter: Choose `2` (or type `list all`). Confirm all three applications appear:
    ```text
-   All applications:
-   No. | Completed | Company | Role
-   ----+-----------+---------+---------------------
-   1   | [ ]       | Google  | SWE Intern
-   2   | [X]       | Shopee  | Backend Intern
-   3   | [ ]       | GovTech | Fullstack Developer
+   Here are your applications:
+   No. | Completed | Company | Role                | Deadline
+   ----+-----------+---------+---------------------+---------
+   1   | [ ]       | Google  | SWE Intern          | -
+   2   | [X]       | Shopee  | Backend Intern      | -
+   3   | [ ]       | GovTech | Fullstack Developer | -
    ```
 7. Test unrecognized filter: Type `list pending`. Confirm error appears:
    ```text
@@ -899,10 +899,10 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    Error: Your application list is currently empty.
    ```
 2. Add two applications: Application 1 (`Google / SWE Intern`) and Application 2 (`Shopee / Backend Intern`).
-3. Choose `4` (Delete) and enter `1`. Confirm deletion confirmation message:
+3. Choose `4` (Delete), enter `1`, and confirm with `y` when asked `Delete [ ] Google | SWE Intern? (y/n)`. Confirm deletion confirmation message:
    ```text
    OK, I've deleted this application:
-     [ ] Google | Role: SWE Intern
+     [ ] Google | SWE Intern
    ```
 4. Choose `2` to list applications. Confirm only Application 2 remains (now at list index 1).
 5. Choose `4` and enter out-of-bounds index `5`:
@@ -1000,18 +1000,18 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 1. Start JobSeek with an empty application list and add `Zulu / Engineer`, `Acme / Designer`, and `Acme / Analyst` using option `1`.
 2. Choose `8` and search for `ENG`. Confirm matching results table:
    ```text
-   Search results for 'ENG':
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   1   | [ ]    | Zulu    | Engineer
+   Applications matching 'ENG':
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------
+   1   | [ ]       | Zulu    | Engineer
    ```
 3. Search for `acm` and confirm that both Acme applications appear with their original numbers `2` and `3`:
    ```text
-   Search results for 'acm':
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   2   | [ ]    | Acme    | Designer
-   3   | [ ]    | Acme    | Analyst
+   Applications matching 'acm':
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------
+   2   | [ ]       | Acme    | Designer
+   3   | [ ]       | Acme    | Analyst
    ```
 4. Search for a term that does not occur (e.g. `marketing`). Confirm no-matches message:
    ```text
@@ -1019,21 +1019,21 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    ```
 5. Choose `9` (Sort). Confirm alphabetical order by company, then role, while preserving original indices:
    ```text
-   Sorted applications:
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   3   | [ ]    | Acme    | Analyst
-   2   | [ ]    | Acme    | Designer
-   1   | [ ]    | Zulu    | Engineer
+   Applications sorted by company, then role:
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------
+   3   | [ ]       | Acme    | Analyst
+   2   | [ ]       | Acme    | Designer
+   1   | [ ]       | Zulu    | Engineer
    ```
 6. Type `list all`. Confirm the original storage order is unaffected:
    ```text
-   All applications:
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   1   | [ ]    | Zulu    | Engineer
-   2   | [ ]    | Acme    | Designer
-   3   | [ ]    | Acme    | Analyst
+   Here are your applications:
+   No. | Completed | Company | Role     | Deadline
+   ----+-----------+---------+----------+---------
+   1   | [ ]       | Zulu    | Engineer | -
+   2   | [ ]       | Acme    | Designer | -
+   3   | [ ]       | Acme    | Analyst  | -
    ```
 
 ### Typed commands
@@ -1041,8 +1041,8 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 *Feature tested: Typed commands (Implemented by: Peng Bohao)*
 
 1. Type `add c/Google r/SWE Intern d/2026-11-30`. Confirm that the confirmation shows `Company: Google`, `Role: SWE Intern` and `Deadline: 2026-11-30`.
-2. Type `add c/Shopee` (no role). Confirm an error ending with `Usage: add c/COMPANY r/ROLE [d/YYYY-MM-DD]` and that nothing is added.
-3. Type `edit 1 r/Backend Intern s/oa`. Confirm that the role changes and `view 1` shows `Status:    Online Assessment`.
+2. Type `add c/Shopee` (no role). Confirm an error ending with `Usage: add c/COMPANY r/ROLE [d/YYYY-MM-DD] [p/PORTAL_LINK] [e/EMAIL] [n/NOTES]` and that nothing is added.
+3. Type `edit 1 r/Backend Intern s/oa`. Confirm that the role changes and `view 1` shows `Recruitment stage: Online Assessment`.
 4. Type `edit 1`, then `edit 1 s/maybe`. Confirm that each gives an error (`Nothing to edit` and `Invalid stage`).
 5. Type `mark 1`, `unmark 1`, `search goo`, `sort`. Confirm each works like the matching menu option.
 6. Type `delete`, `delete abc` and `delete 0`. Confirm each gives an error that includes `Usage: delete INDEX`.
@@ -1061,7 +1061,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 
 ### Delete confirmation and undo
 
-1. Have at least two applications. Type `delete 1`. When asked `Delete ... ? (y/n)`, type `n`. Confirm `Deletion cancelled.` and that `list` still shows both.
+1. Have at least two applications. Type `delete 1`. When asked `Delete ... ? (y/n)`, type `n`. Confirm `Deletion cancelled. No application was deleted.` and that `list` still shows both.
 2. Type `delete 1` again and answer `y`. Confirm the application is deleted.
 3. Type `undo`. Confirm `Undone: deleted ...` and that the application is back at position 1.
 4. Type `mark 1`, then `undo`. Confirm application 1 is shown as `[ ]` again.

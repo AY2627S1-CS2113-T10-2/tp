@@ -9,10 +9,16 @@ sequenceDiagram
     participant storage as :Storage
 
     user->>main: Option 5 (Mark) / Option 6 (Unmark)
-    main->>ui: promptApplicationIndex()
+    main->>main: promptApplicationIndex()
+    activate main
+    main->>ui: showPrompt(...)
     activate ui
-    ui-->>main: 1 (0-based: 0)
     deactivate ui
+    main->>ui: readCommand()
+    activate ui
+    ui-->>main: "1" (0-based: 0)
+    deactivate ui
+    deactivate main
     main->>cmd: new MarkCommand(0, true)
     activate cmd
     cmd-->>main: markCommand

@@ -7,8 +7,8 @@ classDiagram
 
     class DeadlineWarnings {
         - UPCOMING_WINDOW_DAYS: int$
-        + show(applications: ApplicationList, ui: Ui)$: void
-        - appendWarning(warnings: StringBuilder, application: Application, deadline: LocalDate, today: LocalDate)$: void
+        + show(applications: ApplicationList, ui: Ui): void
+        - appendWarning(warnings: StringBuilder, application: Application, deadline: LocalDate, today: LocalDate): void
     }
 
     class ApplicationList {

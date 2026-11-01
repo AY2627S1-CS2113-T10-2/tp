@@ -140,7 +140,7 @@ public class Ui {
     private void showMenuOptions() {
         showLine();
         System.out.println("[1] Add application");
-        System.out.println("[2] List applications");
+        System.out.println("[2] List all applications");
         System.out.println("[3] List uncompleted applications");
         System.out.println("[4] Delete application");
         System.out.println("[5] Mark application as completed");

@@ -8,10 +8,16 @@ sequenceDiagram
     participant storage as :Storage
 
     user->>main: Option 4 (Delete)
-    main->>ui: promptApplicationIndex()
+    main->>main: promptApplicationIndex()
+    activate main
+    main->>ui: showPrompt(...)
     activate ui
-    ui-->>main: 1 (0-based: 0)
     deactivate ui
+    main->>ui: readCommand()
+    activate ui
+    ui-->>main: "1" (0-based: 0)
+    deactivate ui
+    deactivate main
     main->>cmd: new DeleteCommand(0)
     activate cmd
     cmd-->>main: deleteCommand

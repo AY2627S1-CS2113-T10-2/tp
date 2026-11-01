@@ -35,7 +35,7 @@ sequenceDiagram
         deactivate app
     end
 
-    cmd->>table: format(apps, sorted)
+    cmd->>table: format(apps, sorted, heading)
     activate table
     table-->>cmd: formattedTable
     deactivate table

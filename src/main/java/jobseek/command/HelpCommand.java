@@ -29,14 +29,14 @@ public class HelpCommand extends Command {
                 + "  today                           - Show overdue, due-today and upcoming deadlines\n"
                 + "  view INDEX                      - View details for application at INDEX\n"
                 + "  [1] Add application             - Add a new internship or job application\n"
-                + "  [2] List applications           - View active applications in a numbered table\n"
-                + "  [3] List uncompleted apps       - View active / uncompleted applications\n"
+                + "  [2] List all applications       - View all applications in a numbered table\n"
+                + "  [3] List uncompleted applications - View active / uncompleted applications\n"
                 + "  [4] Delete application          - Delete an application by index\n"
-                + "  [5] Mark application completed  - Mark an application as completed\n"
+                + "  [5] Mark application as completed - Mark an application as completed\n"
                 + "  [6] Unmark application          - Mark an application as not completed\n"
                 + "  [7] Help                        - Show this help message\n"
                 + "  [8] Search applications         - Find applications by company or role\n"
-                + "  [9] Sort applications           - View applications alphabetically\n"
+                + "  [9] Sort applications alphabetically - View applications alphabetically\n"
                 + "  [10] Edit application           - Edit an existing application's details\n"
                 + "  [0] Exit                        - Exit JobSeek";
         ui.showMessage(helpMessage);

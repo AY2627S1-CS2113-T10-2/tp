@@ -92,7 +92,7 @@ public class UiTest {
         assertTrue(output.contains("APPLICATIONS"));
         assertTrue(output.contains("No applications found."));
         assertTrue(output.contains("[1] Add application"));
-        assertTrue(output.contains("[2] List applications"));
+        assertTrue(output.contains("[2] List all applications"));
         assertTrue(output.contains("[3] List uncompleted applications"));
         assertTrue(output.contains("[4] Delete application"));
         assertTrue(output.contains("[5] Mark application as completed"));
