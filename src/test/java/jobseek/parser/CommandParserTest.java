@@ -199,6 +199,15 @@ public class CommandParserTest {
     }
 
     @Test
+    public void parse_noArgumentCommandsWithExtraText_throw() {
+        for (String command : new String[]{"sort", "help", "today", "exit", "undo"}) {
+            JobSeekException error = assertThrows(JobSeekException.class,
+                    () -> CommandParser.parse(command + " extra", new CommandHistory()));
+            assertTrue(error.getMessage().contains("Usage: " + command));
+        }
+    }
+
+    @Test
     public void parse_menuNumbersAndUnknownWords_returnNull() throws Exception {
         assertNull(CommandParser.parse("1"));
         assertNull(CommandParser.parse("10"));
