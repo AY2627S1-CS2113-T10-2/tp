@@ -79,6 +79,11 @@ public class Storage {
         return List.copyOf(loadWarnings);
     }
 
+    /** Clears the recorded load warnings. */
+    public void clearLoadWarnings() {
+        loadWarnings.clear();
+    }
+
     /**
      * Saves the application list to local storage.
      *

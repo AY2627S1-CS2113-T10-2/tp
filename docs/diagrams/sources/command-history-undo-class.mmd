@@ -13,7 +13,7 @@ classDiagram
     }
     class CommandHistory {
         -history: Deque~UndoableCommand~
-        +record(command: UndoableCommand): void
+        +record(command: Command): void
         +pop(): UndoableCommand
         +isEmpty(): boolean
     }

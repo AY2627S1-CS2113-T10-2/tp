@@ -9,10 +9,16 @@ sequenceDiagram
     participant table as :ApplicationTable
 
     user->>main: Select option 8 (Search)
-    main->>ui: promptNonEmpty("Enter search term:")
+    main->>main: promptNonEmpty("Enter search term:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "engineer"
     deactivate ui
+    deactivate main
     main->>cmd: new SearchCommand("engineer")
     activate cmd
     cmd-->>main: searchCommand
@@ -36,7 +42,7 @@ sequenceDiagram
     end
 
     alt matches found
-        cmd->>table: format(apps, matches)
+        cmd->>table: format(apps, matches, heading)
         activate table
         table-->>cmd: formattedTable
         deactivate table

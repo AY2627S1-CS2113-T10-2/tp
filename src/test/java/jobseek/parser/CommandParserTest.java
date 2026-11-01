@@ -136,6 +136,13 @@ public class CommandParserTest {
     }
 
     @Test
+    public void parse_editWithNumericStage_success() throws Exception {
+        EditCommand command = assertInstanceOf(EditCommand.class, CommandParser.parse("edit 1 s/3"));
+
+        assertEquals(RecruitmentStage.INTERVIEW, command.getNewStage());
+    }
+
+    @Test
     public void parse_editInvalidStage_throwsListingValidStages() {
         JobSeekException e = assertThrows(JobSeekException.class, () -> CommandParser.parse("edit 1 s/maybe"));
 
@@ -196,6 +203,61 @@ public class CommandParserTest {
         Command exit = CommandParser.parse("exit");
         assertInstanceOf(ExitCommand.class, exit);
         assertTrue(exit.isExit());
+    }
+
+    @Test
+    public void parse_addWithOptionalPortalEmailNotes_buildsAddCommand() throws Exception {
+        AddCommand command = assertInstanceOf(AddCommand.class,
+                CommandParser.parse("add c/Apple r/iOS Dev p/https://apple.com e/jobs@apple.com n/Referred"));
+
+        assertEquals("Apple", command.getCompany());
+        assertEquals("iOS Dev", command.getRole());
+        assertEquals("https://apple.com", command.getPortalLink());
+        assertEquals("jobs@apple.com", command.getEmail());
+        assertEquals("Referred", command.getNotes());
+    }
+
+    @Test
+    public void parse_addAndEditWithUppercasePrefixes_parsedCorrectly() throws Exception {
+        AddCommand addCmd = assertInstanceOf(AddCommand.class,
+                CommandParser.parse("add C/Netflix R/Backend Engineer"));
+        assertEquals("Netflix", addCmd.getCompany());
+        assertEquals("Backend Engineer", addCmd.getRole());
+
+        EditCommand editCmd = assertInstanceOf(EditCommand.class,
+                CommandParser.parse("edit 1 C/Meta R/ML Intern S/Interview"));
+        assertEquals(0, editCmd.getTargetIndex());
+        assertEquals("Meta", editCmd.getNewCompany());
+        assertEquals("ML Intern", editCmd.getNewRole());
+        assertEquals(RecruitmentStage.INTERVIEW, editCmd.getNewStage());
+    }
+
+    @Test
+    public void parse_addAndEditWithTabs_sanitizesTabsToSpaces() throws Exception {
+        AddCommand addCmd = assertInstanceOf(AddCommand.class,
+                CommandParser.parse("add c/Google\tCorp r/SWE\tIntern"));
+        assertEquals("Google Corp", addCmd.getCompany());
+        assertEquals("SWE Intern", addCmd.getRole());
+
+        EditCommand editCmd = assertInstanceOf(EditCommand.class,
+                CommandParser.parse("edit 1 c/Shopee\tSG r/Backend\tLead"));
+        assertEquals("Shopee SG", editCmd.getNewCompany());
+        assertEquals("Backend Lead", editCmd.getNewRole());
+    }
+
+    @Test
+    public void parse_editWithAllNewFields_buildsEditCommand() throws Exception {
+        EditCommand editCmd = assertInstanceOf(EditCommand.class,
+                CommandParser.parse("edit 2 c/Alphabet r/Lead Dev s/Offer d/2026-12-01 "
+                        + "p/https://abc.xyz e/lead@abc.xyz n/Offer received"));
+        assertEquals(1, editCmd.getTargetIndex());
+        assertEquals("Alphabet", editCmd.getNewCompany());
+        assertEquals("Lead Dev", editCmd.getNewRole());
+        assertEquals(RecruitmentStage.OFFER, editCmd.getNewStage());
+        assertEquals(LocalDate.of(2026, 12, 1), editCmd.getNewDeadline());
+        assertEquals("https://abc.xyz", editCmd.getNewPortalLink());
+        assertEquals("lead@abc.xyz", editCmd.getNewEmail());
+        assertEquals("Offer received", editCmd.getNewNotes());
     }
 
     @Test

@@ -9,18 +9,30 @@ sequenceDiagram
     participant storage as :Storage
 
     user->>main: Option 10 (Edit)
-    main->>ui: promptApplicationIndex()
+    main->>main: promptApplicationIndex()
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: 1 (0-based: 0)
     deactivate ui
+    deactivate main
     main->>ui: showPrompt(field choice 1-8)
     activate ui
     ui-->>main: 5 (Portal Link)
     deactivate ui
-    main->>ui: promptOptional("Enter new company portal link:")
+    main->>main: promptOptional("Enter new company portal link:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "https://careers.google.com"
     deactivate ui
+    deactivate main
     main->>cmd: editPortalLink(0, link)
     activate cmd
     cmd-->>main: editCommand
@@ -41,7 +53,7 @@ sequenceDiagram
         activate app
         deactivate app
     else choice == 3 (Recruitment stage)
-        cmd->>app: setStage(newStage)
+        cmd->>app: setRecruitmentStage(newStage)
         activate app
         deactivate app
     else choice == 4 (Deadline)

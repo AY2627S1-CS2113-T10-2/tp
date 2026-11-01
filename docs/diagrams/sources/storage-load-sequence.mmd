@@ -24,7 +24,7 @@ sequenceDiagram
             activate list
             deactivate list
         else record is corrupted
-            storage->>storage: rememberWarning(warning)
+            storage->>storage: add warning to loadWarnings
             activate storage
             deactivate storage
         end

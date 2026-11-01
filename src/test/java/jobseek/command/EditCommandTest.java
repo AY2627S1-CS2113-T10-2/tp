@@ -168,8 +168,8 @@ public class EditCommandTest {
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: At least one field (company, role, or recruitment stage) "
-                + "must be specified for editing."));
+        assertTrue(output.contains("Error: At least one field (company, role, recruitment stage, "
+                + "deadline, portal link, email, or notes) must be specified for editing."));
     }
 
     @Test
@@ -183,8 +183,8 @@ public class EditCommandTest {
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
-        assertTrue(output.contains("Error: At least one field (company, role, or recruitment stage) "
-                + "must be specified for editing."));
+        assertTrue(output.contains("Error: At least one field (company, role, recruitment stage, "
+                + "deadline, portal link, email, or notes) must be specified for editing."));
     }
 
     @Test

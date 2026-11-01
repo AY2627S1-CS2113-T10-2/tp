@@ -17,7 +17,7 @@ sequenceDiagram
     cmd->>cmd: filter.test(application)
     activate cmd
     deactivate cmd
-    cmd->>table: format(applications, matchIndices)
+    cmd->>table: format(applications, matchIndices, heading)
     activate table
     table-->>cmd: table with original numbers
     deactivate table

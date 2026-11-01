@@ -6,7 +6,6 @@ sequenceDiagram
     participant cmd as :ListCommand
     participant list as :ApplicationList
     participant app as :Application
-    participant table as :ApplicationTable
 
     user->>main: list completed
     main->>cmd: ListCommand.parse("completed")
@@ -28,11 +27,10 @@ sequenceDiagram
     end
 
     alt matches found
-        cmd->>table: format(apps, matches)
-        activate table
-        table-->>cmd: formattedTable
-        deactivate table
-        cmd->>ui: showMessage(formattedTable)
+        cmd->>cmd: formatTable(matchingIndices)
+        activate cmd
+        deactivate cmd
+        cmd->>ui: showMessage(table)
         activate ui
         ui-->>user: Formatted table output
         deactivate ui

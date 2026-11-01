@@ -26,14 +26,14 @@ public class HelpCommandTest {
         assertTrue(ui.lastMessage.contains("view INDEX"));
         assertTrue(ui.lastMessage.contains("today"));
         assertTrue(ui.lastMessage.contains("[1] Add application"));
-        assertTrue(ui.lastMessage.contains("[2] List applications"));
-        assertTrue(ui.lastMessage.contains("[3] List uncompleted apps"));
+        assertTrue(ui.lastMessage.contains("[2] List all applications"));
+        assertTrue(ui.lastMessage.contains("[3] List uncompleted applications"));
         assertTrue(ui.lastMessage.contains("[4] Delete application"));
-        assertTrue(ui.lastMessage.contains("[5] Mark application completed"));
+        assertTrue(ui.lastMessage.contains("[5] Mark application as completed"));
         assertTrue(ui.lastMessage.contains("[6] Unmark application"));
         assertTrue(ui.lastMessage.contains("[7] Help"));
         assertTrue(ui.lastMessage.contains("[8] Search applications"));
-        assertTrue(ui.lastMessage.contains("[9] Sort applications"));
+        assertTrue(ui.lastMessage.contains("[9] Sort applications alphabetically"));
         assertTrue(ui.lastMessage.contains("[10] Edit application"));
         assertTrue(ui.lastMessage.contains("[0] Exit"));
     }

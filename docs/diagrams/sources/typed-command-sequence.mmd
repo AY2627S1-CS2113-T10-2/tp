@@ -8,7 +8,7 @@ sequenceDiagram
     user->>main: add c/Google r/SWE Intern d/2026-11-30
     main->>parser: parse(input)
     activate parser
-    parser->>parser: parseFields(args, "crd")
+    parser->>parser: parseFields(args, "crdpen")
     activate parser
     deactivate parser
     parser->>cmd: new AddCommand(...)
