@@ -8,7 +8,7 @@
 * **Documentation & Tools**:
   * [Mermaid](https://mermaid.js.org/) for rendering UML class and sequence diagrams.
   * [Gradle](https://gradle.org/) and [Checkstyle](https://checkstyle.sourceforge.io/) for building, testing and enforcing code style.
-* **AI assistance**: Beal Ng used OpenAI Codex to assist with the listing, search, sort, and menu/input changes, their tests and documentation, and his portfolio page.
+* **OpenAI Codex**: I used it to help with my listing, search, sort, and menu work, along with related tests, documentation, and my portfolio page. (Beal Ng)
 
 ## Design & implementation
 
@@ -1001,18 +1001,18 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 1. Start JobSeek with an empty application list and add `Zulu / Engineer`, `Acme / Designer`, and `Acme / Analyst` using option `1`.
 2. Choose `8` and search for `ENG`. Confirm matching results table:
    ```text
-   Search results for 'ENG':
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   1   | [ ]    | Zulu    | Engineer
+   Applications matching 'ENG':
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------
+   1   | [ ]       | Zulu    | Engineer
    ```
 3. Search for `acm` and confirm that both Acme applications appear with their original numbers `2` and `3`:
    ```text
-   Search results for 'acm':
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   2   | [ ]    | Acme    | Designer
-   3   | [ ]    | Acme    | Analyst
+   Applications matching 'acm':
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------
+   2   | [ ]       | Acme    | Designer
+   3   | [ ]       | Acme    | Analyst
    ```
 4. Search for a term that does not occur (e.g. `marketing`). Confirm no-matches message:
    ```text
@@ -1020,21 +1020,21 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    ```
 5. Choose `9` (Sort). Confirm alphabetical order by company, then role, while preserving original indices:
    ```text
-   Sorted applications:
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   3   | [ ]    | Acme    | Analyst
-   2   | [ ]    | Acme    | Designer
-   1   | [ ]    | Zulu    | Engineer
+   Applications sorted by company, then role:
+   No. | Completed | Company | Role
+   ----+-----------+---------+---------
+   3   | [ ]       | Acme    | Analyst
+   2   | [ ]       | Acme    | Designer
+   1   | [ ]       | Zulu    | Engineer
    ```
 6. Type `list all`. Confirm the original storage order is unaffected:
    ```text
-   All applications:
-   No. | Status | Company | Role
-   ----+--------+---------+---------
-   1   | [ ]    | Zulu    | Engineer
-   2   | [ ]    | Acme    | Designer
-   3   | [ ]    | Acme    | Analyst
+   Here are your applications:
+   No. | Completed | Company | Role     | Deadline
+   ----+-----------+---------+----------+---------
+   1   | [ ]       | Zulu    | Engineer | -
+   2   | [ ]       | Acme    | Designer | -
+   3   | [ ]       | Acme    | Analyst  | -
    ```
 
 ### Typed commands
