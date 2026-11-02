@@ -13,6 +13,8 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 
 ## Menu options
 
+At any prompt that follows a numbered menu option, type `cancel` to abandon that action without changing anything.
+
 The home menu shows the options in two columns. The numbers below are the ones to enter; they work the same way as before.
 
 | Number | Action | What it does |
@@ -378,6 +380,7 @@ Nice! I've marked this application as completed:
 ```
 
 > **Notes on marking applications:**
+> * If the application is already completed, JobSeek says so and makes no change (so it is also not added to the `undo` history).
 > * If your application list is currently empty, JobSeek notifies you:
 >   `Error: Your application list is currently empty.`
 > * If the entered index is blank, non-numeric, or out of range, JobSeek rejects it with an error and reprompts:
