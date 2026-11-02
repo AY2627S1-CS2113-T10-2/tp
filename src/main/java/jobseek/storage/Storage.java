@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -20,6 +21,9 @@ import jobseek.model.RecruitmentStage;
 public class Storage {
     private static final Logger LOGGER = initLogger();
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
+    private static final String BACKUP_SUFFIX = ".bak";
+    /** Some editors (e.g. older Windows Notepad) put this invisible character at the start of UTF-8 files. */
+    private static final char BYTE_ORDER_MARK = '\uFEFF';
     private static final String TITLE_HEADER = "JOBSEEK Applications";
     private static final String COLUMN_HEADER =
             "company\trole\tcompleted\tdeadline\tstage\tportalLink\temail\tnotes";
@@ -40,6 +44,9 @@ public class Storage {
 
     /** Keeps a failed load's empty fallback list from overwriting the original file. */
     private boolean saveBlocked;
+
+    /** True after a load that skipped lines, until the original file has been copied to the backup path. */
+    private boolean backupPending;
 
     private final List<String> loadWarnings = new ArrayList<>();
 
@@ -82,6 +89,26 @@ public class Storage {
         return List.copyOf(loadWarnings);
     }
 
+    /**
+     * Returns where the original data file is copied before the first save that follows a load which
+     * skipped corrupted lines.
+     *
+     * @return Path of the backup file.
+     */
+    public String getBackupFilePath() {
+        return filePath + BACKUP_SUFFIX;
+    }
+
+    /**
+     * Returns whether the data file will be backed up before the next save, because the last load
+     * skipped corrupted lines that a save would otherwise erase.
+     *
+     * @return True if a backup is still pending.
+     */
+    public boolean isBackupPending() {
+        return backupPending;
+    }
+
     /** Clears the recorded load warnings. */
     public void clearLoadWarnings() {
         loadWarnings.clear();
@@ -113,6 +140,7 @@ public class Storage {
         if (parent != null) {
             Files.createDirectories(parent);
         }
+        backUpOriginalIfNeeded(path);
 
         List<String> lines = new ArrayList<>();
         lines.add(HEADER);
@@ -132,6 +160,21 @@ public class Storage {
     }
 
     /**
+     * Copies the original file aside before the first save after a load that skipped lines, because
+     * saving rewrites the file from memory and would permanently erase the skipped lines.
+     */
+    private void backUpOriginalIfNeeded(Path path) throws IOException {
+        if (!backupPending) {
+            return;
+        }
+        if (Files.exists(path)) {
+            Files.copy(path, Path.of(getBackupFilePath()), StandardCopyOption.REPLACE_EXISTING);
+            LOGGER.info("Backed up original data file to " + getBackupFilePath());
+        }
+        backupPending = false;
+    }
+
+    /**
      * Loads the application list from local storage, recovering valid records when encountering corrupted lines.
      * Supports modern 8-field format and backwards-compatible 4-field / 5-field records.
      *
@@ -140,6 +183,7 @@ public class Storage {
      */
     public ApplicationList load() throws IOException {
         loadWarnings.clear();
+        backupPending = false;
         saveBlocked = true;
         Path path = Path.of(filePath);
         if (Files.notExists(path)) {
@@ -150,6 +194,10 @@ public class Storage {
 
         ApplicationList applications = new ApplicationList();
         List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+        if (!lines.isEmpty() && lines.get(0).startsWith(String.valueOf(BYTE_ORDER_MARK))) {
+            // Without this, the title line of a file saved with a BOM is not recognised as a header.
+            lines.set(0, lines.get(0).substring(1));
+        }
         for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
             String line = lines.get(lineNumber);
             // Application records contain tabs, even when the company starts with '#'.
@@ -164,6 +212,7 @@ public class Storage {
             }
         }
         LOGGER.info("Loaded " + applications.size() + " applications from " + filePath);
+        backupPending = !loadWarnings.isEmpty();
         saveBlocked = false;
         return applications;
     }
