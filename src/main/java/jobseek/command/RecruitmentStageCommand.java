@@ -71,6 +71,12 @@ public class RecruitmentStageCommand extends UndoableCommand {
         Application application = applications.get(targetIndex);
         assert application != null : "Application at valid index should not be null";
 
+        if (application.getRecruitmentStage() == stage) {
+            ui.showMessage("No changes made: the application is already at stage " + stage.getLabel() + ".\n  "
+                    + application);
+            return;
+        }
+
         updatedApplication = application;
         previousStage = application.getRecruitmentStage();
         application.setRecruitmentStage(stage);

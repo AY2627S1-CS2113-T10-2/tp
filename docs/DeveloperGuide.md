@@ -395,7 +395,7 @@ Undo works on the same `Application` objects that were changed. Commands keep a 
 #### Design considerations
 
 * **Command history and temporary snapshots:** persistent in-session history stores commands and their previous values. Undo additionally takes one temporary snapshot for save-failure recovery. Restoring the original objects preserves references in earlier history entries; replacing them with copies would break subsequent undo operations.
-* **`hasChanged()`:** rejected commands never call `markChanged()`. A failed save rolls back the change and clears this flag. Neither case adds an entry to history.
+* **`hasChanged()`:** rejected commands never call `markChanged()`, and neither do commands that would not alter anything (`EditCommand.changesAnything()` is false, `RecruitmentStageCommand` with the current stage, `MarkCommand` on an application already in that state). A failed save rolls back the change and clears this flag. None of these cases adds an entry to history.
 * **Limitations:** history is in memory only and there is no redo.
 
 ### Today dashboard

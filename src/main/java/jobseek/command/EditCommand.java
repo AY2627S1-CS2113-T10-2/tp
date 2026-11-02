@@ -2,6 +2,7 @@ package jobseek.command;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Objects;
 
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
@@ -241,6 +242,12 @@ public class EditCommand extends UndoableCommand {
         Application application = applications.get(targetIndex);
         assert application != null : "Application at valid index should not be null";
 
+        if (!changesAnything(application)) {
+            // Saving and recording it would only add an undo step that appears to do nothing.
+            ui.showMessage("No changes made: the application already has these values.\n  " + application);
+            return;
+        }
+
         // Remember all old values so undo can restore the application exactly.
         editedApplication = application;
         previousCompany = application.getCompany();
@@ -279,6 +286,17 @@ public class EditCommand extends UndoableCommand {
 
         saveOrRollback(applications, storage);
         ui.showMessage(buildConfirmationMessage(application));
+    }
+
+    /** Returns whether applying this edit would give the application at least one different value. */
+    private boolean changesAnything(Application application) {
+        return (newCompany != null && !newCompany.equals(application.getCompany()))
+                || (newRole != null && !newRole.equals(application.getRole()))
+                || (newStage != null && newStage != application.getRecruitmentStage())
+                || (isDeadlineUpdated && !Objects.equals(newDeadline, application.getDeadline()))
+                || (newPortalLink != null && !newPortalLink.equals(application.getPortalLink()))
+                || (newEmail != null && !newEmail.equals(application.getEmail()))
+                || (newNotes != null && !newNotes.equals(application.getNotes()));
     }
 
     /** Builds a formatted confirmation message detailing all fields of the updated application. */
