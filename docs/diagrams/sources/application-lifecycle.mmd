@@ -1,15 +1,17 @@
-%%{init: {'theme': 'neutral'}}%%
+%%{init: {'theme': 'default'}}%%
 flowchart LR
-    Start(( )):::start --> Init("Initialize UI<br/>& Storage")
-    Init --> Load("Load applications")
-    Load --> CheckLoad{"Load<br/>success?"}
-    CheckLoad -->|"[yes]"| Warn("Check deadlines<br/>& show menu")
-    CheckLoad -->|"[no]"| Fallback("Show error, use empty list<br/>& block changes")
+    Start(( )):::start --> Init("Initialize UI<br/>& Storage"):::action
+    Init --> Load("Load applications"):::action
+    Load --> CheckLoad{"Load<br/>success?"}:::decision
+    CheckLoad -->|"[yes]"| Warn("Check deadlines<br/>& show menu"):::action
+    CheckLoad -->|"[no]"| Fallback("Show error, use empty list<br/>& block changes"):::action
     Fallback --> Warn
-    Warn --> MergeRead{ }
-    MergeRead --> Read("Read & execute<br/>command")
-    Read --> CheckExit{"Exit<br/>command?"}
+    Warn --> MergeRead{ }:::decision
+    MergeRead --> Read("Read & execute<br/>command"):::action
+    Read --> CheckExit{"Exit<br/>command?"}:::decision
     CheckExit -->|"[no]"| MergeRead
     CheckExit -->|"[yes]"| End(("●")):::finish
     classDef start fill:#000,stroke:#000
     classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px
+    classDef action fill:#e3f6ff,stroke:#2b9bd8,stroke-width:2px
+    classDef decision fill:#fff0dc,stroke:#f0a03a,stroke-width:2px

@@ -1,12 +1,14 @@
-%%{init: {'theme': 'neutral'}}%%
+%%{init: {'theme': 'default'}}%%
 flowchart LR
-    Start(( )):::start --> Choice{"Option 7 or 8?"}
-    Choice -->|"[7: Search]"| Prompt("Prompt keyword &<br/>filter matches")
-    Choice -->|"[8: Sort]"| Sort("Sort index copy by<br/>company & role")
-    Prompt --> MergeTable{ }
+    Start(( )):::start --> Choice{"Option 7 or 8?"}:::decision
+    Choice -->|"[7: Search]"| Prompt("Prompt keyword &<br/>filter matches"):::action
+    Choice -->|"[8: Sort]"| Sort("Sort index copy by<br/>company & role"):::action
+    Prompt --> MergeTable{ }:::decision
     Sort --> MergeTable
-    MergeTable --> Table("Format table via<br/>ApplicationTable")
-    Table --> Display("Display table<br/>via Ui")
+    MergeTable --> Table("Format table via<br/>ApplicationTable"):::action
+    Table --> Display("Display table<br/>via Ui"):::action
     Display --> End(("●")):::finish
     classDef start fill:#000,stroke:#000
     classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px
+    classDef action fill:#e3f6ff,stroke:#2b9bd8,stroke-width:2px
+    classDef decision fill:#fff0dc,stroke:#f0a03a,stroke-width:2px

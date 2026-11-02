@@ -1,4 +1,4 @@
-%%{init: {'theme': 'neutral', 'flowchart': {'wrappingWidth': 600}}}%%
+%%{init: {'theme': 'default', 'flowchart': {'wrappingWidth': 600}}}%%
 flowchart LR
     main["<u>:Main</u>"]
     ui["<u>:Ui</u>"]
@@ -14,3 +14,9 @@ flowchart LR
     main -->|"owns ▶"| history
     applications -->|"contains ▶"| app1
     applications -->|"contains ▶"| app2
+    classDef ctrl fill:#fdf2ff,stroke:#c26bdb,stroke-width:2px
+    classDef obj fill:#eafcff,stroke:#17a2b8,stroke-width:2px
+    classDef store fill:#fff5ec,stroke:#f08c3a,stroke-width:2px
+    class main ctrl
+    class ui,history,applications,app1,app2 obj
+    class storage store

@@ -1,37 +1,37 @@
-%%{init: {'theme': 'neutral'}}%%
+%%{init: {'theme': 'default'}}%%
 classDiagram
     direction TB
-    class Command["{abstract}<br/>Command"] {
+    class Command["{abstract}<br/>Command"]:::cmd {
         #isExit : boolean
         +execute(applications : ApplicationList, ui : Ui, storage : Storage)* void
         +isExit() boolean
     }
-    class UndoableCommand["{abstract}<br/>UndoableCommand"] {
+    class UndoableCommand["{abstract}<br/>UndoableCommand"]:::undoable {
         -hasChanged : boolean
         #markChanged() void
         +hasChanged() boolean
         #saveOrRollback(applications : ApplicationList, storage : Storage) void
         +undo(applications : ApplicationList)* String
     }
-    class CommandHistory {
+    class CommandHistory:::util {
         -history : Deque~UndoableCommand~
         +record(command : Command) void
         +peek() UndoableCommand
         +pop() UndoableCommand
         +isEmpty() boolean
     }
-    class UndoCommand {
+    class UndoCommand:::cmd {
         -history : CommandHistory
         +UndoCommand(history : CommandHistory)
         +execute(applications : ApplicationList, ui : Ui, storage : Storage) void
     }
-    class ApplicationListSnapshot {
+    class ApplicationListSnapshot:::util {
         -originals : List~Application~
         -values : List~Application~
         ~ApplicationListSnapshot(applications : ApplicationList)
         ~restore(applications : ApplicationList) void
     }
-    class ApplicationList {
+    class ApplicationList:::model {
         +replaceAll(newContents : Collection~Application~) void
     }
     Command <|-- UndoableCommand
@@ -45,3 +45,16 @@ classDiagram
     UndoCommand "1" --> "1" CommandHistory : reads ▶
     UndoCommand ..> ApplicationListSnapshot : creates ▶
     ApplicationListSnapshot ..> ApplicationList : restores ▶
+    class AddCommand:::undoable
+    class DeleteCommand:::undoable
+    class EditCommand:::undoable
+    class RecruitmentStageCommand:::undoable
+    class MarkCommand:::undoable
+    classDef ctrl fill:#fdf2ff,stroke:#c26bdb,stroke-width:2px
+    classDef io fill:#eefcf6,stroke:#2bb58a,stroke-width:2px
+    classDef store fill:#fff5ec,stroke:#f08c3a,stroke-width:2px
+    classDef model fill:#eafcff,stroke:#17a2b8,stroke-width:2px
+    classDef enum fill:#f1ecff,stroke:#8e6bd8,stroke-width:2px
+    classDef cmd fill:#fff1f1,stroke:#ef5b5b,stroke-width:2px
+    classDef undoable fill:#fffbe6,stroke:#e6b800,stroke-width:2px
+    classDef util fill:#eefaf0,stroke:#4caf50,stroke-width:2px

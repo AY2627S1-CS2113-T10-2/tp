@@ -1,25 +1,27 @@
-%%{init: {'theme': 'neutral'}}%%
+%%{init: {'theme': 'default'}}%%
 flowchart LR
-    Start(( )):::start --> PromptIdx("Prompt & validate<br/>index")
-    PromptIdx --> PromptField("Show edit menu &<br/>prompt field choice (1-8)")
-    PromptField --> Branch{"Field choice"}
-    Branch -->|"[1: Company]"| UpdCo("Update company") --> Merge{ }
-    Branch -->|"[2: Role]"| UpdRole("Update role") --> Merge
-    Branch -->|"[3: Recruitment stage]"| UpdStage("Update recruitment stage") --> Merge
-    Branch -->|"[4: Deadline]"| UpdDue("Update deadline") --> Merge
-    Branch -->|"[5: Portal Link]"| UpdPort("Update portal link") --> Merge
-    Branch -->|"[6: Email]"| UpdMail("Update email") --> Merge
-    Branch -->|"[7: Notes]"| UpdNote("Update notes") --> Merge
-    Branch -->|"[8: All]"| UpdAll("Update all fields") --> Merge
-    Branch -->|"[else]"| ShowErr("Show 'Invalid field choice'") --> MergeEnd{ }
-    Merge --> Changed{"Any value<br/>different?"}
-    Changed -->|"[no]"| NoChange("Show 'No changes made'") --> MergeEnd
-    Changed -->|"[yes]"| Save("Save applications<br/>to storage")
-    Save --> Saved{"Save<br/>succeeded?"}
-    Saved -->|"[yes]"| Confirm("Show confirmation<br/>message")
-    Saved -->|"[else]"| Rollback("Restore old values<br/>& show error")
+    Start(( )):::start --> PromptIdx("Prompt & validate<br/>index"):::action
+    PromptIdx --> PromptField("Show edit menu &<br/>prompt field choice (1-8)"):::action
+    PromptField --> Branch{"Field choice"}:::decision
+    Branch -->|"[1: Company]"| UpdCo("Update company"):::action --> Merge{ }:::decision
+    Branch -->|"[2: Role]"| UpdRole("Update role"):::action --> Merge
+    Branch -->|"[3: Recruitment stage]"| UpdStage("Update recruitment stage"):::action --> Merge
+    Branch -->|"[4: Deadline]"| UpdDue("Update deadline"):::action --> Merge
+    Branch -->|"[5: Portal Link]"| UpdPort("Update portal link"):::action --> Merge
+    Branch -->|"[6: Email]"| UpdMail("Update email"):::action --> Merge
+    Branch -->|"[7: Notes]"| UpdNote("Update notes"):::action --> Merge
+    Branch -->|"[8: All]"| UpdAll("Update all fields"):::action --> Merge
+    Branch -->|"[else]"| ShowErr("Show 'Invalid field choice'"):::action --> MergeEnd{ }:::decision
+    Merge --> Changed{"Any value<br/>different?"}:::decision
+    Changed -->|"[no]"| NoChange("Show 'No changes made'"):::action --> MergeEnd
+    Changed -->|"[yes]"| Save("Save applications<br/>to storage"):::action
+    Save --> Saved{"Save<br/>succeeded?"}:::decision
+    Saved -->|"[yes]"| Confirm("Show confirmation<br/>message"):::action
+    Saved -->|"[else]"| Rollback("Restore old values<br/>& show error"):::action
     Confirm --> MergeEnd
     Rollback --> MergeEnd
     MergeEnd --> End(("●")):::finish
     classDef start fill:#000,stroke:#000
     classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px
+    classDef action fill:#e3f6ff,stroke:#2b9bd8,stroke-width:2px
+    classDef decision fill:#fff0dc,stroke:#f0a03a,stroke-width:2px
