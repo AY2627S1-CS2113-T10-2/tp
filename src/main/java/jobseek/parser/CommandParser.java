@@ -99,12 +99,12 @@ public class CommandParser {
      * @throws JobSeekException If the command syntax or arguments are invalid.
      */
     public static Command parse(String input, CommandHistory history) throws JobSeekException {
-        if (input == null || input.trim().isEmpty()) {
+        if (input == null || input.strip().isEmpty()) {
             return null;
         }
-        String[] parts = input.trim().split("\\s+", 2);
+        String[] parts = input.strip().split("\\s+", 2);
         String word = parts[0].toLowerCase(Locale.ROOT);
-        String arguments = parts.length > 1 ? parts[1].trim() : "";
+        String arguments = parts.length > 1 ? parts[1].strip() : "";
         LOGGER.fine("Parsing typed command word: " + word);
 
         switch (word) {
@@ -121,7 +121,7 @@ public class CommandParser {
         case "find":
             return parseFind(arguments);
         case "search":
-            String normalizedSearch = arguments.replaceAll("\\s+", " ").trim();
+            String normalizedSearch = arguments.replaceAll("\\s+", " ").strip();
             if (normalizedSearch.isEmpty()) {
                 throw new JobSeekException("Search term cannot be empty. " + SEARCH_USAGE);
             }
@@ -272,7 +272,7 @@ public class CommandParser {
 
     /** Converts a one-based index typed by the user into the zero-based index commands expect. */
     private static int parseIndex(String text, String usage) throws JobSeekException {
-        String trimmed = text.trim();
+        String trimmed = text.strip();
         if (trimmed.isEmpty()) {
             throw new JobSeekException("Please specify an application index. " + usage);
         }
@@ -325,16 +325,16 @@ public class CommandParser {
         List<MatchResult> prefixes = prefixPattern.matcher(arguments).results().toList();
         Fields fields = new Fields();
         if (prefixes.isEmpty()) {
-            fields.leadingText = arguments.trim().replace('\t', ' ');
+            fields.leadingText = arguments.strip().replace('\t', ' ');
             return fields;
         }
 
-        fields.leadingText = arguments.substring(0, prefixes.get(0).start()).trim().replace('\t', ' ');
+        fields.leadingText = arguments.substring(0, prefixes.get(0).start()).strip().replace('\t', ' ');
         for (int i = 0; i < prefixes.size(); i++) {
             MatchResult prefix = prefixes.get(i);
             char key = Character.toLowerCase(arguments.charAt(prefix.start(1)));
             int valueEnd = i + 1 < prefixes.size() ? prefixes.get(i + 1).start() : arguments.length();
-            String value = arguments.substring(prefix.end(), valueEnd).trim().replace('\t', ' ');
+            String value = arguments.substring(prefix.end(), valueEnd).strip().replace('\t', ' ');
 
             if (allowedPrefixes.indexOf(key) < 0) {
                 throw new JobSeekException("Unknown field '" + key + "/'. " + usage);

@@ -309,7 +309,7 @@ public class Main {
             if (input == null) {
                 return null;
             }
-            String trimmed = input.trim().replace('\t', ' ');
+            String trimmed = input.strip().replace('\t', ' ');
             if (!trimmed.isEmpty()) {
                 return trimmed;
             }

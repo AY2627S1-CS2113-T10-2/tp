@@ -143,16 +143,31 @@ public class Application {
      */
     public Application(String company, String role, boolean isCompleted, RecruitmentStage recruitmentStage,
                        LocalDate deadline, String portalLink, String email, String notes) {
-        assert company != null : "Company should not be null";
-        assert role != null : "Role should not be null";
-        this.company = company;
-        this.role = role;
+        this.company = requireText(company, "Company");
+        this.role = requireText(role, "Role");
         this.isCompleted = isCompleted;
         this.recruitmentStage = recruitmentStage != null ? recruitmentStage : DEFAULT_STAGE;
         this.deadline = deadline;
         this.portalLink = portalLink != null ? portalLink.trim() : "";
         this.email = email != null ? email.trim() : "";
         this.notes = notes != null ? notes.trim() : "";
+    }
+
+    /**
+     * Checks that a required text field has visible content and returns it without surrounding whitespace.
+     * This is a real check, not an assertion: assertions are disabled when the JAR is run normally, and
+     * Storage skips records whose company or role is blank, so a blank value would vanish after a restart.
+     *
+     * @param value Text to check.
+     * @param fieldName Name used in the error message.
+     * @return The value with leading and trailing whitespace (including Unicode spaces) removed.
+     * @throws IllegalArgumentException If the value is null or contains only whitespace.
+     */
+    private static String requireText(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " cannot be null or blank.");
+        }
+        return value.strip();
     }
 
     /** Converts a stage label to its enum value, using Applied for blank legacy fields. */
@@ -170,10 +185,10 @@ public class Application {
      * Updates the company name for this application.
      *
      * @param company New company name.
+     * @throws IllegalArgumentException If the name is null or blank.
      */
     public void setCompany(String company) {
-        assert company != null && !company.trim().isEmpty() : "Company cannot be null or empty";
-        this.company = company;
+        this.company = requireText(company, "Company");
     }
 
     /** Returns the role title for this application. */
@@ -185,10 +200,10 @@ public class Application {
      * Updates the role title for this application.
      *
      * @param role New role title.
+     * @throws IllegalArgumentException If the title is null or blank.
      */
     public void setRole(String role) {
-        assert role != null && !role.trim().isEmpty() : "Role cannot be null or empty";
-        this.role = role;
+        this.role = requireText(role, "Role");
     }
 
     /** Returns whether the application process is marked complete. */

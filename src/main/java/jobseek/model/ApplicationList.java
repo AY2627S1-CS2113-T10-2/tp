@@ -1,6 +1,9 @@
 package jobseek.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Manages an in-memory list of job applications.
@@ -19,10 +22,11 @@ public class ApplicationList {
     /**
      * Constructs an ApplicationList pre-populated with existing applications.
      *
-     * @param applications Initial list of applications.
+     * @param applications Initial applications. They are copied, so later changes to the given
+     *                     collection do not affect this list.
      */
-    public ApplicationList(ArrayList<Application> applications) {
-        this.applications = applications != null ? applications : new ArrayList<>();
+    public ApplicationList(Collection<Application> applications) {
+        this.applications = applications != null ? new ArrayList<>(applications) : new ArrayList<>();
     }
 
     /**
@@ -96,12 +100,27 @@ public class ApplicationList {
     }
 
     /**
-     * Returns the underlying list of applications.
+     * Returns a read-only view of the applications. Callers can look at the list but cannot add, remove or
+     * reorder entries through it; use {@link #add}, {@link #delete}, {@link #insert} or {@link #replaceAll}.
+     * (The Application objects themselves are still mutable, which is how edits work.)
      *
-     * @return ArrayList of all applications.
+     * @return Unmodifiable view of all applications, in list order.
      */
-    public ArrayList<Application> getAll() {
-        return applications;
+    public List<Application> getAll() {
+        return Collections.unmodifiableList(applications);
+    }
+
+    /**
+     * Replaces the whole content of the list. Used to restore an earlier state, for example when a
+     * failed save has to be rolled back.
+     *
+     * @param newContents Applications the list should hold afterwards, in order. Copied before use.
+     */
+    public void replaceAll(Collection<Application> newContents) {
+        assert newContents != null : "Replacement contents should not be null";
+        List<Application> copy = new ArrayList<>(newContents);
+        applications.clear();
+        applications.addAll(copy);
     }
 
     /**
