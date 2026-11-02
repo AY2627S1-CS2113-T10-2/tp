@@ -1,9 +1,12 @@
+%%{init: {'theme': 'neutral'}}%%
 flowchart LR
-    Start((●)) --> Choice{"Option 7 or 8?"}
-    Choice -->|"[7: Search]"| Prompt["Prompt keyword &<br/>filter matches"]
-    Choice -->|"[8: Sort]"| Sort["Sort index copy by<br/>company & role"]
+    Start(( )):::start --> Choice{"Option 7 or 8?"}
+    Choice -->|"[7: Search]"| Prompt("Prompt keyword &<br/>filter matches")
+    Choice -->|"[8: Sort]"| Sort("Sort index copy by<br/>company & role")
     Prompt --> MergeTable{ }
     Sort --> MergeTable
-    MergeTable --> Table["Format table via<br/>ApplicationTable"]
-    Table --> Display["Display table<br/>via Ui"]
-    Display --> End(((◎)))
+    MergeTable --> Table("Format table via<br/>ApplicationTable")
+    Table --> Display("Display table<br/>via Ui")
+    Display --> End(("●")):::finish
+    classDef start fill:#000,stroke:#000
+    classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px
