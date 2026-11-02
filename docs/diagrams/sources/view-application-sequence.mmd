@@ -43,7 +43,7 @@ sequenceDiagram
         activate app
         app-->>cmd: false
         deactivate app
-        Note over cmd,app: getDeadline(), getPortalLink(), getEmail() and getNotes()<br/>are also read, but are shown only when recorded
+        Note right of app: getDeadline(), getPortalLink(), getEmail() and getNotes()<br/>are also read, but are shown only when recorded
         cmd->>ui: showMessage(card)
         activate ui
         ui-->>user: Structured card display
