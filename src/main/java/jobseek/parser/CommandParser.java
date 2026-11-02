@@ -116,21 +116,33 @@ public class CommandParser {
             }
             return new SearchCommand(normalizedSearch);
         case "sort":
+            requireNoArguments(word, arguments);
             return new SortCommand();
         case "help":
+            requireNoArguments(word, arguments);
             return new HelpCommand();
         case "exit":
+            requireNoArguments(word, arguments);
             return new ExitCommand();
         case "view":
             return ViewCommand.parse(arguments);
         case "list":
             return ListCommand.parse(arguments);
         case "today":
+            requireNoArguments(word, arguments);
             return new TodayCommand();
         case "undo":
+            requireNoArguments(word, arguments);
             return history != null ? new UndoCommand(history) : null;
         default:
             return null;
+        }
+    }
+
+    /** Rejects trailing text for commands whose syntax is just the command word. */
+    private static void requireNoArguments(String word, String arguments) throws JobSeekException {
+        if (!arguments.isEmpty()) {
+            throw new JobSeekException("Unexpected text after '" + word + "'. Usage: " + word);
         }
     }
 

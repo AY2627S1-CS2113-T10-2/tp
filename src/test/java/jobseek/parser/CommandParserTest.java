@@ -206,6 +206,15 @@ public class CommandParserTest {
     }
 
     @Test
+    public void parse_noArgumentCommandsWithExtraText_throw() {
+        for (String command : new String[]{"sort", "help", "today", "exit", "undo"}) {
+            JobSeekException error = assertThrows(JobSeekException.class,
+                    () -> CommandParser.parse(command + " extra", new CommandHistory()));
+            assertTrue(error.getMessage().contains("Usage: " + command));
+        }
+    }
+
+    @Test
     public void parse_addWithOptionalPortalEmailNotes_buildsAddCommand() throws Exception {
         AddCommand command = assertInstanceOf(AddCommand.class,
                 CommandParser.parse("add c/Apple r/iOS Dev p/https://apple.com e/jobs@apple.com n/Referred"));
