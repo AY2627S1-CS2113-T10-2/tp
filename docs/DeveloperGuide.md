@@ -718,12 +718,12 @@ To execute all tests and generate a detailed HTML coverage report:
 ```
 The report is saved to `build/reports/jacoco/test/html/index.html`.
 
-Measured with `./gradlew test jacocoTestReport` across all 380 automated test cases (37 test classes):
+Measured with `./gradlew test jacocoTestReport` across all 381 automated test cases (39 test classes):
 * **Class Coverage**: **100%** (all 31 classes, including nested classes, in the 29 production source files)
 * **Method Coverage**: **97.7%**
 * **Line Coverage**: **97.5%**
-* **Instruction Coverage**: **95.2%**
-* **Branch Coverage**: **88.7%**
+* **Instruction Coverage**: **95.3%**
+* **Branch Coverage**: **88.5%**
 
 These figures change as code and tests change; re-run the command above to refresh them.
 
