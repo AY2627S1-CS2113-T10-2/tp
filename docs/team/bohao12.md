@@ -58,6 +58,10 @@ JobSeek is a command-line desktop application (CLI) designed for undergraduate s
 
 ### Contributions beyond the project team
 
-- **Cross-Team Bug Reporting (V2.0 PE Dry Run)**: Reported high-severity defects across external teams:
-  - **Team CakeQueue (W12-1)** ([#39](https://github.com/AY2627S1-CS2113-W12-1/tp/issues/39)): Identified silent data loss when saving after encountering corrupted records, and prefix delimiter parser collision on input strings ending with slashes.
-  - **Team BMS (T11-1)** ([#116](https://github.com/AY2627S1-CS2113-T11-1/tp/issues/116)): Identified unhandled `ArithmeticException` crash during scientific-notation price parsing, and silent integer overflow into negative quantities upon stock increments.
+- **Cross-Team Bug Reporting (V2.0 Jar Dry Run)**:
+  - **Team CakeQueue (CS2113-W12-1)** ([Issue #39](https://github.com/AY2627S1-CS2113-W12-1/tp/issues/39)):
+    - *Silent Data Loss on Corrupted Save File*: Discovered that when the storage data file contains a malformed entry, any subsequent mutating command (`add`, `edit`, `delete`) silently purges the corrupted row from disk without alerting the user or backing up corrupted records. Recommended implementing defensive loading with line-numbered warnings or backup isolation.
+    - *Parser Breakdown on Words Ending with `/`*: Discovered that argument values containing trailing slashes (e.g., `s/o` in names like `John s/o Doe`) cause the command parser to misinterpret the token as a delimiter prefix or fail validation, preventing legitimate inputs containing slashes from being accepted. Advised requiring whitespace boundaries in prefix regex.
+  - **Team Business Management System (CS2113-T11-1)** ([Issue #116](https://github.com/AY2627S1-CS2113-T11-1/tp/issues/116)):
+    - *Application Crash on Scientific-Notation Prices*: Identified that passing price values in scientific notation (e.g., `product add p/Cola a/1e-3` or `a/1e999999999`) throws an unhandled `ArithmeticException: Rounding necessary` during `BigDecimal` parsing. Because the main loop only catches custom exceptions, the entire application crashes abruptly, causing total loss of unsaved session data.
+    - *Integer Overflow on Inventory Quantities*: Discovered that incrementing stock past `Integer.MAX_VALUE` (2,147,483,647) silently overflows to negative quantities (`-2147483648`), violating non-negative stock invariants and causing subsequent commands to display illogical errors (e.g., `Only -2147483648 of Bread in stock`). Suggested using `Math.addExact()` or upper-bound guards.
