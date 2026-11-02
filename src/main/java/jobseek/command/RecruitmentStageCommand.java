@@ -94,9 +94,8 @@ public class RecruitmentStageCommand extends UndoableCommand {
         if (!application.getNotes().isEmpty()) {
             message.append("\nNotes: ").append(application.getNotes());
         }
+        saveOrRollback(applications, storage);
         ui.showMessage(message.toString());
-
-        storage.save(applications);
     }
 
     /** Restores the recruitment stage the application had before this command ran. */

@@ -26,6 +26,11 @@ public class CommandHistory {
         return history.pollFirst();
     }
 
+    /** Returns the latest change without removing it until undo has been saved successfully. */
+    public UndoableCommand peek() {
+        return history.peekFirst();
+    }
+
     /** Returns whether there is nothing left to undo. */
     public boolean isEmpty() {
         return history.isEmpty();

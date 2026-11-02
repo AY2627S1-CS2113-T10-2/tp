@@ -1,6 +1,9 @@
 package jobseek.command;
 
+import java.io.IOException;
+
 import jobseek.model.ApplicationList;
+import jobseek.storage.Storage;
 
 /**
  * A command that changes the application list and knows how to reverse that change.
@@ -20,6 +23,24 @@ public abstract class UndoableCommand extends Command {
      */
     public boolean hasChanged() {
         return hasChanged;
+    }
+
+    /**
+     * Persists a change, reversing it if saving fails so it cannot enter undo history.
+     * Call this before displaying a success message.
+     *
+     * @param applications List changed by this command.
+     * @param storage Destination for the updated records.
+     * @throws IOException If the change could not be saved.
+     */
+    protected void saveOrRollback(ApplicationList applications, Storage storage) throws IOException {
+        try {
+            storage.save(applications);
+        } catch (IOException e) {
+            undo(applications);
+            hasChanged = false;
+            throw e;
+        }
     }
 
     /**

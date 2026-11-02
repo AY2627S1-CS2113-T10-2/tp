@@ -141,9 +141,8 @@ public class AddCommand extends UndoableCommand {
         if (!notes.isEmpty()) {
             message.append("\nNotes: ").append(notes);
         }
+        saveOrRollback(applications, storage);
         ui.showMessage(message.toString());
-
-        storage.save(applications);
     }
 
     /** Removes the application this command added. */

@@ -277,8 +277,8 @@ public class EditCommand extends UndoableCommand {
         assert !application.getCompany().isEmpty() : "Company should not be empty after edit";
         assert !application.getRole().isEmpty() : "Role should not be empty after edit";
 
+        saveOrRollback(applications, storage);
         ui.showMessage(buildConfirmationMessage(application));
-        storage.save(applications);
     }
 
     /** Builds a formatted confirmation message detailing all fields of the updated application. */
