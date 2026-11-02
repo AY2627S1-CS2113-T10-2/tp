@@ -545,7 +545,9 @@ The save operation performs the following steps:
 2. Creates missing parent directories, if required.
 3. Adds the title and column headers.
 4. Converts each application into a tab-separated record.
-5. Writes the complete contents using UTF-8 encoding.
+5. Writes the complete contents using UTF-8 encoding to a temporary file in the same directory, then moves it over the data file (an atomic move where the file system supports it).
+
+Writing straight over the data file would truncate it before any new data is written, so an error part-way (a locked file, a full disk, a crash) could leave the saved data empty. With the temporary file, the original is either replaced completely or left untouched. If the write or the move fails, the temporary file is deleted and the `IOException` is passed to the caller, whose in-memory change is rolled back.
 
 The sequence of interactions during a save operation is shown below:
 
@@ -588,7 +590,7 @@ Commands request a save without implementing file encoding or parsing themselves
 
 #### Possible improvements
 
-Recruitment stages are persisted in the final column. The loader also accepts legacy files whose column header is `status`. Saving could use a temporary file followed by an atomic replacement to reduce the risk of an interrupted write damaging the existing data file.
+Recruitment stages are persisted in the final column. The loader also accepts legacy files whose column header is `status`. A crash at exactly the wrong moment can still leave an unused `applications-*.tmp` file in the `data` folder; it is harmless and can be deleted.
 
 The backup is overwritten the next time a load skips lines. A future version could keep several timestamped backups.
 
