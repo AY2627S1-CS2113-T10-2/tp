@@ -1,34 +1,40 @@
+%%{init: {'theme': 'neutral'}}%%
 classDiagram
     direction LR
-
     class Main {
-        - loadApplications(ui: Ui, storage: Storage)$: ApplicationList
+        -loadApplications(ui : Ui, storage : Storage)$ ApplicationList
     }
-
     class Storage {
-        - filePath: String
-        + save(applications: ApplicationList): void
-        + load(): ApplicationList
+        -filePath : String
+        -saveBlocked : boolean
+        -backupPending : boolean
+        -loadWarnings : List~String~
+        +save(applications : ApplicationList) void
+        +load() ApplicationList
+        +ensureWritable() void
+        +getLoadWarnings() List~String~
+        +getBackupFilePath() String
+        +isBackupPending() boolean
+        -writeAtomically(target : Path, lines : List~String~) void
+        -backUpOriginalIfNeeded(path : Path) void
+        -parseRecord(lineIndex : int, line : String) Application
     }
-
     class ApplicationList {
-        - applications: ArrayList~Application~
-        + getAll(): List~Application~
-        + add(app: Application): void
+        -applications : ArrayList~Application~
+        +getAll() List~Application~
+        +add(app : Application) void
     }
-
     class Application {
-        - company: String
-        - role: String
-        - isCompleted: boolean
-        - recruitmentStage: RecruitmentStage
-        - deadline: LocalDate
-        - portalLink: String
-        - email: String
-        - notes: String
+        -company : String
+        -role : String
+        -isCompleted : boolean
+        -recruitmentStage : RecruitmentStage
+        -deadline : LocalDate
+        -portalLink : String
+        -email : String
+        -notes : String
     }
-
-    Main "1" --> "1" Storage : uses
-    Storage "1" ..> "1" ApplicationList : saves / loads
-    ApplicationList "1" *-- "0..*" Application : contains
-    Storage "1" ..> "0..*" Application : serializes / parses
+    Main "1" --> "1" Storage : uses ▶
+    Storage ..> ApplicationList : saves / loads ▶
+    ApplicationList "1" *-- "0..*" Application : owns ▶
+    Storage ..> Application : serializes / parses ▶

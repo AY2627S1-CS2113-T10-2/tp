@@ -1,12 +1,15 @@
+%%{init: {'theme': 'neutral'}}%%
 flowchart LR
-    Start((●)) --> Init["Initialize UI<br/>& Storage"]
-    Init --> Load["Load applications"]
+    Start(( )):::start --> Init("Initialize UI<br/>& Storage")
+    Init --> Load("Load applications")
     Load --> CheckLoad{"Load<br/>success?"}
-    CheckLoad -->|"[yes]"| Warn["Check deadlines<br/>& show menu"]
-    CheckLoad -->|"[no]"| Fallback["Show error &<br/>use empty list"]
+    CheckLoad -->|"[yes]"| Warn("Check deadlines<br/>& show menu")
+    CheckLoad -->|"[no]"| Fallback("Show error, use empty list<br/>& block changes")
     Fallback --> Warn
     Warn --> MergeRead{ }
-    MergeRead --> Read["Read & execute<br/>command"]
+    MergeRead --> Read("Read & execute<br/>command")
     Read --> CheckExit{"Exit<br/>command?"}
     CheckExit -->|"[no]"| MergeRead
-    CheckExit -->|"[yes]"| End(((◎)))
+    CheckExit -->|"[yes]"| End(("●")):::finish
+    classDef start fill:#000,stroke:#000
+    classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px

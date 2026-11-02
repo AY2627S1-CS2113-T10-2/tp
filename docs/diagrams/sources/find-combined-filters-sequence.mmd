@@ -1,31 +1,50 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'neutral', 'sequence': {'mirrorActors': false, 'actorMargin': 60, 'messageMargin': 28}}}%%
 sequenceDiagram
     actor user as User
-    participant ui as :Ui
     participant main as :Main
     participant parser as :CommandParser
-    participant cmd as :FindCommand
-    participant table as :ApplicationTable
+    participant filters as <<class>><br/>ApplicationFilters
+    participant list as :ApplicationList
+    participant table as <<class>><br/>ApplicationTable
+    participant ui as :Ui
 
     user->>main: find c/google s/interview
-    main->>parser: parse(input)
+    main->>parser: parse("find c/google s/interview", history)
     activate parser
+    parser->>filters: companyContains("google")
+    filters-->>parser: companyFilter
+    parser->>filters: inStage(INTERVIEW)
+    filters-->>parser: stageFilter
+    parser->>parser: filter = companyFilter.and(stageFilter)
+    create participant cmd as :FindCommand
+    parser->>cmd: new FindCommand(filter, description)
     parser-->>main: findCommand
     deactivate parser
-    main->>cmd: execute(...)
+    main->>cmd: execute(applications, ui, storage)
     activate cmd
-    cmd->>cmd: filter.test(application)
-    activate cmd
-    deactivate cmd
-    cmd->>table: format(applications, matchIndices, heading)
-    activate table
-    table-->>cmd: table with original numbers
-    deactivate table
-    cmd->>ui: showMessage(table)
-    activate ui
-    ui-->>user: Matching applications
-    deactivate ui
-    cmd-->>main: 
+
+    loop for each application
+        cmd->>list: get(i)
+        activate list
+        list-->>cmd: application
+        deactivate list
+        cmd->>cmd: filter.test(application)
+    end
+
+    alt some applications match
+        cmd->>table: format(applications, matchIndices, heading)
+        activate table
+        table-->>cmd: table with original numbers
+        deactivate table
+        cmd->>ui: showMessage(table)
+        activate ui
+        ui-->>user: Matching applications
+        deactivate ui
+    else no application matches
+        cmd->>ui: showMessage("No applications found matching ...")
+        activate ui
+        ui-->>user: No matches message
+        deactivate ui
+    end
+    cmd-->>main:
     deactivate cmd
