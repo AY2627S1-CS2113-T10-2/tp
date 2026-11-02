@@ -1,12 +1,12 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.exception.JobSeekException;
 import jobseek.model.Application;
 import jobseek.model.ApplicationFilters;
 import jobseek.model.ApplicationList;
 import jobseek.model.RecruitmentStage;
 import jobseek.parser.CommandParser;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -127,7 +127,7 @@ public class FindCommandTest {
     /** Parses and runs a find command, returning the message shown to the user. */
     private static String runFind(String input, ApplicationList applications) throws Exception {
         RecordingUi ui = new RecordingUi();
-        CommandParser.parse(input).execute(applications, ui, new Storage());
+        CommandParser.parse(input).execute(applications, ui, TestStorage.create());
         return ui.lastMessage;
     }
 

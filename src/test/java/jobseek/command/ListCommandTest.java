@@ -1,9 +1,9 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.exception.JobSeekException;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ public class ListCommandTest {
     public void execute_emptyList_showsNoApplicationsFoundMessage() {
         RecordingUi ui = new RecordingUi();
 
-        new ListCommand().execute(new ApplicationList(), ui, new Storage());
+        new ListCommand().execute(new ApplicationList(), ui, TestStorage.create());
 
         assertEquals("No applications found.", ui.lastMessage);
     }
@@ -33,7 +33,7 @@ public class ListCommandTest {
         applications.add(new Application("Tech Corp", "Data Analyst", false));
         RecordingUi ui = new RecordingUi();
 
-        new ListCommand().execute(applications, ui, new Storage());
+        new ListCommand().execute(applications, ui, TestStorage.create());
 
         String[] lines = ui.lastMessage.split("\\R");
         assertEquals(5, lines.length);
@@ -55,7 +55,7 @@ public class ListCommandTest {
         applications.add(new Application("Tech Corp", "Data Analyst", false));
         RecordingUi ui = new RecordingUi();
 
-        new ListCommand(ListCommand.FilterType.COMPLETED).execute(applications, ui, new Storage());
+        new ListCommand(ListCommand.FilterType.COMPLETED).execute(applications, ui, TestStorage.create());
 
         String[] lines = ui.lastMessage.split("\\R");
         assertEquals(4, lines.length);
@@ -70,7 +70,7 @@ public class ListCommandTest {
         applications.add(new Application("Longer Co", "Engineer", true));
         RecordingUi ui = new RecordingUi();
 
-        new ListCommand(ListCommand.FilterType.ALL).execute(applications, ui, new Storage());
+        new ListCommand(ListCommand.FilterType.ALL).execute(applications, ui, TestStorage.create());
 
         String[] lines = ui.lastMessage.split("\\R");
         assertEquals(5, lines.length);
@@ -84,7 +84,7 @@ public class ListCommandTest {
         applications.add(new Application("Acme", "SWE Intern", true));
         RecordingUi ui = new RecordingUi();
 
-        new ListCommand(ListCommand.FilterType.ACTIVE).execute(applications, ui, new Storage());
+        new ListCommand(ListCommand.FilterType.ACTIVE).execute(applications, ui, TestStorage.create());
 
         assertEquals("No active applications found.", ui.lastMessage);
     }
@@ -95,7 +95,7 @@ public class ListCommandTest {
         applications.add(new Application("Acme", "SWE Intern", false));
         RecordingUi ui = new RecordingUi();
 
-        new ListCommand(ListCommand.FilterType.COMPLETED).execute(applications, ui, new Storage());
+        new ListCommand(ListCommand.FilterType.COMPLETED).execute(applications, ui, TestStorage.create());
 
         assertEquals("No completed applications found.", ui.lastMessage);
     }

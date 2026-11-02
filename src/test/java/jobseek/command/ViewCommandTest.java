@@ -1,9 +1,9 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.exception.JobSeekException;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -92,7 +92,7 @@ public class ViewCommandTest {
         list.add(new Application("Google", "SWE Intern", false));
 
         ViewCommand command = new ViewCommand(0);
-        command.execute(list, new Ui(), new Storage());
+        command.execute(list, new Ui(), TestStorage.create());
 
         String output = outputStream.toString();
         assertTrue(output.contains("=================================================="));
@@ -115,7 +115,7 @@ public class ViewCommandTest {
         list.add(app);
 
         ViewCommand command = new ViewCommand(0);
-        command.execute(list, new Ui(), new Storage());
+        command.execute(list, new Ui(), TestStorage.create());
 
         String output = outputStream.toString();
         assertTrue(output.contains("Application Details [Index: 1]"));
@@ -135,7 +135,7 @@ public class ViewCommandTest {
         list.add(app);
 
         ViewCommand command = new ViewCommand(0);
-        command.execute(list, new Ui(), new Storage());
+        command.execute(list, new Ui(), TestStorage.create());
 
         String output = outputStream.toString();
         assertTrue(output.contains("Deadline:  2026-12-01"));
@@ -149,7 +149,7 @@ public class ViewCommandTest {
         ApplicationList list = new ApplicationList();
         list.add(new Application("Google", "SWE Intern", false, "Online Assessment"));
 
-        new ViewCommand(0).execute(list, new Ui(), new Storage());
+        new ViewCommand(0).execute(list, new Ui(), TestStorage.create());
 
         assertTrue(outputStream.toString().contains("Recruitment stage: Online Assessment"));
     }
@@ -161,7 +161,7 @@ public class ViewCommandTest {
 
         ViewCommand command = new ViewCommand(3); // target index 3 for list size 1
         JobSeekException exception = assertThrows(JobSeekException.class, () ->
-                command.execute(list, new Ui(), new Storage()));
+                command.execute(list, new Ui(), TestStorage.create()));
 
         assertTrue(exception.getMessage().contains("Application index 4 does not exist"));
     }
@@ -172,7 +172,7 @@ public class ViewCommandTest {
         ViewCommand command = new ViewCommand(0);
 
         JobSeekException exception = assertThrows(JobSeekException.class, () ->
-                command.execute(list, new Ui(), new Storage()));
+                command.execute(list, new Ui(), TestStorage.create()));
 
         assertTrue(exception.getMessage().contains("Application index 1 does not exist"));
     }
@@ -184,7 +184,7 @@ public class ViewCommandTest {
 
         ViewCommand command = new ViewCommand(-1);
         JobSeekException exception = assertThrows(JobSeekException.class, () ->
-                command.execute(list, new Ui(), new Storage()));
+                command.execute(list, new Ui(), TestStorage.create()));
 
         assertTrue(exception.getMessage().contains("Application index 0 does not exist"));
     }

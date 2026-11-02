@@ -1,9 +1,9 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.model.RecruitmentStage;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +62,7 @@ public class EditCommandTest {
         applications.add(new Application("Googl", "SWE Intern", false));
 
         EditCommand command = new EditCommand(0, "Google", null);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
@@ -80,7 +80,7 @@ public class EditCommandTest {
         applications.add(new Application("Shopee", "Backnd Intern", false));
 
         EditCommand command = new EditCommand(0, null, "Backend Intern");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Shopee", applications.get(0).getCompany());
         assertEquals("Backend Intern", applications.get(0).getRole());
@@ -97,7 +97,7 @@ public class EditCommandTest {
         applications.add(new Application("OldCorp", "OldRole", true));
 
         EditCommand command = new EditCommand(0, "NewCorp", "NewRole");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("NewCorp", applications.get(0).getCompany());
         assertEquals("NewRole", applications.get(0).getRole());
@@ -115,7 +115,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern", false));
 
         EditCommand command = new EditCommand(0, "   Alphabet   ", "   Senior SWE   ");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Alphabet", applications.get(0).getCompany());
         assertEquals("Senior SWE", applications.get(0).getRole());
@@ -125,7 +125,7 @@ public class EditCommandTest {
     public void execute_emptyList_showsError() throws Exception {
         ApplicationList applications = new ApplicationList();
         EditCommand command = new EditCommand(0, "Google", "SWE");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Your application list is currently empty."));
@@ -137,7 +137,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         EditCommand command = new EditCommand(-1, "Google", "SWE Lead");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("SWE Intern", applications.get(0).getRole());
         String output = outputStream.toString();
@@ -150,7 +150,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         EditCommand command = new EditCommand(5, "Meta", "SWE");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Google", applications.get(0).getCompany());
         String output = outputStream.toString();
@@ -163,7 +163,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         EditCommand command = new EditCommand(0, null, null);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
@@ -178,7 +178,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         EditCommand command = new EditCommand(0, "   ", "");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
@@ -193,7 +193,7 @@ public class EditCommandTest {
         applications.add(new Application("Shopee", "Backend Intern", false, "Pending"));
 
         EditCommand command = new EditCommand(0, null, null, RecruitmentStage.ACCEPTED);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Shopee", applications.get(0).getCompany());
         assertEquals("Backend Intern", applications.get(0).getRole());
@@ -210,7 +210,7 @@ public class EditCommandTest {
         applications.add(new Application("OldCorp", "OldRole", false, "Pending"));
 
         EditCommand command = new EditCommand(0, "NewCorp", "NewRole", RecruitmentStage.REJECTED);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("NewCorp", applications.get(0).getCompany());
         assertEquals("NewRole", applications.get(0).getRole());
@@ -229,7 +229,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern", true));
 
         EditCommand command = new EditCommand(0, "Alphabet", null);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertTrue(applications.get(0).isCompleted());
         assertEquals("[X] Alphabet | SWE Intern", applications.get(0).toString());
@@ -243,7 +243,7 @@ public class EditCommandTest {
         applications.add(new Application("Grab", "Data Analyst Intern"));
 
         EditCommand command = new EditCommand(1, "Shopee Singapore", "Fullstack Intern");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Google", applications.get(0).getCompany());
         assertEquals("SWE Intern", applications.get(0).getRole());
@@ -261,7 +261,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         EditCommand command = EditCommand.editPortalLink(0, "https://careers.google.com");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("https://careers.google.com", applications.get(0).getPortalLink());
     }
@@ -272,7 +272,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         EditCommand command = EditCommand.editEmail(0, "recruiter@google.com");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("recruiter@google.com", applications.get(0).getEmail());
     }
@@ -283,7 +283,7 @@ public class EditCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
 
         EditCommand command = EditCommand.editNotes(0, "Round 1 interview scheduled");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals("Round 1 interview scheduled", applications.get(0).getNotes());
     }
@@ -295,7 +295,7 @@ public class EditCommandTest {
         java.time.LocalDate deadline = java.time.LocalDate.of(2026, 11, 20);
 
         EditCommand command = EditCommand.editDeadline(0, deadline);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(deadline, applications.get(0).getDeadline());
     }
@@ -308,7 +308,7 @@ public class EditCommandTest {
 
         EditCommand command = EditCommand.editAll(0, "NewCo", "NewRole", "Accepted",
                 deadline, "https://newco.com/careers", "hiring@newco.com", "Completed screening");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         Application app = applications.get(0);
         assertEquals("NewCo", app.getCompany());
@@ -344,16 +344,16 @@ public class EditCommandTest {
                 deadline, "https://careers.google.com", "recruiter@google.com", "OA passed");
         applications.add(app);
 
-        EditCommand.editPortalLink(0, "").execute(applications, new Ui(), new Storage());
+        EditCommand.editPortalLink(0, "").execute(applications, new Ui(), TestStorage.create());
         assertEquals("", applications.get(0).getPortalLink());
 
-        EditCommand.editEmail(0, "").execute(applications, new Ui(), new Storage());
+        EditCommand.editEmail(0, "").execute(applications, new Ui(), TestStorage.create());
         assertEquals("", applications.get(0).getEmail());
 
-        EditCommand.editNotes(0, "").execute(applications, new Ui(), new Storage());
+        EditCommand.editNotes(0, "").execute(applications, new Ui(), TestStorage.create());
         assertEquals("", applications.get(0).getNotes());
 
-        EditCommand.editDeadline(0, null).execute(applications, new Ui(), new Storage());
+        EditCommand.editDeadline(0, null).execute(applications, new Ui(), TestStorage.create());
         assertEquals(null, applications.get(0).getDeadline());
     }
 }

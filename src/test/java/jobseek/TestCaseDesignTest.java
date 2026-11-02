@@ -115,7 +115,7 @@ public class TestCaseDesignTest {
             list.add(new Application("Google", "SWE", false, RecruitmentStage.APPLIED, null, "", "", ""));
             list.add(new Application("Meta", "PE", false, RecruitmentStage.APPLIED, null, "", "", ""));
             Ui ui = new Ui();
-            Storage storage = new Storage();
+            Storage storage = TestStorage.create();
 
             // Boundary: 0 (Min - 1, invalid)
             assertThrows(JobSeekException.class, () -> CommandParser.parse("view 0"));
@@ -247,7 +247,7 @@ public class TestCaseDesignTest {
                     RecruitmentStage.INTERVIEW, LocalDate.of(2026, 11, 20), "", "", ""));
 
             Ui ui = new Ui();
-            Storage storage = new Storage();
+            Storage storage = TestStorage.create();
 
             // Combined filter: company=google AND stage=interview AND deadline before 2026-11-30 AND incomplete
             FindCommand cmd = (FindCommand) CommandParser.parse("find c/Google s/interview b/2026-11-30 m/no");
