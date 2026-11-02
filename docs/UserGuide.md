@@ -21,10 +21,10 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 | `4` | Delete application | Enter an application number to remove it. |
 | `5` | Mark application as completed | Enter an application number to mark it complete. |
 | `6` | Unmark application | Enter an application number to mark it incomplete. |
-| `7` | Help | Show the menu options and command shortcuts. |
-| `8` | Search applications | Find applications by company or role. |
-| `9` | Sort applications alphabetically | View applications alphabetically by company, then role. |
-| `10` | Edit application | Update company, role, recruitment stage, deadline, portal link, email, notes, or all fields of an application. |
+| `7` | Search applications | Find applications by company or role. |
+| `8` | Sort applications alphabetically | View applications alphabetically by company, then role. |
+| `9` | Edit application | Update company, role, recruitment stage, deadline, portal link, email, notes, or all fields of an application. |
+| `10` | Help | Show the menu options and command shortcuts. |
 | `0` | Exit | Quit JobSeek. |
 
 ---
@@ -196,11 +196,22 @@ Notes:     Passed round 1 OA
 
 ### Editing an application
 
-Choose `10` to update details of an existing application in place without deleting and recreating it.
+Choose `9` to update details of an existing application in place without deleting and recreating it.
 
 - **Prompt sequence**:
   1. `Enter application index to edit:\n> ` — Enter the 1-based index of the application to update (as displayed in `list`).
-  2. `Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: Deadline, 5: Portal Link, 6: Email, 7: Notes, 8: All):\n> ` — Select which field(s) you wish to modify:
+  2. JobSeek displays the edit field selection menu and prompts for your choice:
+     ```text
+     ____________________________________________________________
+     [1] Company               [2] Role
+     [3] Recruitment stage     [4] Deadline
+     [5] Portal Link           [6] Email
+     [7] Notes                 [8] All
+     ____________________________________________________________
+     Enter field to edit:
+     > 
+     ```
+     Select which field(s) you wish to modify:
      - `1`: Edit Company name only.
      - `2`: Edit Role title only.
      - `3`: Edit Recruitment stage only (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`).
@@ -261,7 +272,7 @@ Choose `10` to update details of an existing application in place without deleti
 Each application has one of these stages: `Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, or `Withdrawn`. `Accepted`, `Rejected`, and `Withdrawn` are terminal stages. You can still edit a stage at any time to correct a mistake or reflect a company process; stages do not enforce a fixed transition order.
 
 #### Updating a stage
-Under menu option `10`, select field `3` (Recruitment stage) or `8` (All). You can specify the stage in three flexible ways:
+Under menu option `9`, select field `3` (Recruitment stage) or `8` (All). You can specify the stage in three flexible ways:
 1. **By number (1 to 7)**:
    - `1`: `Applied`
    - `2`: `Online Assessment`
@@ -297,14 +308,14 @@ Completed: No
 ### Search and sort applications
 
 #### Search applications
-Choose `8`, then enter part of a company name or role. Search ignores letter case. For example, `eng` matches both `Engineer` in a role and `Engineering Co` in a company name. An empty search term is rejected and you will be prompted again. If nothing matches, JobSeek tells you so.
+Choose `7`, then enter part of a company name or role. Search ignores letter case. For example, `eng` matches both `Engineer` in a role and `Engineering Co` in a company name. An empty search term is rejected and you will be prompted again. If nothing matches, JobSeek tells you so.
 
 You can also type `search KEYWORD` (for example `search eng`) or, to combine several conditions, `find` (see [Finding with combined filters](#finding-with-combined-filters-find)).
 
 Search results show the same application numbers as the normal list. For example, if the matching record is application `3`, you can still enter `3` when marking or deleting it. Search does not change or save application order.
 
 #### Sort applications alphabetically
-Choose `9` or type `sort` to view applications ordered by company name, then by role when company names match. Sorting ignores letter case. The number beside each application is its original number in the normal list. This is a display-only view: it does not rearrange the saved applications. If you later type `list all`, the original order is shown again.
+Choose `8` or type `sort` to view applications ordered by company name, then by role when company names match. Sorting ignores letter case. The number beside each application is its original number in the normal list. This is a display-only view: it does not rearrange the saved applications. If you later type `list all`, the original order is shown again.
 
 ---
 
@@ -471,9 +482,9 @@ The data file location is relative to the folder from which you launch JobSeek. 
 
 ## Help instructions
 
-Choose `7` to view the comprehensive reference of all menu options and textual command shortcuts.
+Choose `10` to view the comprehensive reference of all menu options and textual command shortcuts.
 
-- **Usage**: Enter `7` at the main menu prompt.
+- **Usage**: Enter `10` at the main menu prompt.
 - **Output**:
   ```text
   Available menu options:
@@ -492,10 +503,10 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
     [4] Delete application          - Delete an application by index
     [5] Mark application as completed - Mark an application as completed
     [6] Unmark application          - Mark an application as not completed
-    [7] Help                        - Show this help message
-    [8] Search applications         - Find applications by company or role
-    [9] Sort applications alphabetically - View applications alphabetically
-    [10] Edit application           - Edit an existing application's details
+    [7] Search applications         - Find applications by company or role
+    [8] Sort applications alphabetically - View applications alphabetically
+    [9] Edit application            - Edit an existing application's details
+    [10] Help                       - Show this help message
     [0] Exit                        - Exit JobSeek
   ```
 
@@ -515,9 +526,9 @@ Choose `7` to view the comprehensive reference of all menu options and textual c
 | **Mark application as completed** | `5` or `mark INDEX` | Choose `5`, then enter application index (e.g. `1`), or `mark 1` |
 | **Unmark application** | `6` or `unmark INDEX` | Choose `6`, then enter application index (e.g. `1`), or `unmark 1` |
 | **Today dashboard** | `today` | `today` |
-| **Help instructions** | `7` or `help` | `7` or `help` |
-| **Search applications** | `8` or `search KEYWORD` | Choose `8`, then enter search term (e.g. `Google`), or `search google` |
+| **Search applications** | `7` or `search KEYWORD` | Choose `7`, then enter search term (e.g. `Google`), or `search google` |
 | **Find with combined filters** | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/yes\|no]` | `find c/google s/interview` |
-| **Sort applications alphabetically** | `9` or `sort` | Choose `9`, or `sort`, to view applications alphabetically |
-| **Edit application** | `10` or `edit INDEX [c/..] [r/..] [s/..] [d/..] [p/..] [e/..] [n/..]` | Choose `10` (select field 1-8 to modify), or `edit 2 s/Interview` |
+| **Sort applications alphabetically** | `8` or `sort` | Choose `8`, or `sort`, to view applications alphabetically |
+| **Edit application** | `9` or `edit INDEX [c/..] [r/..] [s/..] [d/..] [p/..] [e/..] [n/..]` | Choose `9` (select field 1-8 to modify), or `edit 2 s/Interview` |
+| **Help instructions** | `10` or `help` | `10` or `help` |
 | **Exit JobSeek** | `0` or `exit` | `0` or `exit` |

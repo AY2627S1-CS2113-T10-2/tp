@@ -18,7 +18,7 @@ import jobseek.model.RecruitmentStage;
  * Handles persistence by loading and saving job application data to local storage.
  */
 public class Storage {
-    private static final Logger LOGGER = Logger.getLogger(Storage.class.getName());
+    private static final Logger LOGGER = initLogger();
     private static final String DEFAULT_FILE_PATH = "data/applications.txt";
     private static final String TITLE_HEADER = "JOBSEEK Applications";
     private static final String COLUMN_HEADER =
@@ -284,5 +284,11 @@ public class Storage {
         }
         fields.add(field.toString());
         return fields;
+    }
+
+    private static Logger initLogger() {
+        Logger jobseekLogger = Logger.getLogger("jobseek");
+        jobseekLogger.setUseParentHandlers(false);
+        return Logger.getLogger(Storage.class.getName());
     }
 }

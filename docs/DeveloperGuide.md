@@ -259,7 +259,7 @@ The user interaction and validation workflow for updating application fields is 
 
 *Implemented by: Beal Ng*
 
-`Main` translates numeric menu input into a `Command`. Option `8` asks for a non-blank search term, then creates `SearchCommand`; option `9` creates `SortCommand`. The typed commands `search KEYWORD` and `sort` create the same commands through `CommandParser`. For searches with several conditions, see [Combined filters](#combined-filters-find). Both commands operate on an `ApplicationList` but do not mutate it or call `Storage.save`.
+`Main` translates numeric menu input into a `Command`. Option `7` asks for a non-blank search term, then creates `SearchCommand`; option `8` creates `SortCommand`. The typed commands `search KEYWORD` and `sort` create the same commands through `CommandParser`. For searches with several conditions, see [Combined filters](#combined-filters-find). Both commands operate on an `ApplicationList` but do not mutate it or call `Storage.save`.
 
 The commands collect zero-based indices of matching applications. `SearchCommand` matches a case-insensitive substring against both company and role. `SortCommand` sorts a copy of the indices by company, then role, using a case-insensitive comparator; original index breaks ties. `ApplicationTable` formats either view with one-based numbers derived from the original indices. This keeps subsequent mark and delete commands unambiguous, even when the display order differs from storage order.
 
@@ -770,7 +770,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 
 *Feature tested: Help instructions (Implemented by: Siew Hean)*
 
-1. Enter `7` from the main menu.
+1. Enter `10` from the main menu.
 2. Verify that all menu options `[0]` through `[10]` and the typed commands (`list`, `undo`, `add`, `edit`, `delete|mark|unmark`, `find`, `search`, `sort`, `today`, `view`) are displayed:
    ```text
    Available menu options:
@@ -789,10 +789,10 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
      [4] Delete application          - Delete an application by index
      [5] Mark application as completed - Mark an application as completed
      [6] Unmark application          - Mark an application as not completed
-     [7] Help                        - Show this help message
-     [8] Search applications         - Find applications by company or role
-     [9] Sort applications alphabetically - View applications alphabetically
-     [10] Edit application           - Edit an existing application's details
+     [7] Search applications         - Find applications by company or role
+     [8] Sort applications alphabetically - View applications alphabetically
+     [9] Edit application            - Edit an existing application's details
+     [10] Help                       - Show this help message
      [0] Exit                        - Exit JobSeek
    ```
 3. Type `help` and verify that the same list is shown.
@@ -925,12 +925,12 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 
 *Feature tested: Edit application (Implemented by: Siew Hean)*
 
-1. Start JobSeek with an empty application list and choose `10`. Confirm error appears:
+1. Start JobSeek with an empty application list and choose `9`. Confirm error appears:
    ```text
    Error: Your application list is currently empty.
    ```
 2. Add an application using `1` with company `Googl` and role `SWE Intern`.
-3. Choose `10` and enter application index `1`.
+3. Choose `9` and enter application index `1`.
 4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays updated company:
    ```text
    Application updated successfully.
@@ -938,18 +938,18 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    Role: SWE Intern
    Recruitment stage: Applied
    ```
-5. Choose `10` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm updated role:
+5. Choose `9` and enter index `1`. Choose `2` (Role). Enter `Backend Intern`. Confirm updated role:
    ```text
    Application updated successfully.
    Company: Google
    Role: Backend Intern
    Recruitment stage: Applied
    ```
-6. Choose `10`, index `1`, and field `4` (Deadline). Enter `2026-11-20`. Confirm updated deadline.
-7. Choose `10`, index `1`, and field `5` (Portal Link). Enter `https://careers.google.com`. Confirm updated portal link.
-8. Choose `10`, index `1`, and field `6` (Email). Enter `recruiter@google.com`. Confirm updated email.
-9. Choose `10`, index `1`, and field `7` (Notes). Enter `Passed interview round 1`. Confirm updated notes.
-10. Choose `10`, index `1`, and field `8` (All). Enter company `Alphabet`, role `Senior SWE Intern`, stage `5` (Accepted), deadline `2026-12-15`, portal `https://abc.xyz/jobs`, email `lead@abc.xyz`, and notes `Offer accepted!`. Confirm full update output:
+6. Choose `9`, index `1`, and field `4` (Deadline). Enter `2026-11-20`. Confirm updated deadline.
+7. Choose `9`, index `1`, and field `5` (Portal Link). Enter `https://careers.google.com`. Confirm updated portal link.
+8. Choose `9`, index `1`, and field `6` (Email). Enter `recruiter@google.com`. Confirm updated email.
+9. Choose `9`, index `1`, and field `7` (Notes). Enter `Passed interview round 1`. Confirm updated notes.
+10. Choose `9`, index `1`, and field `8` (All). Enter company `Alphabet`, role `Senior SWE Intern`, stage `5` (Accepted), deadline `2026-12-15`, portal `https://abc.xyz/jobs`, email `lead@abc.xyz`, and notes `Offer accepted!`. Confirm full update output:
     ```text
     Application updated successfully.
     Company: Alphabet
@@ -960,7 +960,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
     Email: lead@abc.xyz
     Notes: Offer accepted!
     ```
-11. Test clearing optional fields: Choose `10`, index `1`, and field `5` (Portal Link). Press Enter without typing. Confirm the portal link is cleared and no longer appears in the confirmation message:
+11. Test clearing optional fields: Choose `9`, index `1`, and field `5` (Portal Link). Press Enter without typing. Confirm the portal link is cleared and no longer appears in the confirmation message:
     ```text
     Application updated successfully.
     Company: Alphabet
@@ -970,7 +970,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
     Email: lead@abc.xyz
     Notes: Offer accepted!
     ```
-12. Choose `10` and test invalid inputs: enter non-numeric index `abc`, out-of-bounds `99`, or invalid field choice `99`:
+12. Choose `9` and test invalid inputs: enter non-numeric index `abc`, out-of-bounds `99`, or invalid field choice `99`:
     ```text
     Error: Invalid field choice: '99'. Enter a number from 1 to 8.
     ```
@@ -981,7 +981,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 
 1. Add an application with company `Shopee` and role `Backend Intern`.
 2. Enter `view 1`. Verify `Recruitment stage: Applied` is displayed by default.
-3. Choose `10`, index `1`, and field `3` (Recruitment stage). Enter `2` (Online Assessment). Confirm output:
+3. Choose `9`, index `1`, and field `3` (Recruitment stage). Enter `2` (Online Assessment). Confirm output:
    ```text
    Application recruitment stage updated successfully.
    Company: Shopee
@@ -989,14 +989,14 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    Recruitment stage: Online Assessment
    ```
 4. Enter `view 1`. Verify updated card details show `Recruitment stage: Online Assessment`.
-5. Choose `10`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify:
+5. Choose `9`, index `1`, field `3`. Enter `Rejected` (case-insensitive text). Enter `view 1` and verify:
    ```text
    Application recruitment stage updated successfully.
    Company: Shopee
    Role: Backend Intern
    Recruitment stage: Rejected
    ```
-6. Choose `10`, index `1`, field `8` (All). Enter company `Sea`, role `Data Analyst`, stage `1` (Applied), and press enter for the optional fields. Verify all fields updated correctly:
+6. Choose `9`, index `1`, field `8` (All). Enter company `Sea`, role `Data Analyst`, stage `1` (Applied), and press enter for the optional fields. Verify all fields updated correctly:
    ```text
    Application updated successfully.
    Company: Sea
@@ -1009,7 +1009,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 *Feature tested: Search and sort views (Implemented by: Beal Ng)*
 
 1. Start JobSeek with an empty application list and add `Zulu / Engineer`, `Acme / Designer`, and `Acme / Analyst` using option `1`.
-2. Choose `8` and search for `ENG`. Confirm matching results table:
+2. Choose `7` and search for `ENG`. Confirm matching results table:
    ```text
    Applications matching 'ENG':
    No. | Completed | Company | Role
@@ -1028,7 +1028,7 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    ```text
    No applications found matching 'marketing'.
    ```
-5. Choose `9` (Sort). Confirm alphabetical order by company, then role, while preserving original indices:
+5. Choose `8` (Sort). Confirm alphabetical order by company, then role, while preserving original indices:
    ```text
    Applications sorted by company, then role:
    No. | Completed | Company | Role

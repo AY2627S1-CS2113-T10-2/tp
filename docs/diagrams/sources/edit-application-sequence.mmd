@@ -10,7 +10,7 @@ sequenceDiagram
     participant app as :Application
     participant storage as :Storage
 
-    user->>main: Option 10 (Edit)
+    user->>main: Option 9 (Edit)
     main->>main: promptApplicationIndex()
     activate main
     main->>ui: showPrompt(...)
@@ -21,7 +21,10 @@ sequenceDiagram
     ui-->>main: 1 (0-based: 0)
     deactivate ui
     deactivate main
-    main->>ui: showPrompt(field choice 1-8)
+    main->>ui: showEditMenu()
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: 5 (Portal Link)
     deactivate ui
