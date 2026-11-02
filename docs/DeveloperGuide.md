@@ -571,7 +571,7 @@ JobSeek recovers gracefully from corrupted lines instead of discarding the entir
 
 After loading, `Main.loadApplications()` displays all recorded warnings via `Ui.showError()`. An unrecoverable I/O failure (such as file access permission denied or invalid UTF-8) causes `load()` to throw an `IOException`, which `Main` catches to inform the user and initialize with an empty list. Storage keeps saving blocked until a subsequent load succeeds. Before executing an undoable command or undo, `Main` calls `Storage.ensureWritable()` so the empty fallback list cannot be modified. `Storage.save()` repeats this check to protect direct callers. A confirmed missing file remains a normal, writable first launch; recoverable line-level warnings do not activate the block.
 
-Skipped lines are not rewritten until the next save, and the next save writes only the records that loaded. Users who want to repair a corrupted line should fix the file by hand before making further changes.
+Skipped lines are not rewritten until the next save, and the next save writes only the records that loaded. To avoid losing them, `load()` sets a `backupPending` flag whenever it skipped a line, and `save()` first copies the original file to `<path>.bak` (once, replacing any older backup) before writing. `Main.loadApplications()` tells the user about this after showing the warnings. A leading byte-order mark is stripped from the first line before header detection.
 
 Saving errors (`IOException`) propagate up to `Main.run()`, which catches them and presents a clear error message via `Ui.showError()`. Modifying commands call `UndoableCommand.saveOrRollback()` before displaying success. If saving fails, the command reverses its in-memory change and clears its changed flag, leaving prior history intact. `UndoCommand` instead peeks at the latest history entry and captures an `ApplicationListSnapshot` before undoing it. If saving fails, the snapshot restores fields, ordering and original object identities; the history entry is removed only after a successful save. This preserves references held by earlier commands and allows failed undo operations to be retried. This rollback protects in-memory state; atomic file replacement remains a separate possible improvement.
 
@@ -590,7 +590,7 @@ Commands request a save without implementing file encoding or parsing themselves
 
 Recruitment stages are persisted in the final column. The loader also accepts legacy files whose column header is `status`. Saving could use a temporary file followed by an atomic replacement to reduce the risk of an interrupted write damaging the existing data file.
 
-When lines are skipped during loading, the next save permanently removes them from the file. A future version could keep a backup of the original file (for example `applications.txt.bak`) before the first save after a recovery.
+The backup is overwritten the next time a load skips lines. A future version could keep several timestamped backups.
 
 ### Error handling and logging architecture
 
