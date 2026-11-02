@@ -33,13 +33,20 @@ public class UndoCommand extends Command {
      */
     @Override
     public void execute(ApplicationList applications, Ui ui, Storage storage) throws IOException {
-        UndoableCommand last = history.pop();
+        UndoableCommand last = history.peek();
         if (last == null) {
             ui.showError("Nothing to undo.");
             return;
         }
+        ApplicationListSnapshot snapshot = new ApplicationListSnapshot(applications);
         String description = last.undo(applications);
+        try {
+            storage.save(applications);
+        } catch (IOException e) {
+            snapshot.restore(applications);
+            throw e;
+        }
+        history.pop();
         ui.showMessage("Undone: " + description);
-        storage.save(applications);
     }
 }

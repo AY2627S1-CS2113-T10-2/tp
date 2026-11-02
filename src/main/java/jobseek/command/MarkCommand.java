@@ -66,8 +66,8 @@ public class MarkCommand extends UndoableCommand {
                 ? "Nice! I've marked this application as completed:\n  " + application
                 : "OK, I've marked this application as not completed yet:\n  " + application;
 
+        saveOrRollback(applications, storage);
         ui.showMessage(message);
-        storage.save(applications);
     }
 
     /** Restores the completion flag the application had before this command ran. */

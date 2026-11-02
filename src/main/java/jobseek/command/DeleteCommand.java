@@ -65,8 +65,8 @@ public class DeleteCommand extends UndoableCommand {
         assert applications.size() == sizeBefore - 1
                 : "Deleting one application should reduce the list size by one";
 
+        saveOrRollback(applications, storage);
         ui.showMessage("OK, I've deleted this application:\n  " + application);
-        storage.save(applications);
     }
 
     /** Puts the deleted application back at its original position. */
