@@ -34,7 +34,7 @@ public class DeleteCommand extends UndoableCommand {
      * @param applications In-memory list of applications.
      * @param ui User interface for printing user feedback.
      * @param storage Storage instance to persist the updated list.
-     * @throws Exception If an error occurs during saving.
+     * @throws IOException If the updated list could not be saved.
      */
     @Override
     public void execute(ApplicationList applications, Ui ui, Storage storage) throws IOException {
