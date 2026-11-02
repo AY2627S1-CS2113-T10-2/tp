@@ -255,6 +255,14 @@ The user interaction and validation workflow for updating application fields is 
 
 `HelpCommand` displays a summary of the numeric menu options (`[0]` to `[10]`) and of the typed commands (`list`, `undo`, `add`, `edit`, `delete`, `mark`, `unmark`, `find`, `search`, `sort`, `today`, `view`). It extends `Command` and does not change any data or write to disk. Because the help text is a hard-coded string, it must be updated whenever a command is added; `HelpCommandTest` checks for the main entries.
 
+### Menu layout and command validation
+
+*Implemented by: Beal Ng*
+
+`Ui.showMenuOptions()` prints options `1` to `10` in five paired rows, with `0` for Exit below them. This shortens the home menu without changing how `Main` handles any option number. `UiTest` checks the displayed pairs.
+
+For typed commands that take no arguments (`sort`, `help`, `today`, `undo`, and `exit`), `CommandParser.requireNoArguments()` rejects any trailing text with a `JobSeekException` and the command's usage. `Main` displays the error instead of running the command. `CommandParserTest` covers all five commands with extra text.
+
 ### Search and alphabetical views
 
 *Implemented by: Beal Ng*
@@ -786,6 +794,13 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
      [0] Exit                        - Exit JobSeek
    ```
 3. Type `help` and verify that the same list is shown.
+
+### Home menu layout and extra command text
+
+*Feature tested: Menu layout and typed commands without arguments (Implemented by: Beal Ng)*
+
+1. Start JobSeek. Check that the home menu shows options `1` and `2` on one row, `3` and `4` on the next, through `9` and `10`, with `0` for Exit below them. Choosing an option should still start the action shown beside its number.
+2. Type `sort extra`, `help extra`, `today extra`, `undo extra`, and `exit extra`. Each should show `Error: Unexpected text after '<command>'. Usage: <command>` with the relevant command word in place of `<command>`. The app should stay open after `exit extra`.
 
 ### Viewing application details
 

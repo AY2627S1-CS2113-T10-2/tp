@@ -13,6 +13,8 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 
 ## Menu options
 
+The home menu shows the options in two columns. The numbers below are the ones to enter; they work the same way as before.
+
 | Number | Action | What it does |
 | --- | --- | --- |
 | `1` | Add application | Enter company, role, and optional deadline, portal link, email, and notes. Company and role must be non-empty. |
@@ -47,6 +49,8 @@ Instead of answering prompts one by one, you can type a whole command on one lin
 | Today dashboard | `today` | `today` |
 | Undo | `undo` | `undo` |
 | Help / exit | `help`, `exit` | `exit` |
+
+`sort`, `help`, `today`, `undo`, and `exit` do not take extra words. For example, `sort extra` shows `Error: Unexpected text after 'sort'. Usage: sort` instead of sorting.
 
 - `c/` is company, `r/` is role, `d/` is deadline, `s/` is recruitment stage (e.g. `Interview`, or shortcut `OA`), `p/` is portal link, `e/` is email, and `n/` is notes.
 - Field prefixes are case-insensitive (`c/` or `C/`). Fields can be given in any order. In `add`, `c/` and `r/` are required. In `edit`, at least one field is required.
