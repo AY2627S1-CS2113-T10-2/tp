@@ -1,45 +1,41 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'mirrorActors': false, 'actorMargin': 60, 'messageMargin': 28}}}%%
 sequenceDiagram
-    participant ui as :Ui
     participant main as :Main
     participant storage as :Storage
-    participant list as :ApplicationList
-    participant app as :Application
+    participant files as <<class>><br/>Files
+    participant ui as :Ui
 
     main->>storage: load()
     activate storage
-
+    storage->>files: readAllLines(path, UTF_8)
+    files-->>storage: lines
+    create participant list as :ApplicationList
     storage->>list: new ApplicationList()
-    activate list
-    list-->>storage: applications
-    deactivate list
 
-    loop each line of the file
+    loop for each line of the file
+        storage->>storage: parseRecord(lineIndex, line)
+        activate storage
         alt record is valid
-            storage->>app: new Application(...)
-            activate app
-            app-->>storage: application
-            deactivate app
+            create participant app as :Application
+            storage->>app: new Application(company, role, completed, stage, deadline, portalLink, email, notes)
             storage->>list: add(application)
-            activate list
-            deactivate list
         else record is corrupted
             storage->>storage: add warning to loadWarnings
-            activate storage
-            deactivate storage
         end
+        deactivate storage
+    end
+
+    opt any line was skipped
+        storage->>storage: backupPending = true
     end
     storage-->>main: applications
     deactivate storage
 
     main->>storage: getLoadWarnings()
-    activate storage
     storage-->>main: warnings
-    deactivate storage
-    loop each warning
+    loop for each warning
         main->>ui: showError(warning)
-        activate ui
-        deactivate ui
+    end
+    opt backup is pending
+        main->>ui: showMessage("Your original file will be copied to ... .bak")
     end

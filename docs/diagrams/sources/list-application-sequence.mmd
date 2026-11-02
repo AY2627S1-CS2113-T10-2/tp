@@ -1,20 +1,25 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'mirrorActors': false, 'actorMargin': 60, 'messageMargin': 28}}}%%
 sequenceDiagram
     actor user as User
-    participant ui as :Ui
     participant main as :Main
-    participant cmd as :ListCommand
+    participant parser as :CommandParser
+    participant lcls as <<class>><br/>ListCommand
     participant list as :ApplicationList
     participant app as :Application
+    participant ui as :Ui
 
     user->>main: list completed
-    main->>cmd: ListCommand.parse("completed")
-    activate cmd
-    cmd-->>main: listCommand
-    deactivate cmd
-    main->>cmd: execute(...)
+    main->>parser: parse("list completed", history)
+    activate parser
+    parser->>lcls: parse("completed")
+    activate lcls
+    create participant cmd as :ListCommand
+    lcls->>cmd: new ListCommand(COMPLETED)
+    lcls-->>parser: listCommand
+    deactivate lcls
+    parser-->>main: listCommand
+    deactivate parser
+    main->>cmd: execute(applications, ui, storage)
     activate cmd
 
     loop for each application
@@ -28,20 +33,17 @@ sequenceDiagram
         deactivate app
     end
 
-    alt matches found
-        cmd->>cmd: formatTable(matchingIndices)
-        activate cmd
-        deactivate cmd
+    alt some applications match
+        cmd->>cmd: build table with original numbers
         cmd->>ui: showMessage(table)
         activate ui
         ui-->>user: Formatted table output
         deactivate ui
-    else else
-        cmd->>ui: showMessage("None found")
+    else no application matches
+        cmd->>ui: showMessage("No completed applications found.")
         activate ui
         ui-->>user: Status message
         deactivate ui
     end
-
-    cmd-->>main: 
+    cmd-->>main:
     deactivate cmd

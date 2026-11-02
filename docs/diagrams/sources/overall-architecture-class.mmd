@@ -1,54 +1,70 @@
+%%{init: {'theme': 'default'}}%%
 classDiagram
     direction TB
-    class Main {
-        - ui: Ui
-        - storage: Storage
-        - applications: ApplicationList
-        + run(): void
-        + parseCommand(option: String): Command
+    class Main:::ctrl {
+        -ui : Ui
+        -storage : Storage
+        -applications : ApplicationList
+        -deadlineWarnings : DeadlineWarnings
+        -history : CommandHistory
+        +run() void
+        +parseCommand(option : String) Command
     }
-    class Ui {
-        + showWelcome(): void
-        + showMenu(applications: ApplicationList): void
-        + showMessage(message: String): void
-        + showError(errorMessage: String): void
-        + showPrompt(prompt: String): void
-        + readCommand(): String
-        + showGoodbye(): void
+    class Ui:::io {
+        -scanner : Scanner
+        +showWelcome() void
+        +showMenu(applications : ApplicationList) void
+        +showMenuOptions() void
+        +showEditMenu() void
+        +showMessage(message : String) void
+        +showError(errorMessage : String) void
+        +showPrompt(prompt : String) void
+        +readCommand() String
+        +showGoodbye() void
     }
-    class Storage {
-        - filePath: String
-        + save(applications: ApplicationList): void
-        + load(): ApplicationList
+    class Storage:::store {
+        -filePath : String
+        +save(applications : ApplicationList) void
+        +load() ApplicationList
     }
-    class ApplicationList {
-        - applications: ArrayList~Application~
-        + add(app: Application): void
-        + getAll(): ArrayList~Application~
+    class ApplicationList:::model {
+        -applications : ArrayList~Application~
+        +add(app : Application) void
+        +getAll() List~Application~
     }
-    class DeadlineWarnings {
-        + show(applications: ApplicationList, ui: Ui): void
+    class DeadlineWarnings:::util {
+        +show(applications : ApplicationList, ui : Ui) void
     }
-    class JobSeekException {
-        + JobSeekException(message: String)
+    class CommandParser:::util {
+        +parse(input : String, history : CommandHistory)$ Command
     }
-    class Command {
-        <<abstract>>
-        - isExit: boolean
-        + execute(applications: ApplicationList, ui: Ui, storage: Storage)*: void
-        + isExit(): boolean
+    class CommandHistory:::util {
+        -history : Deque~UndoableCommand~
+        +record(command : Command) void
+        +peek() UndoableCommand
+        +pop() UndoableCommand
+        +isEmpty() boolean
     }
-    class UndoableCommand {
-        <<abstract>>
-        - hasChanged: boolean
-        # markChanged(): void
-        + hasChanged(): boolean
-        + undo(applications: ApplicationList)*: String
+    class Command["{abstract}<br/>Command"]:::cmd {
+        #isExit : boolean
+        +execute(applications : ApplicationList, ui : Ui, storage : Storage)* void
+        +isExit() boolean
     }
-    Main "1" --> "1" Ui
-    Main "1" --> "1" Storage
-    Main "1" --> "1" ApplicationList
-    Main ..> Command : creates
+    class UndoableCommand["{abstract}<br/>UndoableCommand"]:::undoable {
+        -hasChanged : boolean
+        #markChanged() void
+        +hasChanged() boolean
+        #saveOrRollback(applications : ApplicationList, storage : Storage) void
+        +undo(applications : ApplicationList)* String
+    }
+    Main "1" --> "1" Ui : uses ▶
+    Main "1" --> "1" Storage : uses ▶
+    Main "1" --> "1" ApplicationList : manages ▶
+    Main "1" *-- "1" DeadlineWarnings
+    Main "1" *-- "1" CommandHistory
+    Main ..> CommandParser : calls ▶
+    Main ..> Command : executes ▶
+    CommandParser ..> Command : creates ▶
     Command <|-- UndoableCommand
     UndoableCommand <|-- AddCommand
     UndoableCommand <|-- DeleteCommand
@@ -64,3 +80,25 @@ classDiagram
     Command <|-- TodayCommand
     Command <|-- HelpCommand
     Command <|-- ExitCommand
+    class AddCommand:::undoable
+    class DeleteCommand:::undoable
+    class EditCommand:::undoable
+    class RecruitmentStageCommand:::undoable
+    class MarkCommand:::undoable
+    class ListCommand:::cmd
+    class ViewCommand:::cmd
+    class SearchCommand:::cmd
+    class SortCommand:::cmd
+    class FindCommand:::cmd
+    class TodayCommand:::cmd
+    class HelpCommand:::cmd
+    class ExitCommand:::cmd
+    class UndoCommand:::cmd
+    classDef ctrl fill:#fdf2ff,stroke:#c26bdb,stroke-width:2px
+    classDef io fill:#eefcf6,stroke:#2bb58a,stroke-width:2px
+    classDef store fill:#fff5ec,stroke:#f08c3a,stroke-width:2px
+    classDef model fill:#eafcff,stroke:#17a2b8,stroke-width:2px
+    classDef enum fill:#f1ecff,stroke:#8e6bd8,stroke-width:2px
+    classDef cmd fill:#fff1f1,stroke:#ef5b5b,stroke-width:2px
+    classDef undoable fill:#fffbe6,stroke:#e6b800,stroke-width:2px
+    classDef util fill:#eefaf0,stroke:#4caf50,stroke-width:2px

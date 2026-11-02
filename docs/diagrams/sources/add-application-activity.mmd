@@ -1,10 +1,22 @@
+%%{init: {'theme': 'default'}}%%
 flowchart LR
-    Start((●)) --> MergePrompt{ }
-    MergePrompt --> Prompt["Prompt company, role,<br/>deadline, portal, email, notes"]
-    Prompt --> Validate{"Valid required<br/>fields & date?"}
-    Validate -->|"[valid]"| Create["Create Application<br/>& add to list"]
-    Validate -->|"[else]"| ShowErr["Show error<br/>message"]
+    Start(( )):::start --> MergePrompt{ }:::decision
+    MergePrompt --> Prompt("Prompt company, role,<br/>deadline, portal, email, notes"):::action
+    Prompt --> Cancelled{"User typed cancel<br/>or input ended?"}:::decision
+    Cancelled -->|"[yes]"| ShowCancel("Show 'Cancelled.<br/>No changes were made.'"):::action
+    Cancelled -->|"[no]"| Validate{"Valid required<br/>fields & date?"}:::decision
+    Validate -->|"[valid]"| Create("Create Application<br/>& add to list"):::action
+    Validate -->|"[else]"| ShowErr("Show error<br/>message"):::action
     ShowErr --> MergePrompt
-    Create --> Save["Storage.save<br/>applications"]
-    Save --> Show["Display confirmation<br/>message"]
-    Show --> End(((◎)))
+    Create --> Save("Save applications<br/>to storage"):::action
+    Save --> Saved{"Save<br/>succeeded?"}:::decision
+    Saved -->|"[yes]"| Show("Display confirmation<br/>message"):::action
+    Saved -->|"[else]"| Rollback("Remove the new application<br/>& show error"):::action
+    Show --> MergeEnd{ }:::decision
+    Rollback --> MergeEnd
+    ShowCancel --> MergeEnd
+    MergeEnd --> End(("●")):::finish
+    classDef start fill:#000,stroke:#000
+    classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px
+    classDef action fill:#e3f6ff,stroke:#2b9bd8,stroke-width:2px
+    classDef decision fill:#fff0dc,stroke:#f0a03a,stroke-width:2px

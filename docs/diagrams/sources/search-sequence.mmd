@@ -1,31 +1,24 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'mirrorActors': false, 'actorMargin': 60, 'messageMargin': 28}}}%%
 sequenceDiagram
     actor user as User
-    participant ui as :Ui
     participant main as :Main
-    participant cmd as :SearchCommand
+    participant ui as :Ui
     participant list as :ApplicationList
     participant app as :Application
-    participant table as :ApplicationTable
+    participant table as <<class>><br/>ApplicationTable
 
-    user->>main: Select option 7 (Search)
-    main->>main: promptNonEmpty("Enter search term:")
+    user->>main: 7 (search)
+    main->>main: handleMenuSearch()
     activate main
-    main->>ui: showPrompt(...)
-    activate ui
-    deactivate ui
+    main->>ui: showPrompt("Search company or role:")
     main->>ui: readCommand()
     activate ui
     ui-->>main: "engineer"
     deactivate ui
-    deactivate main
+    create participant cmd as :SearchCommand
     main->>cmd: new SearchCommand("engineer")
-    activate cmd
-    cmd-->>main: searchCommand
-    deactivate cmd
-    main->>cmd: execute(...)
+    deactivate main
+    main->>cmd: execute(applications, ui, storage)
     activate cmd
 
     loop for each application
@@ -43,8 +36,8 @@ sequenceDiagram
         deactivate app
     end
 
-    alt matches found
-        cmd->>table: format(apps, matches, heading)
+    alt some applications match
+        cmd->>table: format(applications, matches, heading)
         activate table
         table-->>cmd: formattedTable
         deactivate table
@@ -52,12 +45,11 @@ sequenceDiagram
         activate ui
         ui-->>user: Matching applications table
         deactivate ui
-    else else
-        cmd->>ui: showMessage("No applications found")
+    else no application matches
+        cmd->>ui: showMessage("No applications found matching 'engineer'.")
         activate ui
         ui-->>user: No matches message
         deactivate ui
     end
-
-    cmd-->>main: 
+    cmd-->>main:
     deactivate cmd

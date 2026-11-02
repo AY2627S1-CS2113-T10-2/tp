@@ -1,24 +1,22 @@
-classDiagram
-    direction LR
-    class main[":Main"]
-    class ui[":Ui"]
-    class storage[":Storage"] {
-        filePath = "data/applications.txt"
-    }
-    class applications[":ApplicationList"]
-    class app1["app1:Application"] {
-        company = "Google"
-        role = "SWE Intern"
-        isCompleted = false
-    }
-    class app2["app2:Application"] {
-        company = "Shopee"
-        role = "Backend Intern"
-        isCompleted = true
-    }
+%%{init: {'theme': 'default', 'flowchart': {'wrappingWidth': 600}}}%%
+flowchart LR
+    main["<u>:Main</u>"]
+    ui["<u>:Ui</u>"]
+    history["<u>:CommandHistory</u>"]
+    storage["<u>:Storage</u><hr/>filePath = &quot;data/applications.txt&quot;"]
+    applications["<u>:ApplicationList</u>"]
+    app1["<u>app1:Application</u><hr/>company = &quot;Google&quot;<br/>role = &quot;SWE Intern&quot;<br/>isCompleted = false<br/>recruitmentStage = APPLIED"]
+    app2["<u>app2:Application</u><hr/>company = &quot;Shopee&quot;<br/>role = &quot;Backend Intern&quot;<br/>isCompleted = true<br/>recruitmentStage = OFFER"]
 
-    main --> ui : uses
-    main --> storage : uses
-    main --> applications : owns
-    applications --> app1 : contains
-    applications --> app2 : contains
+    main -->|"uses ▶"| ui
+    main -->|"uses ▶"| storage
+    main -->|"manages ▶"| applications
+    main -->|"owns ▶"| history
+    applications -->|"contains ▶"| app1
+    applications -->|"contains ▶"| app2
+    classDef ctrl fill:#fdf2ff,stroke:#c26bdb,stroke-width:2px
+    classDef obj fill:#eafcff,stroke:#17a2b8,stroke-width:2px
+    classDef store fill:#fff5ec,stroke:#f08c3a,stroke-width:2px
+    class main ctrl
+    class ui,history,applications,app1,app2 obj
+    class storage store

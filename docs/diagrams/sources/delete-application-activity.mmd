@@ -1,10 +1,25 @@
+%%{init: {'theme': 'default'}}%%
 flowchart LR
-    Start((●)) --> Prompt["Prompt application<br/>index"]
-    Prompt --> Check{"Valid index?"}
-    Check -->|"[yes]"| Del["Delete from<br/>ApplicationList"]
-    Check -->|"[no]"| ShowErr["Show error<br/>message"]
-    Del --> Save["Storage.save<br/>applications"]
-    Save --> Show["Display confirmation<br/>message"]
-    Show --> MergeEnd{ }
-    ShowErr --> MergeEnd
-    MergeEnd --> End(((◎)))
+    Start(( )):::start --> MergePrompt{ }:::decision
+    MergePrompt --> Prompt("Prompt application<br/>index"):::action
+    Prompt --> Input{"Input?"}:::decision
+    Input -->|"[cancel or input ended]"| ShowCancel("Show 'Cancelled.<br/>No changes were made.'"):::action
+    Input -->|"[invalid index]"| ShowErr("Show error<br/>message"):::action
+    ShowErr --> MergePrompt
+    Input -->|"[valid index]"| Ask("Ask 'Delete ...? (y/n)'"):::action
+    Ask --> Confirm{"Answer is<br/>y or yes?"}:::decision
+    Confirm -->|"[else]"| ShowKept("Show 'Deletion cancelled'"):::action
+    Confirm -->|"[yes]"| Del("Delete from<br/>ApplicationList"):::action
+    Del --> Save("Save applications<br/>to storage"):::action
+    Save --> Saved{"Save<br/>succeeded?"}:::decision
+    Saved -->|"[yes]"| Show("Display confirmation<br/>message"):::action
+    Saved -->|"[else]"| Restore("Reinsert application<br/>& show error"):::action
+    ShowCancel --> MergeEnd{ }:::decision
+    ShowKept --> MergeEnd
+    Show --> MergeEnd
+    Restore --> MergeEnd
+    MergeEnd --> End(("●")):::finish
+    classDef start fill:#000,stroke:#000
+    classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px
+    classDef action fill:#e3f6ff,stroke:#2b9bd8,stroke-width:2px
+    classDef decision fill:#fff0dc,stroke:#f0a03a,stroke-width:2px

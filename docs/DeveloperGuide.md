@@ -10,6 +10,14 @@
   * [Gradle](https://gradle.org/) and [Checkstyle](https://checkstyle.sourceforge.io/) for building, testing and enforcing code style.
 * **OpenAI Codex**: I used it to help with my listing, search, sort, and menu work, along with related tests, documentation, and my portfolio page. (Beal Ng)
 
+## About the diagrams
+
+The class, object, sequence and activity diagrams follow the UML notation of the course's *UML Reference Sheet*: classes show `visibility name : type` attributes and `visibility name(parameters) : return-type` operations, static members are underlined, abstract classes carry an `{abstract}` label, enumerations use `<<enumeration>>`, composition uses a filled diamond and aggregation a hollow one, dependencies are dashed arrows, and inheritance uses a hollow triangle. In sequence diagrams, objects are written `:Class`, calls to static methods go to a `<<class>>` lifeline, object creation draws the new object's box where it is created, returns are dashed, and `alt`, `opt` and `loop` frames carry their conditions in square brackets. Activity diagrams use a filled circle for the start, a circle with a dot for the end, rounded boxes for actions and diamonds for branches and merges. In the object diagram, object names are underlined.
+
+The *Architecture Diagram* and the *Architecture and Command Pattern Flow* are informal block diagrams, not UML.
+
+Each diagram's Mermaid source is in `docs/diagrams/sources/` and the PNG next to it is generated from that file, for example `npx @mermaid-js/mermaid-cli -i docs/diagrams/sources/add-application-sequence.mmd -o docs/diagrams/add-application-sequence.png -s 2`. Edit the source, regenerate the PNG and commit both. Mermaid cannot draw every symbol exactly like the sheet (for example, the association label arrow is typed as a `▶` character and underlined object names use HTML).
+
 ## Design & implementation
 
 ### Architecture Overview
@@ -34,13 +42,13 @@ The high-level interaction between the user, UI, logic controller, domain model,
 
 The control flow from startup, file loading, deadline inspection, command execution, and termination is illustrated in the activity diagram below:
 
-![Application Lifecycle Activity Diagram](diagrams/application-lifecycle.png?v=2)
+![Application Lifecycle Activity Diagram](diagrams/application-lifecycle.png?v=3)
 
 #### Runtime Object Structure (Object Diagram)
 
 The following object diagram illustrates a concrete runtime snapshot of JobSeek after two applications have been loaded and tracked in memory:
 
-![Runtime Object Structure Diagram](diagrams/runtime-object-structure.png?v=2)
+![Runtime Object Structure Diagram](diagrams/runtime-object-structure.png?v=3)
 
 ### Architecture and Command pattern
 
@@ -66,11 +74,13 @@ JobSeek is a single-user command-line application. `Main` reads one line at a ti
 
 The class diagram below illustrates the structural relationships, associations, dependencies, and explicit UML multiplicities across the core components (`Main`, `Ui`, `Storage`, domain model, and `Command`):
 
-![Overall Architecture Class Diagram](diagrams/overall-architecture-class.png?v=2)
+![Overall Architecture Class Diagram](diagrams/overall-architecture-class.png?v=3)
 
 **Data model.** `ApplicationList` owns the `Application` objects. `RecruitmentStage` is an enum, so an application can only be in one of the known stages.
 
-![Application Data Model Class Diagram](diagrams/app-data-class-updated.png?v=2)
+![Application Data Model Class Diagram](diagrams/app-data-class-updated.png?v=3)
+
+`Application` has several more constructor overloads with optional fields; only the two-argument one is shown. `ApplicationFilters` is a utility class of static factory methods (see [Combined filters](#combined-filters-find)).
 
 **Encapsulation in the model.** `ApplicationList` never hands out its internal list. `getAll()` returns an unmodifiable view, so callers such as `Storage` can read the applications but cannot add, remove or reorder them. The constructor copies the collection it is given. Code that has to restore an earlier state (`ApplicationListSnapshot`, used to roll back a failed save of an undo) calls the explicit `replaceAll(...)` operation instead of editing the list in place. The `Application` objects inside are still mutable, because that is how edits work.
 
@@ -95,11 +105,11 @@ The `AddCommand` allows job seekers to add a new internship or job record with a
 
 The user input validation, prompt looping, and execution lifecycle for adding an application is illustrated in the activity diagram below:
 
-![Add Application Activity Diagram](diagrams/add-application-activity.png?v=2)
+![Add Application Activity Diagram](diagrams/add-application-activity.png?v=3)
 
 #### Add Application Sequence Diagram
 
-![Add Application Sequence Diagram](diagrams/add-application-sequence.png?v=2)
+![Add Application Sequence Diagram](diagrams/add-application-sequence.png?v=3)
 
 ### View application feature
 
@@ -114,11 +124,11 @@ The `ViewCommand` displays all recorded information for an individual applicatio
   1. `ViewCommand.execute(ApplicationList, Ui, Storage)` validates that the zero-based target index satisfies `0 <= targetIndex < applications.size()`.
   2. If the index is out of bounds, it throws a `JobSeekException` reporting the invalid index and the current list size (e.g., `Application index 5 does not exist. (Total applications: 3)`).
   3. Upon successful bounds validation, it retrieves the target `Application` via `applications.get(targetIndex)`.
-  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment stage (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`), and completion status (`Yes` or `No`).
+  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment stage (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`) and completion status (`Yes` or `No`). The optional deadline, portal link, contact email and notes are appended as extra lines only when they have been recorded.
   5. The card is rendered via `Ui.showMessage()`.
   6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
 
-![View Application Sequence Diagram](diagrams/view-application-sequence.png?v=2)
+![View Application Sequence Diagram](diagrams/view-application-sequence.png?v=3)
 
 #### Design considerations
 - **Card view vs tabular view**:
@@ -153,7 +163,7 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
   5. Renders each matching row, preserving the application's original 1-based index (`index + 1`).
   6. Displays the formatted table via `Ui.showMessage()`.
 
-![List Application Sequence Diagram](diagrams/list-application-sequence.png?v=2)
+![List Application Sequence Diagram](diagrams/list-application-sequence.png?v=3)
 
 #### Design considerations
 - **Preserving original 1-based indices**:
@@ -184,7 +194,7 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
      - Marked: `"Nice! I've marked this application as completed:\n  " + application`
      - Unmarked: `"OK, I've marked this application as not completed yet:\n  " + application`
 
-![Mark Application Sequence Diagram](diagrams/mark-application-sequence.png?v=2)
+![Mark Application Sequence Diagram](diagrams/mark-application-sequence.png?v=3)
 
 #### Design considerations
 - **Single unified command vs separate commands**:
@@ -215,11 +225,11 @@ The `DeleteCommand` allows users to permanently remove an application by its 1-b
 
 The decision flow, bounds validation, and deletion logic is shown in the activity diagram below:
 
-![Delete Application Activity Diagram](diagrams/delete-application-activity.png?v=2)
+![Delete Application Activity Diagram](diagrams/delete-application-activity.png?v=3)
 
 #### Delete Application Sequence Diagram
 
-![Delete Application Sequence Diagram](diagrams/delete-application-sequence.png?v=2)
+![Delete Application Sequence Diagram](diagrams/delete-application-sequence.png?v=3)
 
 ### Edit application and recruitment stage tracking
 
@@ -249,11 +259,11 @@ The edit feature allows users to modify existing applications without deleting a
 
 The user interaction and validation workflow for updating application fields is illustrated in the activity diagram below:
 
-![Edit Application Activity Diagram](diagrams/edit-application-activity.png?v=2)
+![Edit Application Activity Diagram](diagrams/edit-application-activity.png?v=3)
 
 #### Edit Application Sequence Diagram
 
-![Edit Application Sequence Diagram](diagrams/edit-application-sequence.png?v=2)
+![Edit Application Sequence Diagram](diagrams/edit-application-sequence.png?v=3)
 
 ### Help feature
 
@@ -281,19 +291,19 @@ The commands collect zero-based indices of matching applications. `SearchCommand
 
 The flow of user input, matching/sorting logic, and display formatting for both search and sort operations is shown below:
 
-![Search and Sort Activity Diagram](diagrams/search-sort-activity.png?v=2)
+![Search and Sort Activity Diagram](diagrams/search-sort-activity.png?v=3)
 
 #### Search Sequence Diagram
 
 The interaction sequence for searching applications is shown below:
 
-![Search Sequence Diagram](diagrams/search-sequence.png?v=2)
+![Search Sequence Diagram](diagrams/search-sequence.png?v=3)
 
 #### Sort Sequence Diagram
 
 The alphabetical view follows a comparable execution path using `SortCommand`. It sorts a copy of the index array rather than mutating storage or the underlying `ApplicationList`:
 
-![Sort Sequence Diagram](diagrams/sort-sequence.png?v=2)
+![Sort Sequence Diagram](diagrams/sort-sequence.png?v=3)
 
 The alphabetical view follows the same formatting path after sorting the index copy. Keeping the list itself unchanged means there is no save operation and existing application numbers remain stable.
 
@@ -311,8 +321,8 @@ Besides the numbered menu, users can type a full command on one line, such as `a
 
 | Input | Command created |
 |---|---|
-| `add c/.. r/.. [d/..]` | `AddCommand` |
-| `edit INDEX [c/..] [r/..] [s/..]` | `EditCommand` |
+| `add c/.. r/.. [d/..] [p/..] [e/..] [n/..]` | `AddCommand` |
+| `edit INDEX [c/..] [r/..] [s/..] [d/..] [p/..] [e/..] [n/..]` | `EditCommand` |
 | `delete INDEX` | `DeleteCommand` |
 | `mark INDEX`, `unmark INDEX` | `MarkCommand` |
 | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/..]` | `FindCommand` |
@@ -325,7 +335,7 @@ Besides the numbered menu, users can type a full command on one line, such as `a
 
 `Main.parseCommand` delegates all typed command parsing directly to `CommandParser.parse(trimmedOption, history)`. The parser returns `null` when the first word is not a recognized typed command (for example a numbered menu option `1` to `10`), allowing `Main` to fall back to the numbered menu switch cleanly. If the first word is a valid typed command but its syntax or arguments are invalid, the parser throws a `JobSeekException` containing actionable usage guidance, which `Main` catches and presents through `Ui.showError()`.
 
-![Typed Command Parser Sequence Diagram](diagrams/typed-command-sequence.png?v=2)
+![Typed Command Parser Sequence Diagram](diagrams/typed-command-sequence.png?v=3)
 
 Fields are found with a regular expression such as `(?:^|\s)([crsdpenbam])/`, which matches one prefix letter and a slash at the start of the text or after whitespace. `add` and `edit` only treat letters that are prefixes in some command as prefixes, so slashes after other letters (`w/ HR`, `I/O`) stay in the value; `find` accepts any letter and reports unknown ones, because it has no free text. Everything between one prefix and the next is that field's value, so values can contain spaces. Text before the first prefix is kept separately; `edit` treats it as the index, and `add` and `find` reject it. Because the prefix must follow whitespace, slashes inside words such as `AT&T/Intel` are ordinary text. The parser also rejects prefixes that belong to a different command (for example `s/` in `add`), repeated prefixes and empty values. The exception is `edit`, where an empty `d/`, `p/`, `e/` or `n/` is valid and clears that field.
 
@@ -353,7 +363,7 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 | `CommandParser` (`parser`) | `parseFind` turns each prefix (`c/ r/ s/ b/ a/ m/`) into a predicate and joins them with `Predicate.and`. It also builds a readable description of the conditions. |
 | `FindCommand` (`command`) | Holds one combined `Predicate<Application>` and a description. It tests every application, then shows the matches through `ApplicationTable`. |
 
-![Combined Filters Sequence Diagram](diagrams/find-combined-filters-sequence.png?v=2)
+![Combined Filters Sequence Diagram](diagrams/find-combined-filters-sequence.png?v=3)
 
 `FindCommand` never needs to know which filters were chosen, because the parser has already combined them into a single predicate. Adding a new filter therefore means adding one factory method to `ApplicationFilters` and one prefix to `parseFind`; `FindCommand` stays unchanged. This is the strategy pattern, using Java's functional interface `Predicate` instead of a hand-written interface. `FindCommand` is read-only, so it does not call `Storage.save`.
 
@@ -365,8 +375,6 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 * **Original numbering:** results use the index in the full list (like `search` and `sort`), so numbers stay valid for `edit` and `delete`.
 
 ### Delete confirmation and undo
-
-*Feature tested: Delete confirmation and undo (Implemented by: Peng Bohao)*
 
 *Implemented by: Peng Bohao*
 
@@ -385,7 +393,11 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 | `ApplicationListSnapshot` | Restores list order, field values and original object identities if saving an undo fails. |
 | `Main` | Owns the `CommandHistory`, records each executed command, and creates `UndoCommand` for the text command `undo`. |
 
-![Command History and Undo Class Diagram](diagrams/command-history-undo-class.png?v=2)
+![Command History and Undo Class Diagram](diagrams/command-history-undo-class.png?v=3)
+
+The sequence diagram below shows a confirmed delete followed by `undo`, including the snapshot and the failed-save branch:
+
+![Delete Confirmation and Undo Sequence Diagram](diagrams/delete-confirmation-undo-sequence.png?v=3)
 
 **Undo execution sequence:**
 
@@ -408,7 +420,7 @@ Undo works on the same `Application` objects that were changed. Commands keep a 
 
 *Implemented by: Peng Bohao*
 
-`TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per recruitment stage). `Main.parseCommand` creates it for the text command `today`.
+`TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per recruitment stage). `CommandParser` creates it for the typed command `today`.
 
 It is read-only, so it does not call `Storage.save`. Its constructor accepts a `LocalDate` so tests can fix "today"; the no-argument constructor uses `LocalDate.now()`. Each entry prints the application's original one-based index so it can be used with `view`, `edit` and `delete`. The classification rules match `DeadlineWarnings` (same 7-day window, completed applications ignored), but the dashboard can be run on demand instead of only at startup.
 
@@ -440,7 +452,7 @@ The feature involves the following classes:
 
 The following class diagram shows the relationships relevant to deadline checking. Unrelated fields and methods are omitted.
 
-![Deadline Warnings Class Diagram](diagrams/deadline-warnings-class.png?v=2)
+![Deadline Warnings Class Diagram](diagrams/deadline-warnings-class.png?v=3)
 
 Each application's deadline is represented using `LocalDate`. A `null` deadline indicates that no deadline has been recorded. `LocalDate` supports comparisons between calendar dates without requiring a time of day.
 
@@ -466,9 +478,9 @@ The private `appendWarning()` method adds each warning to a `StringBuilder`. Eac
 
 #### Sequence of interactions
 
-The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in a note to keep the diagram focused on interactions between objects.
+The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in the `appendWarning(...)` self-call to keep the diagram focused on interactions between objects.
 
-![Deadline Warnings Sequence Diagram](diagrams/deadline-warnings-sequence.png?v=2)
+![Deadline Warnings Sequence Diagram](diagrams/deadline-warnings-sequence.png?v=3)
 
 #### Design considerations
 
@@ -514,9 +526,9 @@ The feature involves the following classes:
 
 The class relationships within the storage subsystem are illustrated below:
 
-![Storage Class Diagram](diagrams/storage-class.png?v=2)
+![Storage Class Diagram](diagrams/storage-class.png?v=3)
 
-The class diagrams show the core relationships. Save-failure protection additionally uses `Storage.ensureWritable()`, `UndoableCommand.saveOrRollback()`, `CommandHistory.peek()` and the temporary `ApplicationListSnapshot` described above. Earlier activity and sequence illustrations omit these failure branches; the workflows in the text define save-before-confirmation behavior and rollback.
+The class diagrams show the core relationships. Save-failure protection additionally uses `Storage.ensureWritable()`, `UndoableCommand.saveOrRollback()`, `CommandHistory.peek()` and the temporary `ApplicationListSnapshot` described above. The add, delete and edit activity diagrams, the save sequence diagram and the undo sequence diagram show the failed-save branches; the workflows in the text define save-before-confirmation behavior and rollback.
 
 #### File format
 
@@ -559,7 +571,7 @@ If the file system reports `AtomicMoveNotSupportedException`, storage falls back
 
 The sequence of interactions during a save operation is shown below:
 
-![Storage Save Sequence Diagram](diagrams/storage-save-sequence.png?v=2)
+![Storage Save Sequence Diagram](diagrams/storage-save-sequence.png?v=3)
 
 The operation rewrites the file using the current list. Consequently, applications removed from the list are also removed from the saved data.
 
@@ -571,9 +583,9 @@ If the file does not exist, `load()` logs an informational event via `java.util.
 
 In adherence to the Single Level of Abstraction Principle (SLAP), `Storage.load()` delegates the parsing and validation of individual lines to a private helper, `parseRecord(int lineIndex, String line)`. For each record, `Storage` verifies that there are four fields (legacy format), five fields (legacy status format), or eight fields (modern format with optional portal link, email, notes). It ensures the completion flag is boolean (`true` or `false`), company and role are non-empty, optional deadlines conform to `LocalDate` format, and recruitment stage maps to a valid `RecruitmentStage`. Valid records are instantiated as `Application` objects and added to the list. Any line that fails validation is skipped, and an informative warning naming the line number is recorded in `Storage.getLoadWarnings()`.
 
-The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note:
+The following sequence diagram shows loading of an existing file, including a corrupted record. Low-level file reading is omitted to keep the diagram focused on interactions between objects:
 
-![Storage Load Sequence Diagram](diagrams/storage-load-sequence.png?v=2)
+![Storage Load Sequence Diagram](diagrams/storage-load-sequence.png?v=3)
 
 #### Error handling
 
@@ -598,7 +610,7 @@ Commands request a save without implementing file encoding or parsing themselves
 
 #### Possible improvements
 
-Recruitment stages are persisted in the final column. The loader also accepts legacy files whose column header is `status`. A crash at exactly the wrong moment can still leave an unused `applications-*.tmp` file in the `data` folder; it is harmless and can be deleted.
+Recruitment stages are persisted in the fifth column, after the deadline. The loader also accepts legacy files whose column header is `status`. A crash at exactly the wrong moment can still leave an unused `applications-*.tmp` file in the `data` folder; it is harmless and can be deleted.
 
 The backup is overwritten the next time a load skips lines. A future version could keep several timestamped backups.
 
@@ -613,8 +625,9 @@ JobSeek employs a multi-tiered error handling and defensive programming strategy
 #### 2. Defensive Programming and Assertions
 JobSeek utilizes Java `assert` statements throughout constructors and internal command execution to enforce preconditions, postconditions, and internal class invariants:
 - **Preconditions**: Verifying non-null arguments and valid index states (`assert targetIndex >= 0`, `assert list != null`, `assert history != null`).
-- **Postconditions & State Invariants**: Verifying application fields are never blank or null after updates, and list indices remain consistent.
-Assertions are enabled during automated testing (`./gradlew test`) and development to trap logic regressions immediately.
+- **Postconditions & State Invariants**: Verifying list indices remain consistent after changes.
+
+Assertions are enabled during automated testing (`./gradlew test`) and development to trap logic regressions immediately. They are **disabled** when users run the JAR with `java -jar`, so rules that must always hold are enforced with ordinary checks instead: `Application` throws `IllegalArgumentException` for a null or blank company or role, and `ApplicationList` throws `NullPointerException` for null entries (see [Design & implementation](#architecture-and-command-pattern)). Assertions are used only for conditions that indicate a programming error.
 
 #### 3. Diagnostic Logging Architecture
 JobSeek utilizes Java's standard `java.util.logging.Logger` across critical architectural layers to provide transparent operational observability without polluting user-facing terminal output:
@@ -705,11 +718,14 @@ To execute all tests and generate a detailed HTML coverage report:
 ```
 The report is saved to `build/reports/jacoco/test/html/index.html`.
 
-As of the latest release, JobSeek achieves industry-standard coverage across all 302 automated test cases:
-* **Class Coverage**: **100%** (all 23 production classes covered)
+Measured with `./gradlew test jacocoTestReport` across all 381 automated test cases (39 test classes):
+* **Class Coverage**: **100%** (all 31 classes, including nested classes, in the 29 production source files)
+* **Method Coverage**: **97.7%**
 * **Line Coverage**: **97.5%**
-* **Instruction Coverage**: **93.9%**
-* **Branch Coverage**: **86.9%**
+* **Instruction Coverage**: **95.3%**
+* **Branch Coverage**: **88.5%**
+
+These figures change as code and tests change; re-run the command above to refresh them.
 
 ### Test Case Design Methodologies
 
@@ -1150,4 +1166,6 @@ Use isolated test data for failure checks rather than a user's saved application
 - **Startup protection:** `MainTest.run_failedStartupLoad_rejectsChangesButAllowsHelpAndExit` checks that attempted changes leave both the fallback list and original file untouched after a fatal load failure.
 - **Failed saves and undo:** `SaveFailureTest` injects write failures for add, delete, edit, stage changes and both completion directions. It checks field values, ordering, identity, absent success messages and retained history. It then retries undo successfully and checks the persisted result. A main-loop test verifies that a failed deletion does not break an earlier edit's undo entry.
 
-These tests verify application behavior when a save reports an error. They do not establish crash-safe or atomic file replacement.
+- **Atomic replacement:** `StorageAtomicSaveTest` checks that a save replaces the whole file, leaves no temporary file behind, and keeps the original content when the file cannot be replaced (a locked file on Windows). On file systems without atomic moves the fallback is not atomic, as described in [Saving applications](#saving-applications).
+
+These tests do not establish that saved data survives a power failure.
