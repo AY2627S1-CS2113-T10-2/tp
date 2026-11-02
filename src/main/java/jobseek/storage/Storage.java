@@ -164,7 +164,9 @@ public class Storage {
      * Writes the lines to a temporary file next to the target and then replaces the target with it.
      * Writing straight over the target would truncate it first, so a failure part-way through
      * (a locked file, a full disk, a crash) would leave the user's saved data empty or half written.
-     * With this approach the original file is either replaced completely or left untouched.
+     * A failed temporary-file write leaves the original untouched. The replacement is atomic only
+     * when the file system supports atomic moves; otherwise a regular replacement is used, which
+     * cannot guarantee an intact original after a move failure or a crash during replacement.
      *
      * @param target Data file to replace.
      * @param lines Complete new contents of the file.
@@ -179,6 +181,7 @@ public class Storage {
             try {
                 Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             } catch (AtomicMoveNotSupportedException e) {
+                // Compatibility fallback: this replacement does not provide the same atomicity guarantee.
                 Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException | RuntimeException e) {

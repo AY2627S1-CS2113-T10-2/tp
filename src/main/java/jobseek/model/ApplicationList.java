@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Manages an in-memory list of job applications.
@@ -23,24 +24,25 @@ public class ApplicationList {
      * Constructs an ApplicationList pre-populated with existing applications.
      *
      * @param applications Initial applications. They are copied, so later changes to the given
-     *                     collection do not affect this list.
+     *                     collection do not affect this list. A null collection creates an empty list.
+     * @throws NullPointerException If the collection contains a null application.
      */
     public ApplicationList(Collection<Application> applications) {
-        this.applications = applications != null ? new ArrayList<>(applications) : new ArrayList<>();
+        this.applications = applications != null ? copyApplications(applications) : new ArrayList<>();
     }
 
     /**
      * Adds an application to the list.
      *
      * @param app Application to be added.
+     * @throws NullPointerException If the application is null.
      */
     public void add(Application app) {
-        if (app != null) {
-            int sizeBefore = applications.size();
-            applications.add(app);
-            assert applications.size() == sizeBefore + 1 : "List size should increase by 1 after adding";
-            assert applications.contains(app) : "List should contain the newly added application";
-        }
+        Objects.requireNonNull(app, "Application cannot be null");
+        int sizeBefore = applications.size();
+        applications.add(app);
+        assert applications.size() == sizeBefore + 1 : "List size should increase by 1 after adding";
+        assert applications.contains(app) : "List should contain the newly added application";
     }
 
     /**
@@ -49,9 +51,10 @@ public class ApplicationList {
      *
      * @param index 0-based position to insert at; must be between 0 and size (inclusive).
      * @param app Application to insert.
+     * @throws NullPointerException If the application is null.
      */
     public void insert(int index, Application app) {
-        assert app != null : "Cannot insert a null application";
+        Objects.requireNonNull(app, "Application cannot be null");
         if (index < 0 || index > applications.size()) {
             throw new IndexOutOfBoundsException("Invalid insert index: " + index + ".");
         }
@@ -115,12 +118,29 @@ public class ApplicationList {
      * failed save has to be rolled back.
      *
      * @param newContents Applications the list should hold afterwards, in order. Copied before use.
+     * @throws NullPointerException If the collection or any application in it is null.
      */
     public void replaceAll(Collection<Application> newContents) {
-        assert newContents != null : "Replacement contents should not be null";
-        List<Application> copy = new ArrayList<>(newContents);
+        List<Application> copy = copyApplications(newContents);
         applications.clear();
         applications.addAll(copy);
+    }
+
+    /**
+     * Copies and validates a collection before it can change this list. Validation happens before
+     * replacement so a rejected collection cannot erase the existing applications.
+     *
+     * @param source Collection to copy.
+     * @return An independent list containing only non-null applications.
+     * @throws NullPointerException If the collection or any application in it is null.
+     */
+    private static ArrayList<Application> copyApplications(Collection<Application> source) {
+        Objects.requireNonNull(source, "Application collection cannot be null");
+        ArrayList<Application> copy = new ArrayList<>(source);
+        for (Application application : copy) {
+            Objects.requireNonNull(application, "Application cannot be null");
+        }
+        return copy;
     }
 
     /**

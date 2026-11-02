@@ -74,6 +74,8 @@ The class diagram below illustrates the structural relationships, associations, 
 
 **Encapsulation in the model.** `ApplicationList` never hands out its internal list. `getAll()` returns an unmodifiable view, so callers such as `Storage` can read the applications but cannot add, remove or reorder them. The constructor copies the collection it is given. Code that has to restore an earlier state (`ApplicationListSnapshot`, used to roll back a failed save of an undo) calls the explicit `replaceAll(...)` operation instead of editing the list in place. The `Application` objects inside are still mutable, because that is how edits work.
 
+**Non-null entries.** The collection constructor, `add`, `insert` and `replaceAll` reject null application entries with `NullPointerException`, even when assertions are disabled. Collections are copied and validated before replacing any existing content, so a rejected replacement preserves the original applications and their order. For compatibility, a null collection passed to the constructor still creates an empty list; `replaceAll(null)` is rejected.
+
 **Validation lives in the model.** `Application` rejects a null or blank company or role with an `IllegalArgumentException` in its constructor and setters. This is an ordinary check, not a Java `assert`, because assertions are disabled when users run the JAR. "Blank" is defined with `String.isBlank()`/`strip()`, which know Unicode spaces (such as U+2003 EM SPACE), and the same definition is used by the prompts, `CommandParser`, `AddCommand`, `EditCommand` and `Storage`. Using `trim()` somewhere and `isBlank()` elsewhere is how a name that could be added once vanished after a restart. The commands still validate first so that users see a friendly error message instead of an exception.
 
 ### Add application feature
@@ -189,7 +191,7 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
   - *Current choice*: A unified `MarkCommand` parameterized with boolean `isCompleted`. The workflow for validation, index checking, list mutation, and disk persistence is identical for both actions; unifying them eliminates code duplication.
   - *Alternative*: Separate `MarkCommand` and `UnmarkCommand` classes. This was rejected to avoid redundant boilerplate and maintenance overhead.
 - **Immediate disk persistence**:
-  - Changes to completion status are saved before success is reported. A failed save restores the previous in-memory flag; the current file-writing implementation does not guarantee atomic replacement during a crash.
+  - Changes to completion status are saved before success is reported. A failed save restores the previous in-memory flag. Storage uses an atomic move where supported, with a non-atomic compatibility fallback; see [Saving applications](#saving-applications) for its guarantees and limitations.
 
 ### Delete application feature
 
@@ -551,7 +553,9 @@ The save operation performs the following steps:
 4. Converts each application into a tab-separated record.
 5. Writes the complete contents using UTF-8 encoding to a temporary file in the same directory, then moves it over the data file (an atomic move where the file system supports it).
 
-Writing straight over the data file would truncate it before any new data is written, so an error part-way (a locked file, a full disk, a crash) could leave the saved data empty. With the temporary file, the original is either replaced completely or left untouched. If the write or the move fails, the temporary file is deleted and the `IOException` is passed to the caller, whose in-memory change is rolled back.
+Writing straight over the data file would truncate it before any new data is written. Writing to a temporary file first leaves the original untouched if that write fails. Once the temporary file is complete, storage requests an atomic move: where supported, the replacement occurs as one operation, without exposing a partly replaced file.
+
+If the file system reports `AtomicMoveNotSupportedException`, storage falls back to a regular move with replacement for compatibility. This fallback is **not atomic**: if the move fails or the process crashes during replacement, the original file is not guaranteed to remain intact. Atomic replacement also does not, by itself, guarantee that saved data survives a power failure. If writing or moving reports an error, storage attempts to delete the temporary file and passes the `IOException` to the caller, whose in-memory change is rolled back. That rollback does not repair a data file damaged during the non-atomic fallback.
 
 The sequence of interactions during a save operation is shown below:
 
@@ -579,7 +583,7 @@ After loading, `Main.loadApplications()` displays all recorded warnings via `Ui.
 
 Skipped lines are not rewritten until the next save, and the next save writes only the records that loaded. To avoid losing them, `load()` sets a `backupPending` flag whenever it skipped a line, and `save()` first copies the original file to `<path>.bak` (once, replacing any older backup) before writing. `Main.loadApplications()` tells the user about this after showing the warnings. A leading byte-order mark is stripped from the first line before header detection.
 
-Saving errors (`IOException`) propagate up to `Main.run()`, which catches them and presents a clear error message via `Ui.showError()`. Modifying commands call `UndoableCommand.saveOrRollback()` before displaying success. If saving fails, the command reverses its in-memory change and clears its changed flag, leaving prior history intact. `UndoCommand` instead peeks at the latest history entry and captures an `ApplicationListSnapshot` before undoing it. If saving fails, the snapshot restores fields, ordering and original object identities; the history entry is removed only after a successful save. This preserves references held by earlier commands and allows failed undo operations to be retried. This rollback protects in-memory state; atomic file replacement remains a separate possible improvement.
+Saving errors (`IOException`) propagate up to `Main.run()`, which catches them and presents a clear error message via `Ui.showError()`. Modifying commands call `UndoableCommand.saveOrRollback()` before displaying success. If saving fails, the command reverses its in-memory change and clears its changed flag, leaving prior history intact. `UndoCommand` instead peeks at the latest history entry and captures an `ApplicationListSnapshot` before undoing it. If saving fails, the snapshot restores fields, ordering and original object identities; the history entry is removed only after a successful save. This preserves references held by earlier commands and allows failed undo operations to be retried. This rollback protects in-memory state; file replacement has the file-system-dependent guarantees described in [Saving applications](#saving-applications).
 
 #### Design considerations
 

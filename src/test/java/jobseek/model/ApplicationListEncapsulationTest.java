@@ -3,6 +3,7 @@ package jobseek.model;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,6 +55,47 @@ public class ApplicationListEncapsulationTest {
 
         assertEquals(1, list.size());
         assertEquals("Google", list.get(0).getCompany());
+    }
+
+    @Test
+    public void constructor_nullElementAtAnyPosition_isRejected() {
+        Application application = new Application("Google", "SWE");
+
+        assertThrows(NullPointerException.class, () -> new ApplicationList(Arrays.asList(null, application)));
+        assertThrows(NullPointerException.class, () -> new ApplicationList(Arrays.asList(application, null)));
+    }
+
+    @Test
+    public void insert_nullApplication_keepsOriginalContentAndOrder() {
+        ApplicationList list = listOfTwo();
+        List<Application> original = new ArrayList<>(list.getAll());
+
+        assertThrows(NullPointerException.class, () -> list.insert(0, null));
+        assertThrows(NullPointerException.class, () -> list.insert(list.size(), null));
+
+        assertEquals(original, list.getAll());
+    }
+
+    @Test
+    public void replaceAll_nullElementAtAnyPosition_keepsOriginalContentAndOrder() {
+        ApplicationList list = listOfTwo();
+        List<Application> original = new ArrayList<>(list.getAll());
+        Application replacement = new Application("Grab", "Data");
+
+        assertThrows(NullPointerException.class, () -> list.replaceAll(Arrays.asList(null, replacement)));
+        assertThrows(NullPointerException.class, () -> list.replaceAll(Arrays.asList(replacement, null)));
+
+        assertEquals(original, list.getAll());
+    }
+
+    @Test
+    public void replaceAll_nullCollection_keepsOriginalContentAndOrder() {
+        ApplicationList list = listOfTwo();
+        List<Application> original = new ArrayList<>(list.getAll());
+
+        assertThrows(NullPointerException.class, () -> list.replaceAll(null));
+
+        assertEquals(original, list.getAll());
     }
 
     @Test
