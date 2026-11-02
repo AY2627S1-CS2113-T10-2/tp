@@ -1,8 +1,8 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ public class TodayCommandTest {
     public void execute_emptyList_showsEmptySectionsAndZeroSummary() {
         RecordingUi ui = new RecordingUi();
 
-        new TodayCommand(TODAY).execute(new ApplicationList(), ui, new Storage());
+        new TodayCommand(TODAY).execute(new ApplicationList(), ui, TestStorage.create());
 
         assertTrue(ui.lastMessage.contains("Today: 2026-10-28"));
         assertTrue(ui.lastMessage.contains("OVERDUE (0)\n  none"));
@@ -38,7 +38,7 @@ public class TodayCommandTest {
         applications.add(new Application("Grab", "Data", false, LocalDate.of(2026, 11, 5)));
         RecordingUi ui = new RecordingUi();
 
-        new TodayCommand(TODAY).execute(applications, ui, new Storage());
+        new TodayCommand(TODAY).execute(applications, ui, TestStorage.create());
 
         assertTrue(ui.lastMessage.contains("OVERDUE (1)\n  1. Google | SWE Intern - 2026-10-27 (1 day overdue)"));
         assertTrue(ui.lastMessage.contains("DUE TODAY (1)\n  2. Shopee | Backend - 2026-10-28 (due today)"));
@@ -54,7 +54,7 @@ public class TodayCommandTest {
         applications.add(new Application("Shopee", "Backend", false));
         RecordingUi ui = new RecordingUi();
 
-        new TodayCommand(TODAY).execute(applications, ui, new Storage());
+        new TodayCommand(TODAY).execute(applications, ui, TestStorage.create());
 
         assertTrue(ui.lastMessage.contains("OVERDUE (0)"));
         assertTrue(ui.lastMessage.contains("1 active, 1 completed, 1 active without a deadline"));
@@ -69,7 +69,7 @@ public class TodayCommandTest {
         applications.add(new Application("C", "R", false, "Applied", null));
         RecordingUi ui = new RecordingUi();
 
-        new TodayCommand(TODAY).execute(applications, ui, new Storage());
+        new TodayCommand(TODAY).execute(applications, ui, TestStorage.create());
 
         assertTrue(ui.lastMessage.contains("Active by recruitment stage - Accepted: 1, Applied: 2"));
     }

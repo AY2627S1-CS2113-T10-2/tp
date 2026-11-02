@@ -1,8 +1,8 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +18,7 @@ public class MarkCommandTest {
         applications.add(app);
 
         MarkCommand command = new MarkCommand(0, true);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertTrue(app.isCompleted());
     }
@@ -30,7 +30,7 @@ public class MarkCommandTest {
         applications.add(app);
 
         MarkCommand command = new MarkCommand(0, false);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertFalse(app.isCompleted());
     }
@@ -42,7 +42,7 @@ public class MarkCommandTest {
         applications.add(app);
 
         MarkCommand command = new MarkCommand(5, true);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertFalse(app.isCompleted());
     }
@@ -51,7 +51,7 @@ public class MarkCommandTest {
     public void execute_emptyList_doesNotThrow() throws Exception {
         ApplicationList applications = new ApplicationList();
         MarkCommand command = new MarkCommand(0, true);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertTrue(applications.isEmpty());
     }

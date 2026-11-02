@@ -1,8 +1,8 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ public class ExitCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
         ExitCommand command = new ExitCommand();
 
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(1, applications.size());
         assertTrue(command.isExit());
