@@ -13,7 +13,7 @@ JobSeek is a command-line tracker for job and internship applications. It tracks
 
 ## Menu options
 
-At any prompt that follows a numbered menu option, type `cancel` to abandon that action without changing anything.
+At any prompt that follows a numbered menu option, type `cancel` to abandon that action without changing anything. If the input ends (for example the terminal is closed) in the middle of a prompt, the unfinished action is abandoned in the same way; only pressing Enter on an optional prompt means "leave blank / clear".
 
 The home menu shows the options in two columns. The numbers below are the ones to enter; they work the same way as before.
 
@@ -350,7 +350,7 @@ Reverses the most recent change to your applications, such as an accidental dele
 - **Usage**: Enter `undo` at the main menu prompt.
 - **What can be undone**: adding, deleting, editing any application field(s) (company, role, recruitment stage, deadline, portal link, email, notes, or all fields), and marking or unmarking an application.
 - Enter `undo` again to step further back, newest change first.
-- Commands that only display information (`list`, `view`, `search`, `today`) and cancelled or failed commands are not recorded.
+- Commands that only display information (`list`, `view`, `search`, `today`), cancelled or failed commands, and changes that would not alter anything (for example `edit 1 c/Acme` when the company is already Acme, or marking an already completed application) are not recorded.
 - The history is kept in memory only, so it is cleared when you exit JobSeek.
 - If there is nothing to undo, JobSeek shows `Error: Nothing to undo.`.
 - If saving the undo fails, the application list stays as it was before the attempt and the history entry is retained. Resolve the storage problem and enter `undo` again to retry.
