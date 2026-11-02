@@ -149,7 +149,7 @@ The `ListCommand` presents applications in an aligned ASCII table. It supports c
      - `COMPLETED`: `"No completed applications found."`
      - `ACTIVE`: `"No active applications found."`
      - `ALL`: `"No applications found."`
-  4. Dynamically calculates column widths for `No.`, `Completed`, `Company`, `Role`, and `Deadline` based on the longest values among matching entries, guaranteeing clean tabular alignment.
+  4. Dynamically calculates column widths for `No.`, `Completed`, `Company`, `Role`, `Stage`, `Deadline`, `Portal Link`, `Email`, and `Notes` based on the longest values among matching entries, guaranteeing clean tabular alignment.
   5. Renders each matching row, preserving the application's original 1-based index (`index + 1`).
   6. Displays the formatted table via `Ui.showMessage()`.
 
@@ -877,26 +877,26 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 4. Test active filter (default): Choose `3` (or type `list`). Confirm only active applications appear with original numbers:
    ```text
    Here are your applications:
-   No. | Completed | Company | Role                | Deadline
-   ----+-----------+---------+---------------------+---------
-   1   | [ ]       | Google  | SWE Intern          | -
-   3   | [ ]       | GovTech | Fullstack Developer | -
+   No. | Completed | Company | Role                | Stage   | Deadline | Portal Link | Email | Notes
+   ----+-----------+---------+---------------------+---------+----------+-------------+-------+------
+   1   | [ ]       | Google  | SWE Intern          | Applied | -        | -           | -     | -
+   3   | [ ]       | GovTech | Fullstack Developer | Applied | -        | -           | -     | -
    ```
 5. Test completed filter: Type `list completed`. Confirm only Application 2 appears:
    ```text
    Here are your applications:
-   No. | Completed | Company | Role           | Deadline
-   ----+-----------+---------+----------------+---------
-   2   | [X]       | Shopee  | Backend Intern | -
+   No. | Completed | Company | Role           | Stage   | Deadline | Portal Link | Email | Notes
+   ----+-----------+---------+----------------+---------+----------+-------------+-------+------
+   2   | [X]       | Shopee  | Backend Intern | Applied | -        | -           | -     | -
    ```
 6. Test all filter: Choose `2` (or type `list all`). Confirm all three applications appear:
    ```text
    Here are your applications:
-   No. | Completed | Company | Role                | Deadline
-   ----+-----------+---------+---------------------+---------
-   1   | [ ]       | Google  | SWE Intern          | -
-   2   | [X]       | Shopee  | Backend Intern      | -
-   3   | [ ]       | GovTech | Fullstack Developer | -
+   No. | Completed | Company | Role                | Stage   | Deadline | Portal Link | Email | Notes
+   ----+-----------+---------+---------------------+---------+----------+-------------+-------+------
+   1   | [ ]       | Google  | SWE Intern          | Applied | -        | -           | -     | -
+   2   | [X]       | Shopee  | Backend Intern      | Applied | -        | -           | -     | -
+   3   | [ ]       | GovTech | Fullstack Developer | Applied | -        | -           | -     | -
    ```
 7. Test unrecognized filter: Type `list pending`. Confirm error appears:
    ```text
@@ -1070,11 +1070,11 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 6. Type `list all`. Confirm the original storage order is unaffected:
    ```text
    Here are your applications:
-   No. | Completed | Company | Role     | Deadline
-   ----+-----------+---------+----------+---------
-   1   | [ ]       | Zulu    | Engineer | -
-   2   | [ ]       | Acme    | Designer | -
-   3   | [ ]       | Acme    | Analyst  | -
+   No. | Completed | Company | Role     | Stage   | Deadline | Portal Link | Email | Notes
+   ----+-----------+---------+----------+---------+----------+-------------+-------+------
+   1   | [ ]       | Zulu    | Engineer | Applied | -        | -           | -     | -
+   2   | [ ]       | Acme    | Designer | Applied | -        | -           | -     | -
+   3   | [ ]       | Acme    | Analyst  | Applied | -        | -           | -     | -
    ```
 
 ### Typed commands
