@@ -297,7 +297,7 @@ public class MainTest {
     @Test
     public void run_menuAddWithRetryOnEmptyField_promptsUntilValid() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\n\n   \nShopee\n\n   \nBackend Intern\n\n0\n";
+        String input = "1\n\n   \nShopee\n\n   \nBackend Intern\n\n\n\n\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -913,7 +913,7 @@ public class MainTest {
         assertInstanceOf(HelpCommand.class, main.parseCommand("10"));
         assertInstanceOf(ExitCommand.class, main.parseCommand("0"));
 
-        Scanner addScanner = new Scanner("Google\nSWE Intern\n");
+        Scanner addScanner = new Scanner("Google\nSWE Intern\n\n\n\n\n");
         Main addMain = new Main(new Ui(addScanner), createTestStorage(), new ApplicationList());
         Command addCmd = addMain.parseCommand("1");
         assertInstanceOf(AddCommand.class, addCmd);
@@ -1045,7 +1045,7 @@ public class MainTest {
     @Test
     public void run_menuAddUnicodeEmojis_storesAndDisplays() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\n🚀 Tech & Co.\n🎉 Lead SWE 💻✨\n2\n0\n";
+        String input = "1\n🚀 Tech & Co.\n🎉 Lead SWE 💻✨\n\n\n\n\n2\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 
@@ -1150,7 +1150,7 @@ public class MainTest {
     @Test
     public void run_menuAddTabsInFields_normalizedToSpaces() {
         ApplicationList applications = new ApplicationList();
-        String input = "1\nGoogle\tLLC\nSWE\tIntern\n0\n";
+        String input = "1\nGoogle\tLLC\nSWE\tIntern\n\n\n\n\n0\n";
         Main main = createMainWithInput(input, applications);
         main.run();
 

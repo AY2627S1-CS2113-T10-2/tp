@@ -265,12 +265,19 @@ public class Main {
         return new AddCommand(company, role, deadline, portalLink, email, notes);
     }
 
-    /** Prompts for an optional deadline and repeats until a valid date is entered. */
+    /**
+     * Prompts for an optional deadline and repeats until a valid date is entered.
+     * Pressing Enter means "no deadline"; end of input abandons the action instead, so a half-finished
+     * edit cannot silently clear a saved deadline.
+     */
     private LocalDate promptDeadline() {
         while (true) {
             ui.showPrompt("Deadline (YYYY-MM-DD, leave blank if none):\n> ");
             String input = checkCancel(ui.readCommand());
-            if (input == null || input.trim().isEmpty()) {
+            if (input == null) {
+                throw new PromptCancelledException();
+            }
+            if (input.trim().isEmpty()) {
                 return null;
             }
             try {
@@ -281,12 +288,15 @@ public class Main {
         }
     }
 
-    /** Prompts for optional input string, returning empty string if left blank or at EOF. */
+    /**
+     * Prompts for an optional text value. Pressing Enter gives an empty string (which clears the field when
+     * editing); end of input abandons the action instead, so it cannot be mistaken for pressing Enter.
+     */
     private String promptOptional(String promptLabel) {
         ui.showPrompt(promptLabel + "\n> ");
         String input = checkCancel(ui.readCommand());
         if (input == null) {
-            return "";
+            throw new PromptCancelledException();
         }
         return input.trim().replace('\t', ' ');
     }
