@@ -134,7 +134,7 @@ Choose `1` to create and track a new job or internship application.
 
 ### Listing applications: `list`
 
-Shows a table of tracked applications with their original list numbers, completion status (`[X]` or `[ ]`), company name, role title, and deadline. By default, only active (uncompleted) applications are displayed.
+Shows a table of tracked applications with their original list numbers and all recorded fields: completion status (`[X]` or `[ ]`), company name, role title, recruitment stage, deadline, portal link, email, and notes. By default, only active (uncompleted) applications are displayed.
 
 Format: `list [completed|all]`
 
@@ -150,10 +150,10 @@ Examples:
 Example output:
 ```text
 Here are your applications:
-No. | Completed | Company   | Role           | Deadline
-----+-----------+-----------+----------------+-----------
-1   | [ ]       | Google    | SWE Intern     | 2026-11-03
-3   | [ ]       | Shopee    | Backend Intern | -
+No. | Completed | Company | Role           | Stage   | Deadline   | Portal Link                | Email                | Notes
+----+-----------+---------+----------------+---------+------------+----------------------------+----------------------+----------------------
+1   | [ ]       | Google  | SWE Intern     | Applied | 2026-11-03 | https://careers.google.com | recruiter@google.com | Spoke at career fair
+3   | [ ]       | Shopee  | Backend Intern | Applied | -          | -                          | -                    | -
 ```
 
 > **Notes on list filtering:**

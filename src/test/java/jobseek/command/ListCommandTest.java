@@ -4,8 +4,11 @@ import jobseek.TestStorage;
 import jobseek.exception.JobSeekException;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
+import jobseek.model.RecruitmentStage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,9 +45,13 @@ public class ListCommandTest {
         assertTrue(lines[1].contains("Completed"));
         assertTrue(lines[1].contains("Company"));
         assertTrue(lines[1].contains("Role"));
+        assertTrue(lines[1].contains("Stage"));
         assertTrue(lines[1].contains("Deadline"));
-        assertRow(lines[3], "1", "[ ]", "Acme", "SWE Intern", "-");
-        assertRow(lines[4], "3", "[ ]", "Tech Corp", "Data Analyst", "-");
+        assertTrue(lines[1].contains("Portal Link"));
+        assertTrue(lines[1].contains("Email"));
+        assertTrue(lines[1].contains("Notes"));
+        assertRow(lines[3], "1", "[ ]", "Acme", "SWE Intern", "Applied", "-", "-", "-", "-");
+        assertRow(lines[4], "3", "[ ]", "Tech Corp", "Data Analyst", "Applied", "-", "-", "-", "-");
     }
 
     @Test
@@ -60,7 +67,7 @@ public class ListCommandTest {
         String[] lines = ui.lastMessage.split("\\R");
         assertEquals(4, lines.length);
         assertEquals("Here are your applications:", lines[0]);
-        assertRow(lines[3], "2", "[X]", "Longer Co", "Engineer", "-");
+        assertRow(lines[3], "2", "[X]", "Longer Co", "Engineer", "Applied", "-", "-", "-", "-");
     }
 
     @Test
@@ -74,8 +81,24 @@ public class ListCommandTest {
 
         String[] lines = ui.lastMessage.split("\\R");
         assertEquals(5, lines.length);
-        assertRow(lines[3], "1", "[ ]", "Acme", "SWE Intern", "-");
-        assertRow(lines[4], "2", "[X]", "Longer Co", "Engineer", "-");
+        assertRow(lines[3], "1", "[ ]", "Acme", "SWE Intern", "Applied", "-", "-", "-", "-");
+        assertRow(lines[4], "2", "[X]", "Longer Co", "Engineer", "Applied", "-", "-", "-", "-");
+    }
+
+    @Test
+    public void execute_withAllFieldsPopulated_formatsAllColumnsCorrectly() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern", false, RecruitmentStage.INTERVIEW,
+                LocalDate.of(2026, 11, 20), "https://careers.google.com", "recruiter@google.com",
+                "Passed OA"));
+        RecordingUi ui = new RecordingUi();
+
+        new ListCommand().execute(applications, ui, TestStorage.create());
+
+        String[] lines = ui.lastMessage.split("\\R");
+        assertEquals(4, lines.length);
+        assertRow(lines[3], "1", "[ ]", "Google", "SWE Intern", "Interview", "2026-11-20",
+                "https://careers.google.com", "recruiter@google.com", "Passed OA");
     }
 
     @Test
@@ -118,14 +141,18 @@ public class ListCommandTest {
     }
 
     private static void assertRow(String row, String number, String status, String company, String role,
-            String deadline) {
+            String stage, String deadline, String portal, String email, String notes) {
         String[] columns = row.split(" \\| ");
-        assertEquals(5, columns.length);
+        assertEquals(9, columns.length);
         assertEquals(number, columns[0].trim());
         assertEquals(status, columns[1].trim());
         assertEquals(company, columns[2].trim());
         assertEquals(role, columns[3].trim());
-        assertEquals(deadline, columns[4].trim());
+        assertEquals(stage, columns[4].trim());
+        assertEquals(deadline, columns[5].trim());
+        assertEquals(portal, columns[6].trim());
+        assertEquals(email, columns[7].trim());
+        assertEquals(notes, columns[8].trim());
     }
 
     private static class RecordingUi extends Ui {
