@@ -1,4 +1,6 @@
 %%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant ui as :Ui
@@ -9,30 +11,66 @@ sequenceDiagram
     participant storage as :Storage
 
     user->>main: Enter 1
-    main->>ui: promptNonEmpty("Company:")
+    main->>main: promptNonEmpty("Company:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "Google"
     deactivate ui
-    main->>ui: promptNonEmpty("Role:")
+    deactivate main
+    main->>main: promptNonEmpty("Role:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "SWE Intern"
     deactivate ui
-    main->>ui: promptDeadline()
+    deactivate main
+    main->>main: promptDeadline()
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "2026-11-15"
     deactivate ui
-    main->>ui: promptOptional("Company Portal Link:")
+    deactivate main
+    main->>main: promptOptional("Company Portal Link:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "https://careers.google.com"
     deactivate ui
-    main->>ui: promptOptional("Contact Email:")
+    deactivate main
+    main->>main: promptOptional("Contact Email:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "recruiter@google.com"
     deactivate ui
-    main->>ui: promptOptional("Notes:")
+    deactivate main
+    main->>main: promptOptional("Notes:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "OA passed"
     deactivate ui
+    deactivate main
 
     main->>cmd: new AddCommand(...)
     activate cmd
@@ -55,4 +93,5 @@ sequenceDiagram
     activate ui
     ui-->>user: Confirmation message
     deactivate ui
+    cmd-->>main: 
     deactivate cmd

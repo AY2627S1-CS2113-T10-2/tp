@@ -78,11 +78,23 @@ public class RecruitmentStageCommand extends UndoableCommand {
                 : "Application stage should match the updated stage";
         markChanged();
 
-        String message = "Application recruitment stage updated successfully.\n"
-                + "Company: " + application.getCompany() + "\n"
-                + "Role: " + application.getRole() + "\n"
-                + "Recruitment stage: " + application.getRecruitmentStage().getLabel();
-        ui.showMessage(message);
+        StringBuilder message = new StringBuilder("Application recruitment stage updated successfully.\n");
+        message.append("Company: ").append(application.getCompany()).append("\n");
+        message.append("Role: ").append(application.getRole()).append("\n");
+        message.append("Recruitment stage: ").append(application.getRecruitmentStage().getLabel());
+        if (application.getDeadline() != null) {
+            message.append("\nDeadline: ").append(application.getDeadline());
+        }
+        if (!application.getPortalLink().isEmpty()) {
+            message.append("\nPortal Link: ").append(application.getPortalLink());
+        }
+        if (!application.getEmail().isEmpty()) {
+            message.append("\nEmail: ").append(application.getEmail());
+        }
+        if (!application.getNotes().isEmpty()) {
+            message.append("\nNotes: ").append(application.getNotes());
+        }
+        ui.showMessage(message.toString());
 
         storage.save(applications);
     }

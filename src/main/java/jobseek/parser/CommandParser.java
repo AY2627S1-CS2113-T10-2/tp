@@ -47,9 +47,10 @@ import java.util.regex.Pattern;
  * to the numbered menu. Parsing is kept separate from {@code Main} so it can be tested on its own.
  */
 public class CommandParser {
-    public static final String ADD_USAGE = "Usage: add c/COMPANY r/ROLE [d/YYYY-MM-DD]";
+    public static final String ADD_USAGE = "Usage: add c/COMPANY r/ROLE [d/YYYY-MM-DD] "
+            + "[p/PORTAL_LINK] [e/EMAIL] [n/NOTES]";
     public static final String EDIT_USAGE = "Usage: edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE] "
-            + "(at least one field)";
+            + "[d/YYYY-MM-DD] [p/PORTAL_LINK] [e/EMAIL] [n/NOTES] (at least one field)";
     public static final String DELETE_USAGE = "Usage: delete INDEX";
     public static final String MARK_USAGE = "Usage: mark INDEX";
     public static final String UNMARK_USAGE = "Usage: unmark INDEX";
@@ -58,8 +59,8 @@ public class CommandParser {
             + "[m/yes|no] (at least one filter; b/ = deadline on or before, a/ = on or after, "
             + "m/ = marked completed)";
 
-    /** A field prefix is a lowercase letter and a slash at the start of the text or after a space. */
-    private static final Pattern FIELD_PREFIX = Pattern.compile("(?:^|\\s)([a-z])/");
+    /** A field prefix is a case-insensitive letter and a slash at the start of the text or after a space. */
+    private static final Pattern FIELD_PREFIX = Pattern.compile("(?i)(?:^|\\s)([a-z])/");
 
     private static final Logger LOGGER = Logger.getLogger(CommandParser.class.getName());
 
@@ -109,10 +110,11 @@ public class CommandParser {
         case "find":
             return parseFind(arguments);
         case "search":
-            if (arguments.isEmpty()) {
+            String normalizedSearch = arguments.replaceAll("\\s+", " ").trim();
+            if (normalizedSearch.isEmpty()) {
                 throw new JobSeekException("Search term cannot be empty. " + SEARCH_USAGE);
             }
-            return new SearchCommand(arguments);
+            return new SearchCommand(normalizedSearch);
         case "sort":
             requireNoArguments(word, arguments);
             return new SortCommand();
@@ -145,7 +147,7 @@ public class CommandParser {
     }
 
     private static Command parseAdd(String arguments) throws JobSeekException {
-        Fields fields = parseFields(arguments, "crd", ADD_USAGE);
+        Fields fields = parseFields(arguments, "crdpen", ADD_USAGE);
         if (!fields.leadingText.isEmpty()) {
             throw new JobSeekException("Unexpected text '" + fields.leadingText + "'. " + ADD_USAGE);
         }
@@ -154,19 +156,37 @@ public class CommandParser {
         if (company == null || role == null) {
             throw new JobSeekException("Both company (c/) and role (r/) are required. " + ADD_USAGE);
         }
-        return new AddCommand(company, role, parseDeadline(fields.values.get('d')));
+        LocalDate deadline = parseDeadline(fields.values.get('d'));
+        String portalLink = fields.values.getOrDefault('p', "");
+        String email = fields.values.getOrDefault('e', "");
+        String notes = fields.values.getOrDefault('n', "");
+        return new AddCommand(company, role, deadline, portalLink, email, notes);
     }
 
     private static Command parseEdit(String arguments) throws JobSeekException {
-        Fields fields = parseFields(arguments, "crs", EDIT_USAGE);
+        Fields fields = parseFields(arguments, "crsdpen", EDIT_USAGE);
         int index = parseIndex(fields.leadingText, EDIT_USAGE);
         String company = fields.values.get('c');
         String role = fields.values.get('r');
         String stageLabel = fields.values.get('s');
-        if (company == null && role == null && stageLabel == null) {
+        LocalDate deadline = fields.values.containsKey('d') ? parseDeadline(fields.values.get('d')) : null;
+        String portalLink = fields.values.get('p');
+        String email = fields.values.get('e');
+        String notes = fields.values.get('n');
+        boolean hasDeadline = fields.values.containsKey('d');
+
+        if (company == null && role == null && stageLabel == null
+                && !hasDeadline && portalLink == null && email == null && notes == null) {
             throw new JobSeekException("Nothing to edit. " + EDIT_USAGE);
         }
-        return new EditCommand(index, company, role, stageLabel == null ? null : parseStage(stageLabel));
+
+        RecruitmentStage stage = stageLabel == null ? null : parseStage(stageLabel);
+        EditCommand command = new EditCommand(index, company, role, stage,
+                deadline, portalLink, email, notes);
+        if (hasDeadline) {
+            command.setDeadlineUpdated(true);
+        }
+        return command;
     }
 
     /**
@@ -210,11 +230,13 @@ public class CommandParser {
                 filter = filter.and(ApplicationFilters.deadlineOnOrAfter(after));
                 conditions.add("deadline on or after " + after);
                 break;
-            default:
+            case 'm':
                 boolean completed = parseYesNo(value);
                 filter = filter.and(ApplicationFilters.isCompleted(completed));
                 conditions.add(completed ? "marked completed" : "not marked completed");
                 break;
+            default:
+                throw new JobSeekException("Unknown filter '" + entry.getKey() + "/'. " + FIND_USAGE);
             }
         }
         return new FindCommand(filter, String.join(", ", conditions));
@@ -266,7 +288,7 @@ public class CommandParser {
     /** Validates the stage here so a typo is reported as a normal error instead of failing later. */
     private static RecruitmentStage parseStage(String text) throws JobSeekException {
         try {
-            return RecruitmentStage.fromLabel(text);
+            return RecruitmentStage.fromChoice(text);
         } catch (IllegalArgumentException e) {
             throw new JobSeekException("Invalid stage: '" + text + "'. Valid stages: Applied, "
                     + "Online Assessment (OA), Interview, Offer, Accepted, Rejected, Withdrawn.");
@@ -286,16 +308,16 @@ public class CommandParser {
         List<MatchResult> prefixes = FIELD_PREFIX.matcher(arguments).results().toList();
         Fields fields = new Fields();
         if (prefixes.isEmpty()) {
-            fields.leadingText = arguments.trim();
+            fields.leadingText = arguments.trim().replace('\t', ' ');
             return fields;
         }
 
-        fields.leadingText = arguments.substring(0, prefixes.get(0).start()).trim();
+        fields.leadingText = arguments.substring(0, prefixes.get(0).start()).trim().replace('\t', ' ');
         for (int i = 0; i < prefixes.size(); i++) {
             MatchResult prefix = prefixes.get(i);
-            char key = arguments.charAt(prefix.start(1));
+            char key = Character.toLowerCase(arguments.charAt(prefix.start(1)));
             int valueEnd = i + 1 < prefixes.size() ? prefixes.get(i + 1).start() : arguments.length();
-            String value = arguments.substring(prefix.end(), valueEnd).trim();
+            String value = arguments.substring(prefix.end(), valueEnd).trim().replace('\t', ' ');
 
             if (allowedPrefixes.indexOf(key) < 0) {
                 throw new JobSeekException("Unknown field '" + key + "/'. " + usage);

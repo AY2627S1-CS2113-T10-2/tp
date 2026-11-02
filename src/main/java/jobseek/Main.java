@@ -17,6 +17,7 @@ import jobseek.command.MarkCommand;
 import jobseek.command.RecruitmentStageCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
+import jobseek.command.UndoCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
 import jobseek.model.RecruitmentStage;
@@ -125,7 +126,9 @@ public class Main {
             if (command != null) {
                 try {
                     command.execute(applications, ui, storage);
-                    history.record(command);
+                    if (!(command instanceof UndoCommand)) {
+                        history.record(command);
+                    }
                     isExit = command.isExit();
                 } catch (JobSeekException e) {
                     ui.showError(e.getMessage());
@@ -157,7 +160,7 @@ public class Main {
 
         String trimmedOption = option.trim();
 
-        // Typed commands (e.g. "add c/Google", "view 1", "list active", "today", "undo") are parsed first.
+        // Typed commands (e.g. "add c/Google", "view 1", "list all", "today", "undo") are parsed first.
         try {
             Command typedCommand = CommandParser.parse(trimmedOption, history);
             if (typedCommand != null) {
@@ -172,7 +175,7 @@ public class Main {
         case "1":
             return handleMenuAdd();
         case "2":
-            return new ListCommand();
+            return new ListCommand(ListCommand.FilterType.ALL);
         case "3":
             return new ListCommand(ListCommand.FilterType.ACTIVE);
         case "4":
@@ -366,19 +369,28 @@ public class Main {
             return null;
         }
 
-        ui.showPrompt(promptMessage);
-        String indexStr = ui.readCommand();
-        if (indexStr == null || indexStr.trim().isEmpty()) {
-            ui.showError("Please specify a valid application index.");
-            return null;
-        }
+        while (true) {
+            ui.showPrompt(promptMessage);
+            String indexStr = ui.readCommand();
+            if (indexStr == null) {
+                return null;
+            }
+            if (indexStr.trim().isEmpty()) {
+                ui.showError("Please specify a valid application index.");
+                continue;
+            }
 
-        try {
-            int oneBasedIndex = Integer.parseInt(indexStr.trim());
-            return oneBasedIndex - 1;
-        } catch (NumberFormatException e) {
-            ui.showError("Invalid application index. Please enter a valid number.");
-            return null;
+            try {
+                int oneBasedIndex = Integer.parseInt(indexStr.trim());
+                if (!applications.isValidIndex(oneBasedIndex - 1)) {
+                    ui.showError("Invalid application index: " + oneBasedIndex
+                            + ". Please enter a number between 1 and " + applications.size() + ".");
+                    continue;
+                }
+                return oneBasedIndex - 1;
+            } catch (NumberFormatException e) {
+                ui.showError("Invalid application index. Please enter a valid number.");
+            }
         }
     }
 

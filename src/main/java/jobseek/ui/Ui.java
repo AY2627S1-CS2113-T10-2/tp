@@ -139,11 +139,11 @@ public class Ui {
 
     private void showMenuOptions() {
         showLine();
-        System.out.println("[1] Add application        [2] List applications");
-        System.out.println("[3] List uncompleted       [4] Delete application");
-        System.out.println("[5] Mark completed         [6] Unmark application");
-        System.out.println("[7] Help                   [8] Search applications");
-        System.out.println("[9] Sort alphabetically    [10] Edit application");
+        System.out.println("[1] Add application       [2] List all applications");
+        System.out.println("[3] List uncompleted      [4] Delete application");
+        System.out.println("[5] Mark completed        [6] Unmark application");
+        System.out.println("[7] Help                  [8] Search applications");
+        System.out.println("[9] Sort alphabetically   [10] Edit application");
         System.out.println("[0] Exit");
         showLine();
     }

@@ -91,11 +91,11 @@ public class UiTest {
         String output = outputStream.toString();
         assertTrue(output.contains("APPLICATIONS"));
         assertTrue(output.contains("No applications found."));
-        assertTrue(output.contains("[1] Add application        [2] List applications"));
-        assertTrue(output.contains("[3] List uncompleted       [4] Delete application"));
-        assertTrue(output.contains("[5] Mark completed         [6] Unmark application"));
-        assertTrue(output.contains("[7] Help                   [8] Search applications"));
-        assertTrue(output.contains("[9] Sort alphabetically    [10] Edit application"));
+        assertTrue(output.contains("[1] Add application       [2] List all applications"));
+        assertTrue(output.contains("[3] List uncompleted      [4] Delete application"));
+        assertTrue(output.contains("[5] Mark completed        [6] Unmark application"));
+        assertTrue(output.contains("[7] Help                  [8] Search applications"));
+        assertTrue(output.contains("[9] Sort alphabetically   [10] Edit application"));
         assertTrue(output.contains("[0] Exit"));
     }
 

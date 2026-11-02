@@ -1,4 +1,6 @@
 %%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     participant main as :Main
     participant warnings as :DeadlineWarnings
@@ -27,7 +29,7 @@ sequenceDiagram
         app-->>warnings: completed
         deactivate app
 
-        opt incomplete and deadline <= today + 7 days
+        opt deadline within 7 days
             warnings->>warnings: appendWarning(...)
             activate warnings
             deactivate warnings

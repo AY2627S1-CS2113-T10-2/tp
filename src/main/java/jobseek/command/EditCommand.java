@@ -200,6 +200,11 @@ public class EditCommand extends UndoableCommand {
         return newNotes;
     }
 
+    /** Sets whether the deadline field should be updated (even if new deadline is null). */
+    public void setDeadlineUpdated(boolean isDeadlineUpdated) {
+        this.isDeadlineUpdated = isDeadlineUpdated;
+    }
+
     /**
      * Executes the edit command by validating the target index, updating provided fields,
      * displaying confirmation, and persisting changes to storage.
@@ -228,7 +233,8 @@ public class EditCommand extends UndoableCommand {
 
         if (newCompany == null && newRole == null && newStage == null
                 && !isDeadlineUpdated && newPortalLink == null && newEmail == null && newNotes == null) {
-            ui.showError("At least one field (company, role, or recruitment stage) must be specified for editing.");
+            ui.showError("At least one field (company, role, recruitment stage, deadline, portal link, email, or notes)"
+                    + " must be specified for editing.");
             return;
         }
 

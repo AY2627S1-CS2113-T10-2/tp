@@ -1,4 +1,6 @@
 %%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     participant ui as :Ui
     participant main as :Main
@@ -24,7 +26,7 @@ sequenceDiagram
             activate list
             deactivate list
         else record is corrupted
-            storage->>storage: rememberWarning(warning)
+            storage->>storage: add warning to loadWarnings
             activate storage
             deactivate storage
         end

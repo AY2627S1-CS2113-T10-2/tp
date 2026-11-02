@@ -64,6 +64,27 @@ public class RecruitmentStageCommandTest {
     }
 
     @Test
+    public void execute_withOptionalFields_displaysThemInConfirmation() throws Exception {
+        Application app = new Application("Google", "SWE Intern", false, RecruitmentStage.APPLIED,
+                java.time.LocalDate.of(2026, 12, 1), "https://google.com", "recruiter@google.com", "Round 1 done");
+        ApplicationList applications = new ApplicationList();
+        applications.add(app);
+
+        RecruitmentStageCommand command = new RecruitmentStageCommand(0, RecruitmentStage.OFFER);
+        command.execute(applications, new Ui(), createTestStorage());
+
+        String output = outputStream.toString();
+        assertTrue(output.contains("Application recruitment stage updated successfully."));
+        assertTrue(output.contains("Company: Google"));
+        assertTrue(output.contains("Role: SWE Intern"));
+        assertTrue(output.contains("Recruitment stage: Offer"));
+        assertTrue(output.contains("Deadline: 2026-12-01"));
+        assertTrue(output.contains("Portal Link: https://google.com"));
+        assertTrue(output.contains("Email: recruiter@google.com"));
+        assertTrue(output.contains("Notes: Round 1 done"));
+    }
+
+    @Test
     public void execute_nullStage_showsError() throws Exception {
         ApplicationList applications = new ApplicationList();
         applications.add(new Application("Google", "SWE Intern"));

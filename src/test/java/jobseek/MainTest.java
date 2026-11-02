@@ -196,14 +196,14 @@ public class MainTest {
         String output = outputStream.toString();
         assertTrue(output.contains("Available menu options:"));
         assertTrue(output.contains("[1] Add application"));
-        assertTrue(output.contains("[2] List applications"));
-        assertTrue(output.contains("[3] List uncompleted apps"));
+        assertTrue(output.contains("[2] List all applications"));
+        assertTrue(output.contains("[3] List uncompleted applications"));
         assertTrue(output.contains("[4] Delete application"));
-        assertTrue(output.contains("[5] Mark application completed"));
+        assertTrue(output.contains("[5] Mark application as completed"));
         assertTrue(output.contains("[6] Unmark application"));
         assertTrue(output.contains("[7] Help"));
         assertTrue(output.contains("[8] Search applications"));
-        assertTrue(output.contains("[9] Sort applications"));
+        assertTrue(output.contains("[9] Sort applications alphabetically"));
         assertTrue(output.contains("[10] Edit application"));
         assertTrue(output.contains("[0] Exit"));
     }
@@ -448,6 +448,22 @@ public class MainTest {
 
         String output = outputStream.toString();
         assertTrue(output.contains("Error: Please specify a valid application index."));
+    }
+
+    /** Verifies that Delete reprompts across non-numeric and out-of-bounds indices until valid. */
+    @Test
+    public void run_menuDeleteRepeatedInvalidIndex_repromptsAndDeletes() {
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("Google", "SWE Intern"));
+        String input = "4\ninvalidNumber\n99\n1\ny\n0\n";
+        Main main = createMainWithInput(input, applications);
+        main.run();
+
+        assertEquals(0, applications.size());
+        String output = outputStream.toString();
+        assertTrue(output.contains("Error: Invalid application index. Please enter a valid number."));
+        assertTrue(output.contains("Error: Invalid application index: 99. Please enter a number between 1 and 1."));
+        assertTrue(output.contains("OK, I've deleted this application:"));
     }
 
     /** Verifies that selecting Mark Complete updates the chosen application. */
@@ -824,6 +840,8 @@ public class MainTest {
         Main main = new Main();
 
         assertInstanceOf(ListCommand.class, main.parseCommand("2"));
+        assertEquals(ListCommand.FilterType.ALL,
+                ((ListCommand) main.parseCommand("2")).getFilterType());
         assertInstanceOf(ListCommand.class, main.parseCommand("3"));
         assertEquals(ListCommand.FilterType.ACTIVE,
                 ((ListCommand) main.parseCommand("3")).getFilterType());

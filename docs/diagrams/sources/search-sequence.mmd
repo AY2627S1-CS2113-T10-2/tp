@@ -1,4 +1,6 @@
 %%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant ui as :Ui
@@ -9,10 +11,16 @@ sequenceDiagram
     participant table as :ApplicationTable
 
     user->>main: Select option 8 (Search)
-    main->>ui: promptNonEmpty("Enter search term:")
+    main->>main: promptNonEmpty("Enter search term:")
+    activate main
+    main->>ui: showPrompt(...)
+    activate ui
+    deactivate ui
+    main->>ui: readCommand()
     activate ui
     ui-->>main: "engineer"
     deactivate ui
+    deactivate main
     main->>cmd: new SearchCommand("engineer")
     activate cmd
     cmd-->>main: searchCommand
@@ -36,7 +44,7 @@ sequenceDiagram
     end
 
     alt matches found
-        cmd->>table: format(apps, matches)
+        cmd->>table: format(apps, matches, heading)
         activate table
         table-->>cmd: formattedTable
         deactivate table
@@ -51,4 +59,5 @@ sequenceDiagram
         deactivate ui
     end
 
+    cmd-->>main: 
     deactivate cmd

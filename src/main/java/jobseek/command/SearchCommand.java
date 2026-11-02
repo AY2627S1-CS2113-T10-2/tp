@@ -21,7 +21,7 @@ public class SearchCommand extends Command {
      * @param keyword Search term entered by the user.
      */
     public SearchCommand(String keyword) {
-        this.keyword = keyword.trim();
+        this.keyword = keyword != null ? keyword.trim().replaceAll("\\s+", " ") : "";
     }
 
     /**
@@ -42,8 +42,9 @@ public class SearchCommand extends Command {
         List<Integer> matches = new ArrayList<>();
         for (int i = 0; i < applications.size(); i++) {
             Application application = applications.get(i);
-            if (application.getCompany().toLowerCase(Locale.ROOT).contains(normalizedKeyword)
-                    || application.getRole().toLowerCase(Locale.ROOT).contains(normalizedKeyword)) {
+            String company = application.getCompany().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+            String role = application.getRole().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+            if (company.contains(normalizedKeyword) || role.contains(normalizedKeyword)) {
                 matches.add(i);
             }
         }

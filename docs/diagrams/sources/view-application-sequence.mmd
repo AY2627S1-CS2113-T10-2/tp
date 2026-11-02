@@ -1,17 +1,24 @@
 %%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
 sequenceDiagram
     actor user as User
     participant ui as :Ui
     participant main as :Main
+    participant parser as :CommandParser
     participant cmd as :ViewCommand
     participant list as :ApplicationList
     participant app as :Application
 
     user->>main: Enter "view 1"
-    main->>cmd: ViewCommand.parse("1")
+    main->>parser: parse("view 1", history)
+    activate parser
+    parser->>cmd: ViewCommand.parse("1")
     activate cmd
-    cmd-->>main: viewCommand
+    cmd-->>parser: viewCommand
     deactivate cmd
+    parser-->>main: viewCommand
+    deactivate parser
     main->>cmd: execute(...)
     activate cmd
 
@@ -40,6 +47,7 @@ sequenceDiagram
         activate ui
         ui-->>user: Structured card display
         deactivate ui
+        cmd-->>main: 
     else invalid index
         cmd-->>main: throw JobSeekException
     end
