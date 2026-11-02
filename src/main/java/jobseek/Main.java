@@ -32,6 +32,9 @@ import jobseek.ui.Ui;
 public class Main {
     private static final Logger LOGGER = initLogger();
 
+    /** Typing this word at any menu prompt abandons the action. It cannot clash with a valid answer. */
+    private static final String CANCEL_WORD = "cancel";
+
     private final Ui ui;
     private final Storage storage;
     private final ApplicationList applications;
@@ -178,6 +181,22 @@ public class Main {
             return null;
         }
 
+        try {
+            return parseMenuOption(trimmedOption);
+        } catch (PromptCancelledException e) {
+            ui.showMessage("Cancelled. No changes were made.");
+            return null;
+        }
+    }
+
+    /**
+     * Runs the prompts for a numbered menu option and builds its command.
+     *
+     * @param trimmedOption Menu option entered by the user, without surrounding spaces.
+     * @return The command to run, or null if the option is invalid or the user ran out of input.
+     * @throws PromptCancelledException If the user types "cancel" at any prompt.
+     */
+    private Command parseMenuOption(String trimmedOption) {
         switch (trimmedOption) {
         case "1":
             return handleMenuAdd();
@@ -207,6 +226,24 @@ public class Main {
         }
     }
 
+    /** Thrown by {@link #checkCancel} so one catch in {@code parseCommand} can abandon a half-finished prompt. */
+    private static class PromptCancelledException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+    }
+
+    /**
+     * Returns the input unchanged, or abandons the current menu action if the user typed "cancel".
+     *
+     * @param input Line read from the user, or null at end of input.
+     * @return The same input.
+     */
+    private static String checkCancel(String input) {
+        if (input != null && input.trim().equalsIgnoreCase(CANCEL_WORD)) {
+            throw new PromptCancelledException();
+        }
+        return input;
+    }
+
     /** Prompts for application details and creates the corresponding add command. */
     private Command handleMenuAdd() {
         String company = promptNonEmpty("Company:", "Company cannot be empty.");
@@ -228,7 +265,7 @@ public class Main {
     private LocalDate promptDeadline() {
         while (true) {
             ui.showPrompt("Deadline (YYYY-MM-DD, leave blank if none):\n> ");
-            String input = ui.readCommand();
+            String input = checkCancel(ui.readCommand());
             if (input == null || input.trim().isEmpty()) {
                 return null;
             }
@@ -243,7 +280,7 @@ public class Main {
     /** Prompts for optional input string, returning empty string if left blank or at EOF. */
     private String promptOptional(String promptLabel) {
         ui.showPrompt(promptLabel + "\n> ");
-        String input = ui.readCommand();
+        String input = checkCancel(ui.readCommand());
         if (input == null) {
             return "";
         }
@@ -254,7 +291,7 @@ public class Main {
     private String promptNonEmpty(String promptLabel, String errorMessage) {
         while (true) {
             ui.showPrompt(promptLabel + "\n> ");
-            String input = ui.readCommand();
+            String input = checkCancel(ui.readCommand());
             if (input == null) {
                 return null;
             }
@@ -295,7 +332,7 @@ public class Main {
         }
 
         ui.showEditMenu();
-        String fieldChoice = ui.readCommand();
+        String fieldChoice = checkCancel(ui.readCommand());
         if (fieldChoice == null) {
             return null;
         }
@@ -356,7 +393,7 @@ public class Main {
     private RecruitmentStage promptRecruitmentStage() {
         while (true) {
             ui.showPrompt(RecruitmentStage.SELECTION_PROMPT);
-            String input = ui.readCommand();
+            String input = checkCancel(ui.readCommand());
             if (input == null) {
                 return null;
             }
@@ -377,7 +414,7 @@ public class Main {
 
         while (true) {
             ui.showPrompt(promptMessage);
-            String indexStr = ui.readCommand();
+            String indexStr = checkCancel(ui.readCommand());
             if (indexStr == null) {
                 return null;
             }

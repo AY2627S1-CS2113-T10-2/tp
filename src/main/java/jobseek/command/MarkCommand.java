@@ -57,6 +57,13 @@ public class MarkCommand extends UndoableCommand {
         }
 
         Application application = applications.get(targetIndex);
+        if (application.isCompleted() == isCompleted) {
+            // Nothing would change, so do not save or record it: otherwise undo would appear to do nothing.
+            ui.showMessage(isCompleted
+                    ? "This application is already marked as completed:\n  " + application
+                    : "This application is already not completed:\n  " + application);
+            return;
+        }
         markedApplication = application;
         previousCompleted = application.isCompleted();
         application.setCompleted(isCompleted);

@@ -172,7 +172,7 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
   2. `Main` instantiates `MarkCommand(targetIndex, isCompleted)`.
   3. `MarkCommand.execute(applications, ui, storage)` checks whether `applications.isEmpty()`. If empty, it displays an error message via `Ui.showError()`.
   4. Validates that `targetIndex` is valid using `applications.isValidIndex(targetIndex)`. If invalid, displays a bounds error (e.g., `Invalid application index: 4. Please enter a number between 1 and 2.`).
-  5. Retrieves the application and updates its completion state using `application.setCompleted(isCompleted)`.
+  5. If the application already has the requested state, shows an "already marked" message and returns without saving, so the command is not recorded for `undo`. Otherwise it updates the completion state using `application.setCompleted(isCompleted)`.
   6. Calls `saveOrRollback(applications, storage)` to persist the change, restoring the previous completion flag if saving fails.
   7. After a successful save, displays a confirmation message showing the updated application representation:
      - Marked: `"Nice! I've marked this application as completed:\n  " + application`
