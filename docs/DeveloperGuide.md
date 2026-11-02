@@ -782,26 +782,31 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 2. Verify that all menu options `[0]` through `[10]` and the typed commands (`list`, `undo`, `add`, `edit`, `delete|mark|unmark`, `find`, `search`, `sort`, `today`, `view`) are displayed:
    ```text
    Available menu options:
-     list [completed|all]            - List active, completed, or all applications
-     undo                            - Undo the last add, delete, edit, stage or mark change
-     add c/COMPANY r/ROLE [d/DATE]   - Add an application in one line
-     edit INDEX [c/..] [r/..] [s/..] - Edit company, role or stage in one line
-     delete|mark|unmark INDEX        - Delete, complete or reopen an application
-     find c/.. r/.. s/.. b/.. a/..   - Combine filters (company, role, stage, deadline)
-     search KEYWORD | sort           - Search by company/role, or view alphabetically
-     today                           - Show overdue, due-today and upcoming deadlines
-     view INDEX                      - View details for application at INDEX
-     [1] Add application             - Add a new internship or job application
-     [2] List all applications       - View all applications in a numbered table
-     [3] List uncompleted applications - View active / uncompleted applications
-     [4] Delete application          - Delete an application by index
-     [5] Mark application as completed - Mark an application as completed
-     [6] Unmark application          - Mark an application as not completed
-     [7] Search applications         - Find applications by company or role
+   Typed commands (you can also use the numbers below):
+     list [completed|all]               - List active, completed, or all applications
+     view INDEX                         - View details for application at INDEX
+     add c/COMPANY r/ROLE [d/DATE]      - Add an application (optional: d/ p/ e/ n/ fields)
+     edit INDEX [c/..] [r/..] [s/..]    - Edit fields (also d/ p/ e/ n/; an empty value clears)
+     delete|mark|unmark INDEX           - Delete, complete or reopen an application
+     find c/.. r/.. s/.. b/.. a/.. m/.. - Combine filters (company, role, stage, deadlines, done)
+     search KEYWORD                     - Find applications by company or role
+     sort                               - View applications alphabetically
+     today                              - Show overdue, due-today and upcoming deadlines
+     undo                               - Undo the last add, delete, edit, stage or mark change
+     help                               - Show this help message
+     exit                               - Exit JobSeek
+   Numbered menu options:
+     [1] Add application                  - Add a new internship or job application
+     [2] List all applications            - View all applications in a numbered table
+     [3] List uncompleted applications    - View active / uncompleted applications
+     [4] Delete application               - Delete an application by index
+     [5] Mark application as completed    - Mark an application as completed
+     [6] Unmark application               - Mark an application as not completed
+     [7] Search applications              - Find applications by company or role
      [8] Sort applications alphabetically - View applications alphabetically
-     [9] Edit application            - Edit an existing application's details
-     [10] Help                       - Show this help message
-     [0] Exit                        - Exit JobSeek
+     [9] Edit application                 - Edit an existing application's details
+     [10] Help                            - Show this help message
+     [0] Exit                             - Exit JobSeek
    ```
 3. Type `help` and verify that the same list is shown.
 
