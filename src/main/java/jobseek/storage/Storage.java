@@ -2,6 +2,7 @@ package jobseek.storage;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -155,8 +156,39 @@ public class Storage {
                     + escape(application.getEmail()) + "\t"
                     + escape(application.getNotes()));
         }
-        Files.write(path, lines, StandardCharsets.UTF_8);
+        writeAtomically(path, lines);
         LOGGER.info("Saved " + applications.size() + " applications to " + filePath);
+    }
+
+    /**
+     * Writes the lines to a temporary file next to the target and then replaces the target with it.
+     * Writing straight over the target would truncate it first, so a failure part-way through
+     * (a locked file, a full disk, a crash) would leave the user's saved data empty or half written.
+     * With this approach the original file is either replaced completely or left untouched.
+     *
+     * @param target Data file to replace.
+     * @param lines Complete new contents of the file.
+     * @throws IOException If the new contents could not be written or moved into place.
+     */
+    private void writeAtomically(Path target, List<String> lines) throws IOException {
+        Path parent = target.toAbsolutePath().getParent();
+        // Same directory as the target, so the final move stays on one file system.
+        Path temporary = Files.createTempFile(parent, "applications-", ".tmp");
+        try {
+            Files.write(temporary, lines, StandardCharsets.UTF_8);
+            try {
+                Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException | RuntimeException e) {
+            try {
+                Files.deleteIfExists(temporary);
+            } catch (IOException cleanupFailure) {
+                e.addSuppressed(cleanupFailure);
+            }
+            throw e;
+        }
     }
 
     /**
