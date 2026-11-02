@@ -124,7 +124,7 @@ public class Main {
             if (fullCommand == null) {
                 break;
             }
-            fullCommand = fullCommand.trim();
+            fullCommand = fullCommand.strip();
             if (fullCommand.isEmpty()) {
                 ui.showPrompt("Enter option:\n> ");
                 continue;
@@ -168,11 +168,11 @@ public class Main {
      * @return The corresponding Command object, or null if the option is invalid.
      */
     public Command parseCommand(String option) {
-        if (option == null || option.trim().isEmpty()) {
+        if (option == null || option.strip().isEmpty()) {
             return null;
         }
 
-        String trimmedOption = option.trim();
+        String trimmedOption = option.strip();
 
         // Typed commands (e.g. "add c/Google", "view 1", "list all", "today", "undo") are parsed first.
         try {
@@ -242,7 +242,7 @@ public class Main {
      * @return The same input.
      */
     private static String checkCancel(String input) {
-        if (input != null && input.trim().equalsIgnoreCase(CANCEL_WORD)) {
+        if (input != null && input.strip().equalsIgnoreCase(CANCEL_WORD)) {
             throw new PromptCancelledException();
         }
         return input;
@@ -270,11 +270,11 @@ public class Main {
         while (true) {
             ui.showPrompt("Deadline (YYYY-MM-DD, leave blank if none):\n> ");
             String input = checkCancel(ui.readCommand());
-            if (input == null || input.trim().isEmpty()) {
+            if (input == null || input.strip().isEmpty()) {
                 return null;
             }
             try {
-                return LocalDate.parse(input.trim());
+                return LocalDate.parse(input.strip());
             } catch (DateTimeParseException e) {
                 ui.showError("Invalid deadline. Use YYYY-MM-DD or leave it blank.");
             }
@@ -288,7 +288,7 @@ public class Main {
         if (input == null) {
             return "";
         }
-        return input.trim().replace('\t', ' ');
+        return input.strip().replace('\t', ' ');
     }
 
     /** Prompts until the user enters a non-blank value or reaches end of input. */
@@ -299,7 +299,7 @@ public class Main {
             if (input == null) {
                 return null;
             }
-            String trimmed = input.trim().replace('\t', ' ');
+            String trimmed = input.strip().replace('\t', ' ');
             if (!trimmed.isEmpty()) {
                 return trimmed;
             }
@@ -340,7 +340,7 @@ public class Main {
         if (fieldChoice == null) {
             return null;
         }
-        String trimmedChoice = fieldChoice.trim();
+        String trimmedChoice = fieldChoice.strip();
 
         switch (trimmedChoice) {
         case "1":
@@ -404,7 +404,7 @@ public class Main {
             try {
                 return RecruitmentStage.fromChoice(input);
             } catch (IllegalArgumentException e) {
-                ui.showError("Invalid recruitment stage: '" + input.trim()
+                ui.showError("Invalid recruitment stage: '" + input.strip()
                         + "'. Enter a stage name or a number from 1 to 7.");
             }
         }
@@ -422,13 +422,13 @@ public class Main {
             if (indexStr == null) {
                 return null;
             }
-            if (indexStr.trim().isEmpty()) {
+            if (indexStr.strip().isEmpty()) {
                 ui.showError("Please specify a valid application index.");
                 continue;
             }
 
             try {
-                int oneBasedIndex = Integer.parseInt(indexStr.trim());
+                int oneBasedIndex = Integer.parseInt(indexStr.strip());
                 if (!applications.isValidIndex(oneBasedIndex - 1)) {
                     ui.showError("Invalid application index: " + oneBasedIndex
                             + ". Please enter a number between 1 and " + applications.size() + ".");

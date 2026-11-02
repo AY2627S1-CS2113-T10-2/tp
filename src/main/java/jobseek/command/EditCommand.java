@@ -65,8 +65,8 @@ public class EditCommand extends UndoableCommand {
      */
     public EditCommand(int targetIndex, String newCompany, String newRole, String newStatus) {
         this(targetIndex, newCompany, newRole,
-                (newStatus != null && !newStatus.trim().isEmpty())
-                        ? RecruitmentStage.fromLabel(newStatus.trim()) : null,
+                (newStatus != null && !newStatus.strip().isEmpty())
+                        ? RecruitmentStage.fromLabel(newStatus.strip()) : null,
                 null, null, null, null);
     }
 
@@ -85,13 +85,13 @@ public class EditCommand extends UndoableCommand {
     public EditCommand(int targetIndex, String newCompany, String newRole, RecruitmentStage newStage,
                        LocalDate newDeadline, String newPortalLink, String newEmail, String newNotes) {
         this.targetIndex = targetIndex;
-        this.newCompany = (newCompany != null && !newCompany.trim().isEmpty()) ? newCompany.trim() : null;
-        this.newRole = (newRole != null && !newRole.trim().isEmpty()) ? newRole.trim() : null;
+        this.newCompany = (newCompany != null && !newCompany.strip().isEmpty()) ? newCompany.strip() : null;
+        this.newRole = (newRole != null && !newRole.strip().isEmpty()) ? newRole.strip() : null;
         this.newStage = newStage;
         this.newDeadline = newDeadline;
-        this.newPortalLink = newPortalLink != null ? newPortalLink.trim() : null;
-        this.newEmail = newEmail != null ? newEmail.trim() : null;
-        this.newNotes = newNotes != null ? newNotes.trim() : null;
+        this.newPortalLink = newPortalLink != null ? newPortalLink.strip() : null;
+        this.newEmail = newEmail != null ? newEmail.strip() : null;
+        this.newNotes = newNotes != null ? newNotes.strip() : null;
         this.isDeadlineUpdated = newDeadline != null;
     }
 
@@ -110,8 +110,8 @@ public class EditCommand extends UndoableCommand {
     public EditCommand(int targetIndex, String newCompany, String newRole, String newStatus,
                        LocalDate newDeadline, String newPortalLink, String newEmail, String newNotes) {
         this(targetIndex, newCompany, newRole,
-                (newStatus != null && !newStatus.trim().isEmpty())
-                        ? RecruitmentStage.fromLabel(newStatus.trim()) : null,
+                (newStatus != null && !newStatus.strip().isEmpty())
+                        ? RecruitmentStage.fromLabel(newStatus.strip()) : null,
                 newDeadline, newPortalLink, newEmail, newNotes);
     }
 

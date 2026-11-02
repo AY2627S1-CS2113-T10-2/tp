@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -118,7 +119,7 @@ public class ApplicationListTest {
         list.add(app1);
         list.add(app2);
 
-        ArrayList<Application> all = list.getAll();
+        List<Application> all = list.getAll();
         assertEquals(2, all.size());
         assertEquals(app1, all.get(0));
         assertEquals(app2, all.get(1));

@@ -72,6 +72,10 @@ The class diagram below illustrates the structural relationships, associations, 
 
 ![Application Data Model Class Diagram](diagrams/application-model-class.png?v=2)
 
+**Encapsulation in the model.** `ApplicationList` never hands out its internal list. `getAll()` returns an unmodifiable view, so callers such as `Storage` can read the applications but cannot add, remove or reorder them. The constructor copies the collection it is given. Code that has to restore an earlier state (`ApplicationListSnapshot`, used to roll back a failed save of an undo) calls the explicit `replaceAll(...)` operation instead of editing the list in place. The `Application` objects inside are still mutable, because that is how edits work.
+
+**Validation lives in the model.** `Application` rejects a null or blank company or role with an `IllegalArgumentException` in its constructor and setters. This is an ordinary check, not a Java `assert`, because assertions are disabled when users run the JAR. "Blank" is defined with `String.isBlank()`/`strip()`, which know Unicode spaces (such as U+2003 EM SPACE), and the same definition is used by the prompts, `CommandParser`, `AddCommand`, `EditCommand` and `Storage`. Using `trim()` somewhere and `isBlank()` elsewhere is how a name that could be added once vanished after a restart. The commands still validate first so that users see a friendly error message instead of an exception.
+
 ### Add application feature
 
 *Implemented by: Siew Hean*
