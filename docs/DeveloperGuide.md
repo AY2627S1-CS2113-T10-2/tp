@@ -114,7 +114,7 @@ The `ViewCommand` displays all recorded information for an individual applicatio
   1. `ViewCommand.execute(ApplicationList, Ui, Storage)` validates that the zero-based target index satisfies `0 <= targetIndex < applications.size()`.
   2. If the index is out of bounds, it throws a `JobSeekException` reporting the invalid index and the current list size (e.g., `Application index 5 does not exist. (Total applications: 3)`).
   3. Upon successful bounds validation, it retrieves the target `Application` via `applications.get(targetIndex)`.
-  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment stage (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`), and completion status (`Yes` or `No`).
+  4. It constructs a visual card bordered with dividers, displaying the application's company, role, recruitment stage (`Applied`, `Online Assessment`, `Interview`, `Offer`, `Accepted`, `Rejected`, `Withdrawn`) and completion status (`Yes` or `No`). The optional deadline, portal link, contact email and notes are appended as extra lines only when they have been recorded.
   5. The card is rendered via `Ui.showMessage()`.
   6. Because `ViewCommand` is a read-only operation, it does not modify the application list or trigger disk persistence.
 
@@ -311,8 +311,8 @@ Besides the numbered menu, users can type a full command on one line, such as `a
 
 | Input | Command created |
 |---|---|
-| `add c/.. r/.. [d/..]` | `AddCommand` |
-| `edit INDEX [c/..] [r/..] [s/..]` | `EditCommand` |
+| `add c/.. r/.. [d/..] [p/..] [e/..] [n/..]` | `AddCommand` |
+| `edit INDEX [c/..] [r/..] [s/..] [d/..] [p/..] [e/..] [n/..]` | `EditCommand` |
 | `delete INDEX` | `DeleteCommand` |
 | `mark INDEX`, `unmark INDEX` | `MarkCommand` |
 | `find [c/..] [r/..] [s/..] [b/..] [a/..] [m/..]` | `FindCommand` |
@@ -366,8 +366,6 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 
 ### Delete confirmation and undo
 
-*Feature tested: Delete confirmation and undo (Implemented by: Peng Bohao)*
-
 *Implemented by: Peng Bohao*
 
 #### Overview
@@ -408,7 +406,7 @@ Undo works on the same `Application` objects that were changed. Commands keep a 
 
 *Implemented by: Peng Bohao*
 
-`TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per recruitment stage). `Main.parseCommand` creates it for the text command `today`.
+`TodayCommand` shows overdue, due-today and upcoming (next 7 days) deadlines of active applications, then a summary (active/completed counts, active applications per recruitment stage). `CommandParser` creates it for the typed command `today`.
 
 It is read-only, so it does not call `Storage.save`. Its constructor accepts a `LocalDate` so tests can fix "today"; the no-argument constructor uses `LocalDate.now()`. Each entry prints the application's original one-based index so it can be used with `view`, `edit` and `delete`. The classification rules match `DeadlineWarnings` (same 7-day window, completed applications ignored), but the dashboard can be run on demand instead of only at startup.
 
@@ -466,7 +464,7 @@ The private `appendWarning()` method adds each warning to a `StringBuilder`. Eac
 
 #### Sequence of interactions
 
-The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in a note to keep the diagram focused on interactions between objects.
+The following sequence diagram illustrates the deadline check after saved applications have been loaded. Warning classification and formatting are summarised in the `appendWarning(...)` self-call to keep the diagram focused on interactions between objects.
 
 ![Deadline Warnings Sequence Diagram](diagrams/deadline-warnings-sequence.png?v=2)
 
@@ -571,7 +569,7 @@ If the file does not exist, `load()` logs an informational event via `java.util.
 
 In adherence to the Single Level of Abstraction Principle (SLAP), `Storage.load()` delegates the parsing and validation of individual lines to a private helper, `parseRecord(int lineIndex, String line)`. For each record, `Storage` verifies that there are four fields (legacy format), five fields (legacy status format), or eight fields (modern format with optional portal link, email, notes). It ensures the completion flag is boolean (`true` or `false`), company and role are non-empty, optional deadlines conform to `LocalDate` format, and recruitment stage maps to a valid `RecruitmentStage`. Valid records are instantiated as `Application` objects and added to the list. Any line that fails validation is skipped, and an informative warning naming the line number is recorded in `Storage.getLoadWarnings()`.
 
-The following sequence diagram shows successful loading of an existing file. File-reading details are summarised in a note:
+The following sequence diagram shows loading of an existing file, including a corrupted record. Low-level file reading is omitted to keep the diagram focused on interactions between objects:
 
 ![Storage Load Sequence Diagram](diagrams/storage-load-sequence.png?v=2)
 
@@ -598,7 +596,7 @@ Commands request a save without implementing file encoding or parsing themselves
 
 #### Possible improvements
 
-Recruitment stages are persisted in the final column. The loader also accepts legacy files whose column header is `status`. A crash at exactly the wrong moment can still leave an unused `applications-*.tmp` file in the `data` folder; it is harmless and can be deleted.
+Recruitment stages are persisted in the fifth column, after the deadline. The loader also accepts legacy files whose column header is `status`. A crash at exactly the wrong moment can still leave an unused `applications-*.tmp` file in the `data` folder; it is harmless and can be deleted.
 
 The backup is overwritten the next time a load skips lines. A future version could keep several timestamped backups.
 
@@ -613,8 +611,9 @@ JobSeek employs a multi-tiered error handling and defensive programming strategy
 #### 2. Defensive Programming and Assertions
 JobSeek utilizes Java `assert` statements throughout constructors and internal command execution to enforce preconditions, postconditions, and internal class invariants:
 - **Preconditions**: Verifying non-null arguments and valid index states (`assert targetIndex >= 0`, `assert list != null`, `assert history != null`).
-- **Postconditions & State Invariants**: Verifying application fields are never blank or null after updates, and list indices remain consistent.
-Assertions are enabled during automated testing (`./gradlew test`) and development to trap logic regressions immediately.
+- **Postconditions & State Invariants**: Verifying list indices remain consistent after changes.
+
+Assertions are enabled during automated testing (`./gradlew test`) and development to trap logic regressions immediately. They are **disabled** when users run the JAR with `java -jar`, so rules that must always hold are enforced with ordinary checks instead: `Application` throws `IllegalArgumentException` for a null or blank company or role, and `ApplicationList` throws `NullPointerException` for null entries (see [Design & implementation](#architecture-and-command-pattern)). Assertions are used only for conditions that indicate a programming error.
 
 #### 3. Diagnostic Logging Architecture
 JobSeek utilizes Java's standard `java.util.logging.Logger` across critical architectural layers to provide transparent operational observability without polluting user-facing terminal output:
@@ -705,11 +704,14 @@ To execute all tests and generate a detailed HTML coverage report:
 ```
 The report is saved to `build/reports/jacoco/test/html/index.html`.
 
-As of the latest release, JobSeek achieves industry-standard coverage across all 302 automated test cases:
-* **Class Coverage**: **100%** (all 23 production classes covered)
+Measured with `./gradlew test jacocoTestReport` across all 380 automated test cases (37 test classes):
+* **Class Coverage**: **100%** (all 31 classes, including nested classes, in the 29 production source files)
+* **Method Coverage**: **97.7%**
 * **Line Coverage**: **97.5%**
-* **Instruction Coverage**: **93.9%**
-* **Branch Coverage**: **86.9%**
+* **Instruction Coverage**: **95.2%**
+* **Branch Coverage**: **88.7%**
+
+These figures change as code and tests change; re-run the command above to refresh them.
 
 ### Test Case Design Methodologies
 
@@ -1150,4 +1152,6 @@ Use isolated test data for failure checks rather than a user's saved application
 - **Startup protection:** `MainTest.run_failedStartupLoad_rejectsChangesButAllowsHelpAndExit` checks that attempted changes leave both the fallback list and original file untouched after a fatal load failure.
 - **Failed saves and undo:** `SaveFailureTest` injects write failures for add, delete, edit, stage changes and both completion directions. It checks field values, ordering, identity, absent success messages and retained history. It then retries undo successfully and checks the persisted result. A main-loop test verifies that a failed deletion does not break an earlier edit's undo entry.
 
-These tests verify application behavior when a save reports an error. They do not establish crash-safe or atomic file replacement.
+- **Atomic replacement:** `StorageAtomicSaveTest` checks that a save replaces the whole file, leaves no temporary file behind, and keeps the original content when the file cannot be replaced (a locked file on Windows). On file systems without atomic moves the fallback is not atomic, as described in [Saving applications](#saving-applications).
+
+These tests do not establish that saved data survives a power failure.
