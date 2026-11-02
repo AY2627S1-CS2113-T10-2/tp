@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests that saving replaces the data file as a whole and never leaves it truncated or littered with temp files.
+ * Tests successful saves and replacement failure handling on the current file system.
+ * These checks do not establish crash safety for the non-atomic fallback on other file systems.
  */
 public class StorageAtomicSaveTest {
 

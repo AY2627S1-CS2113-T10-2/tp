@@ -65,8 +65,8 @@ public class ApplicationListTest {
     }
 
     @Test
-    public void add_nullApplication_ignored() {
-        list.add(null);
+    public void add_nullApplication_rejected() {
+        assertThrows(NullPointerException.class, () -> list.add(null));
         assertEquals(0, list.size());
         assertTrue(list.isEmpty());
     }
