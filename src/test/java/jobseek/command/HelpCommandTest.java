@@ -1,7 +1,7 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +18,7 @@ public class HelpCommandTest {
         RecordingUi ui = new RecordingUi();
         HelpCommand command = new HelpCommand();
 
-        command.execute(new ApplicationList(), ui, new Storage());
+        command.execute(new ApplicationList(), ui, TestStorage.create());
 
         assertFalse(command.isExit());
         assertTrue(ui.lastMessage.contains("Available menu options:"));
