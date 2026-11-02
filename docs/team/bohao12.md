@@ -13,37 +13,41 @@ JobSeek is a command-line desktop application (CLI) designed for undergraduate s
 ### Enhancements implemented
 
 - **Foundational Architecture & Code Skeleton** ([#13](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/13), [#14](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/14)):
-  - *What it does*: Bootstrapped the initial JobSeek codebase from scratch, establishing core domain models (`Application`, `ApplicationList`), command pattern (`Command`), console interface (`Ui`), and persistence (`Storage`) with Java 25.
+  - *What it does*: Bootstrapped the initial JobSeek codebase from scratch, establishing core domain models (`Application`, `ApplicationList`), command pattern hierarchy (`Command`), console interface (`Ui`), and persistence (`Storage`) with Java 25.
   - *Justification & Highlights*: Established package structures early so team members could develop concurrently without merge conflicts. Decoupled business logic from I/O and encapsulated list operations with index bounds protection.
-- **One-line Typed Command Parser** ([#50](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/50)):
-  - *What it does*: Built `CommandParser` enabling single-line typed command execution (e.g., `add c/Google r/SWE Intern d/2026-11-30`, `find ...`, `undo`).
-  - *Justification & Highlights*: Eliminates multi-step prompts for power users. Implemented regex prefix tokenization requiring leading whitespace to prevent false splits on slashes within text (e.g., `AT&T/Intel`, `C/C++`). Validates inputs defensively with informative errors without corrupting state; backed by 24 unit tests.
+- **One-line Typed Command Parser & Prefix Sanitization** ([#50](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/50), [#78](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/78)):
+  - *What it does*: Built `CommandParser` enabling single-line typed commands (`add c/Google r/SWE d/2026-11-30`, `find ...`, `undo`) alongside the numbered menu.
+  - *Justification & Highlights*: Eliminates multi-step prompts for power users. Implemented regex prefix tokenization requiring whitespace, preventing false splits on slashes within text (`AT&T/Intel`, `C/C++`), and allowed clearing optional fields via prefix (`edit 1 d/ -`). Backed by 24 unit tests.
 - **Multi-criteria Filter Engine (`find`)** ([#51](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/51)):
   - *What it does*: Filters applications across company (`c/`), role (`r/`), stage (`s/`), deadline range (`a/`, `b/`), and status (`m/`) simultaneously.
   - *Justification & Highlights*: Applied Strategy pattern (`ApplicationFilters`) composing `Predicate<Application>` lambdas joined via logical `AND`. Extensible for new filters without modifying `FindCommand` execution (OCP). Results retain master 1-based indexes for direct use with `edit`, `delete`, or `view`.
-- **Reversible Undo Architecture & Delete Confirmation** ([#52](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/52)):
+- **Reversible Undo Architecture & Robust Mutation Handling** ([#52](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/52), [#77](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/77), [#83](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/83)):
   - *What it does*: Added deletion confirmation prompts and the `undo` command to iteratively revert mutating operations (`add`, `delete`, `edit`, `status`, `mark`, `unmark`).
-  - *Justification & Highlights*: Protects against accidental data loss. Architected `UndoableCommand` and stack-based `CommandHistory`, where each command encapsulates its inverse state delta. Cancelled or invalid commands are never recorded. Backed by 18 unit tests.
-- **Storage Reliability & Corrupted-File Recovery** ([#45](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/45), [#47](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/47)):
-  - *What it does*: Hardened `Storage` to safely isolate corrupted lines with line-numbered warnings instead of crashing or deleting data, and resolved silent bugs where stages and deadlines were lost across restarts.
+  - *Justification & Highlights*: Protects against accidental data loss. Architected `UndoableCommand` and stack-based `CommandHistory` storing inverse state deltas. Prevented no-op undo entries for unchanged edits or re-marking, supported prompt cancellation (`cancel`), and handled abrupt EOF safely without corrupting history. Backed by 18 unit tests.
+- **Storage Reliability, Atomic Saves & Corruption Recovery** ([#45](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/45), [#47](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/47), [#76](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/76), [#82](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/82)):
+  - *What it does*: Replaced destructive direct writes with temporary-file atomic replacement to eliminate truncated or empty save files on crash/failure. Added UTF-8 Byte-Order Mark (BOM) handling, automatic backups before skipping corrupted records, and persisted recruitment stages across restarts.
+- **Model Encapsulation & Defensive Invariants** ([#84](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/84)):
+  - *What it does*: Hardened `Application` to reject blank companies/roles using Unicode-aware validation (`String.isBlank()`). Fully encapsulated `ApplicationList` by exposing only unmodifiable collection views, utilizing defensive copies, and rejecting null entries with `NullPointerException`.
 - **Application Details, Listing, and Status** ([#32](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/32), [#34](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/34)):
   - Implemented `view INDEX` details card, filtered `list [completed|all]`, `mark`/`unmark` completion toggles, and `today` deadline dashboard.
 
 ### Contributions to the User Guide
 
 - **Authored sections**: One-line typed command syntax and prefix rules, Finding with combined filters, Undoing changes and delete confirmation, Today dashboard, Listing applications, Viewing application details, Marking/unmarking applications, and the Command Summary quick reference table.
-- **Updated sections & audit** ([#53](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/53)): Adding applications (deadlines), Deleting applications (confirmation), Data persistence (status saving and corrupted-line isolation), and conducted a full audit against code behavior.
+- **Updated sections & audit** ([#53](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/53), [#78](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/78), [#80](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/80)): Adding applications (deadlines), Deleting applications (confirmation), Data persistence (status saving, corrupted-line recovery), clearing optional fields, and prompt cancellation.
 
 ### Contributions to the Developer Guide
 
 - **Authored design sections**: Typed command parser, Multi-criteria filter engine, Delete confirmation and undo architecture, Today dashboard, View command, Filtered listing, and Mark/unmark features (each with design considerations and alternatives).
+- **Documented architectural robustness** ([#82](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/82), [#84](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/84)): Documented storage atomic file replacement guarantees and non-atomic fallback limitations, model encapsulation, and non-null domain invariants.
 - **UML diagrams added/updated**: Architecture overview, Domain model and command hierarchy class diagrams, Undo architecture class diagram, Sequence diagrams for Typed command parsing, Multi-criteria `find`, Delete-with-undo, `ViewCommand`, `ListCommand`, `MarkCommand`, deadline handling, status editing, and storage loading.
 - **Documentation restructuring & sections filled** ([#53](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/53)): Fixed section corruption, authored product scope, non-functional requirements (NFRs), glossary, user stories, and manual testing procedures.
 
 ### Contributions to team-based tasks
 
 - Set up initial codebase skeleton (`Application`, `Command`, `Ui`, `Storage`, `ApplicationList`, `Main`) and configured `build.gradle` for Java 25 ([#13](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/13)).
-- Updated project branding across README and configured team member portfolio links in `AboutUs.md`.
+- Isolated test infrastructure so unit and integration test executions save to temporary files instead of overwriting user data in `data/applications.txt` ([#79](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/79)).
+- Updated project branding across README, organized help text into typed-command and menu lists ([#80](https://github.com/AY2627S1-CS2113-T10-2/tp/pull/80)), and configured team member portfolio links in `AboutUs.md`.
 - Opened, tracked, and resolved GitHub issues for features and bug fixes (e.g., [#27](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/27), [#46](https://github.com/AY2627S1-CS2113-T10-2/tp/issues/46)).
 - Reviewed all documentation written by teammates against actual code implementation.
 
