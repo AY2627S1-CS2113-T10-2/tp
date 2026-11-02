@@ -38,6 +38,9 @@ public class Storage {
 
     private String filePath;
 
+    /** Keeps a failed load's empty fallback list from overwriting the original file. */
+    private boolean saveBlocked;
+
     private final List<String> loadWarnings = new ArrayList<>();
 
     /**
@@ -85,12 +88,26 @@ public class Storage {
     }
 
     /**
+     * Rejects writes after a fatal load failure until a subsequent load succeeds.
+     * Callers can also use this check before changing the in-memory list.
+     *
+     * @throws IOException If the existing data could not be loaded safely.
+     */
+    public void ensureWritable() throws IOException {
+        if (saveBlocked) {
+            throw new IOException("Changes are disabled because the data file could not be loaded. "
+                    + "Repair or restore the file and restart JobSeek before making changes.");
+        }
+    }
+
+    /**
      * Saves the application list to local storage.
      *
      * @param applications The ApplicationList to save.
      * @throws IOException If a file writing error occurs.
      */
     public void save(ApplicationList applications) throws IOException {
+        ensureWritable();
         Path path = Path.of(filePath);
         Path parent = path.getParent();
         if (parent != null) {
@@ -123,9 +140,11 @@ public class Storage {
      */
     public ApplicationList load() throws IOException {
         loadWarnings.clear();
+        saveBlocked = true;
         Path path = Path.of(filePath);
-        if (!Files.exists(path)) {
+        if (Files.notExists(path)) {
             LOGGER.info("Storage file not found at " + filePath + ". Returning empty list.");
+            saveBlocked = false;
             return new ApplicationList();
         }
 
@@ -145,6 +164,7 @@ public class Storage {
             }
         }
         LOGGER.info("Loaded " + applications.size() + " applications from " + filePath);
+        saveBlocked = false;
         return applications;
     }
 

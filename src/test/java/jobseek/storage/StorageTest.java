@@ -6,10 +6,13 @@ import jobseek.model.RecruitmentStage;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,6 +22,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Unit tests for {@link Storage}.
  */
 public class StorageTest {
+
+    /** Fatal decoding errors must not allow a subsequent save to overwrite the source bytes. */
+    @Test
+    public void load_invalidUtf8_blocksRepeatedSavesUntilSuccessfulReload() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-load-failure").resolve("applications.txt");
+        byte[] original = {(byte) 0xFF, (byte) 0xFE};
+        Files.write(file, original);
+        Storage storage = new Storage(file.toString());
+
+        assertThrows(IOException.class, storage::load);
+        storage.clearLoadWarnings();
+        assertThrows(IOException.class, () -> storage.save(new ApplicationList()));
+        assertThrows(IOException.class, () -> storage.save(new ApplicationList()));
+        assertArrayEquals(original, Files.readAllBytes(file));
+
+        Files.writeString(file, "Acme\tIntern\tfalse\t\n");
+        ApplicationList recovered = storage.load();
+        storage.save(recovered);
+        assertEquals("Acme", storage.load().get(0).getCompany());
+    }
+
+    /** A missing file is a normal first launch and must remain writable. */
+    @Test
+    public void load_missingFile_allowsFirstSave() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-first-save").resolve("applications.txt");
+        Storage storage = new Storage(file.toString());
+        ApplicationList applications = storage.load();
+        applications.add(new Application("Acme", "Intern"));
+
+        storage.save(applications);
+
+        assertEquals("Acme", storage.load().get(0).getCompany());
+    }
 
     /** A leading hash in a valid company name must survive saving and restarting. */
     @Test
