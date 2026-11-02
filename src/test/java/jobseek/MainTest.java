@@ -23,11 +23,13 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.Scanner;
 import java.util.UUID;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -41,6 +43,26 @@ public class MainTest {
 
     private final PrintStream standardOut = System.out;
     private ByteArrayOutputStream outputStream;
+
+    /** A fatal startup read failure leaves data intact and rejects edits before mutation. */
+    @Test
+    public void run_failedStartupLoad_rejectsChangesButAllowsHelpAndExit() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-failed-startup").resolve("applications.txt");
+        byte[] original = {(byte) 0xFF, (byte) 0xFE};
+        Files.write(file, original);
+        Ui ui = new Ui(new Scanner("add c/NewCo r/Intern\nundo\nhelp\nexit\n"));
+        Main main = new Main(ui, new Storage(file.toString()));
+
+        main.run();
+
+        assertTrue(main.getApplications().isEmpty());
+        assertArrayEquals(original, Files.readAllBytes(file));
+        String output = outputStream.toString();
+        assertTrue(output.contains("Failed to load applications"));
+        assertTrue(output.contains("Changes are disabled"));
+        assertTrue(output.contains("Goodbye!"));
+        assertFalse(output.contains("I've added"));
+    }
 
     /** Captures console output before each workflow test. */
     @BeforeEach

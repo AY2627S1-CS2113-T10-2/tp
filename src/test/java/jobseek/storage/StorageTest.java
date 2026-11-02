@@ -6,10 +6,13 @@ import jobseek.model.RecruitmentStage;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,6 +22,81 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Unit tests for {@link Storage}.
  */
 public class StorageTest {
+
+    /** Fatal decoding errors must not allow a subsequent save to overwrite the source bytes. */
+    @Test
+    public void load_invalidUtf8_blocksRepeatedSavesUntilSuccessfulReload() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-load-failure").resolve("applications.txt");
+        byte[] original = {(byte) 0xFF, (byte) 0xFE};
+        Files.write(file, original);
+        Storage storage = new Storage(file.toString());
+
+        assertThrows(IOException.class, storage::load);
+        storage.clearLoadWarnings();
+        assertThrows(IOException.class, () -> storage.save(new ApplicationList()));
+        assertThrows(IOException.class, () -> storage.save(new ApplicationList()));
+        assertArrayEquals(original, Files.readAllBytes(file));
+
+        Files.writeString(file, "Acme\tIntern\tfalse\t\n");
+        ApplicationList recovered = storage.load();
+        storage.save(recovered);
+        assertEquals("Acme", storage.load().get(0).getCompany());
+    }
+
+    /** A missing file is a normal first launch and must remain writable. */
+    @Test
+    public void load_missingFile_allowsFirstSave() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-first-save").resolve("applications.txt");
+        Storage storage = new Storage(file.toString());
+        ApplicationList applications = storage.load();
+        applications.add(new Application("Acme", "Intern"));
+
+        storage.save(applications);
+
+        assertEquals("Acme", storage.load().get(0).getCompany());
+    }
+
+    /** A leading hash in a valid company name must survive saving and restarting. */
+    @Test
+    public void saveThenLoad_companyStartsWithHash_preservesRecord() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-hash-test").resolve("applications.txt");
+        Storage storage = new Storage(file.toString());
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("#Acme", "Intern"));
+        applications.add(new Application("#", "Developer"));
+        applications.add(new Application("Other Company", "Analyst"));
+
+        storage.save(applications);
+        Storage restartedStorage = new Storage(file.toString());
+        ApplicationList loaded = restartedStorage.load();
+
+        assertEquals(3, loaded.size());
+        assertEquals("#Acme", loaded.get(0).getCompany());
+        assertEquals("Intern", loaded.get(0).getRole());
+        assertEquals("#", loaded.get(1).getCompany());
+        assertEquals("Other Company", loaded.get(2).getCompany());
+        assertTrue(restartedStorage.getLoadWarnings().isEmpty());
+    }
+
+    /** Existing legacy records with hash-prefixed names remain readable alongside comments. */
+    @Test
+    public void load_hashCompanyInLegacyRecords_ignoresOnlyCommentLines() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-hash-test").resolve("applications.txt");
+        Files.writeString(file, "# Saved application data\n"
+                + "#Acme\tIntern\tfalse\t\n"
+                + "#OtherCo\tDeveloper\ttrue\t2026-11-03\tAccepted\n");
+        Storage storage = new Storage(file.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(2, loaded.size());
+        assertEquals("#Acme", loaded.get(0).getCompany());
+        assertNull(loaded.get(0).getDeadline());
+        assertEquals("#OtherCo", loaded.get(1).getCompany());
+        assertTrue(loaded.get(1).isCompleted());
+        assertEquals(RecruitmentStage.ACCEPTED, loaded.get(1).getRecruitmentStage());
+        assertTrue(storage.getLoadWarnings().isEmpty());
+    }
 
     @Test
     public void defaultConstructor_usesDefaultFilePath() {

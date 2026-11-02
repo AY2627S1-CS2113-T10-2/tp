@@ -18,6 +18,7 @@ import jobseek.command.RecruitmentStageCommand;
 import jobseek.command.SearchCommand;
 import jobseek.command.SortCommand;
 import jobseek.command.UndoCommand;
+import jobseek.command.UndoableCommand;
 import jobseek.exception.JobSeekException;
 import jobseek.model.ApplicationList;
 import jobseek.model.RecruitmentStage;
@@ -125,6 +126,10 @@ public class Main {
             Command command = parseCommand(fullCommand);
             if (command != null) {
                 try {
+                    // A failed startup load must not allow edits to the empty fallback list.
+                    if (command instanceof UndoableCommand || command instanceof UndoCommand) {
+                        storage.ensureWritable();
+                    }
                     command.execute(applications, ui, storage);
                     if (!(command instanceof UndoCommand)) {
                         history.record(command);
