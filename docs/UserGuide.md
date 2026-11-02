@@ -55,7 +55,8 @@ Instead of answering prompts one by one, you can type a whole command on one lin
 - `c/` is company, `r/` is role, `d/` is deadline, `s/` is recruitment stage (e.g. `Interview`, or shortcut `OA`), `p/` is portal link, `e/` is email, and `n/` is notes.
 - Field prefixes are case-insensitive (`c/` or `C/`). Fields can be given in any order. In `add`, `c/` and `r/` are required. In `edit`, at least one field is required.
 - Command words are not case-sensitive. `INDEX` is the number shown by `list`.
-- A field value ends where the next prefix starts, so avoid typing text such as ` r/` inside a company name.
+- A field value ends where the next prefix starts. Only the prefix letters above (`c r s d p e n`, plus `b a m` in `find`) count, so text such as `w/ recruiter` or `I/O Team` is safe inside a value. Avoid typing a real prefix such as ` r/` inside a company name or note.
+- In `edit`, give `d/`, `p/`, `e/` or `n/` with nothing after it to clear that field. For example, `edit 2 n/` removes the notes of application 2 and `edit 2 d/` removes its deadline.
 - If a command is wrong, JobSeek shows what is wrong and the correct format, and nothing is changed.
 
 ---

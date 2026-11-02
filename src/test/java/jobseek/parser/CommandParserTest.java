@@ -96,11 +96,52 @@ public class CommandParserTest {
     }
 
     @Test
-    public void parse_addUnknownPrefix_throws() {
+    public void parse_addPrefixFromAnotherCommand_throws() {
         JobSeekException e = assertThrows(JobSeekException.class,
-                () -> CommandParser.parse("add c/Google r/SWE x/oops"));
+                () -> CommandParser.parse("add c/Google r/SWE s/Interview"));
 
-        assertTrue(e.getMessage().contains("Unknown field 'x/'"));
+        assertTrue(e.getMessage().contains("Unknown field 's/'"));
+    }
+
+    @Test
+    public void parse_addSlashAfterNonPrefixLetter_staysInValue() throws Exception {
+        AddCommand command = assertInstanceOf(AddCommand.class, CommandParser.parse(
+                "add c/Intel r/Engineer I/O Team n/follow up w/ recruiter x/y"));
+
+        assertEquals("Engineer I/O Team", command.getRole());
+        assertEquals("follow up w/ recruiter x/y", command.getNotes());
+    }
+
+    @Test
+    public void parse_editSlashAfterNonPrefixLetter_staysInValue() throws Exception {
+        EditCommand command = assertInstanceOf(EditCommand.class,
+                CommandParser.parse("edit 1 n/call w/ HR before 5pm"));
+
+        assertEquals("call w/ HR before 5pm", command.getNewNotes());
+    }
+
+    @Test
+    public void parse_editEmptyOptionalFields_clearsThem() throws Exception {
+        EditCommand command = assertInstanceOf(EditCommand.class,
+                CommandParser.parse("edit 2 d/ p/ e/ n/"));
+
+        assertEquals(1, command.getTargetIndex());
+        assertNull(command.getNewDeadline());
+        assertEquals("", command.getNewPortalLink());
+        assertEquals("", command.getNewEmail());
+        assertEquals("", command.getNewNotes());
+    }
+
+    @Test
+    public void parse_editEmptyRequiredFields_throws() {
+        assertThrows(JobSeekException.class, () -> CommandParser.parse("edit 1 c/"));
+        assertThrows(JobSeekException.class, () -> CommandParser.parse("edit 1 r/"));
+        assertThrows(JobSeekException.class, () -> CommandParser.parse("edit 1 s/"));
+    }
+
+    @Test
+    public void parse_addEmptyOptionalField_throws() {
+        assertThrows(JobSeekException.class, () -> CommandParser.parse("add c/A r/B n/"));
     }
 
     @Test
