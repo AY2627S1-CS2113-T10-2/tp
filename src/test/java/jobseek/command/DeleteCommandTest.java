@@ -1,5 +1,6 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
@@ -88,7 +89,7 @@ public class DeleteCommandTest {
         applications.add(new Application("Apple", "iOS Intern", false));
 
         DeleteCommand command = new DeleteCommand(5);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(1, applications.size());
     }
@@ -98,7 +99,7 @@ public class DeleteCommandTest {
         ApplicationList applications = new ApplicationList();
 
         DeleteCommand command = new DeleteCommand(0);
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertTrue(applications.isEmpty());
     }

@@ -1,8 +1,8 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ public class SortCommandTest {
         applications.add(new Application("acme", "Designer", true));
         RecordingUi ui = new RecordingUi();
 
-        new SortCommand().execute(applications, ui, new Storage());
+        new SortCommand().execute(applications, ui, TestStorage.create());
 
         String[] lines = ui.lastMessage.split("\\R");
         assertEquals("Applications sorted by company, then role:", lines[0]);
@@ -36,7 +36,7 @@ public class SortCommandTest {
     @Test
     public void execute_emptyList_showsEmptyMessage() {
         RecordingUi ui = new RecordingUi();
-        new SortCommand().execute(new ApplicationList(), ui, new Storage());
+        new SortCommand().execute(new ApplicationList(), ui, TestStorage.create());
         assertEquals("No applications found.", ui.lastMessage);
     }
 
@@ -47,7 +47,7 @@ public class SortCommandTest {
         applications.add(new Application("Google", "SWE Intern"));
         RecordingUi ui = new RecordingUi();
 
-        new SortCommand().execute(applications, ui, new Storage());
+        new SortCommand().execute(applications, ui, TestStorage.create());
 
         String[] lines = ui.lastMessage.split("\\R");
         assertTrue(lines[3].startsWith("1 "));

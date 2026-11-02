@@ -1,8 +1,8 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ public class SearchCommandTest {
         applications.add(new Application("Engineering Co", "Intern", true));
         RecordingUi ui = new RecordingUi();
 
-        new SearchCommand("  ENGin  ").execute(applications, ui, new Storage());
+        new SearchCommand("  ENGin  ").execute(applications, ui, TestStorage.create());
 
         String[] lines = ui.lastMessage.split("\\R");
         assertEquals("Applications matching 'ENGin':", lines[0]);
@@ -41,7 +41,7 @@ public class SearchCommandTest {
         applications.add(new Application("Acme", "Designer"));
         RecordingUi ui = new RecordingUi();
 
-        new SearchCommand("Google").execute(applications, ui, new Storage());
+        new SearchCommand("Google").execute(applications, ui, TestStorage.create());
 
         assertEquals("No applications found matching 'Google'.", ui.lastMessage);
     }
@@ -49,7 +49,7 @@ public class SearchCommandTest {
     @Test
     public void execute_emptyList_showsEmptyMessage() {
         RecordingUi ui = new RecordingUi();
-        new SearchCommand("Acme").execute(new ApplicationList(), ui, new Storage());
+        new SearchCommand("Acme").execute(new ApplicationList(), ui, TestStorage.create());
         assertEquals("No applications found.", ui.lastMessage);
     }
 
@@ -59,10 +59,10 @@ public class SearchCommandTest {
         applications.add(new Application("🚀 Tech Corp", "%s Developer"));
         RecordingUi ui = new RecordingUi();
 
-        new SearchCommand("🚀").execute(applications, ui, new Storage());
+        new SearchCommand("🚀").execute(applications, ui, TestStorage.create());
         assertTrue(ui.lastMessage.contains("🚀 Tech Corp"));
 
-        new SearchCommand("%s").execute(applications, ui, new Storage());
+        new SearchCommand("%s").execute(applications, ui, TestStorage.create());
         assertTrue(ui.lastMessage.contains("%s Developer"));
     }
 

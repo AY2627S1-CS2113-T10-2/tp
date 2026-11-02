@@ -1,8 +1,8 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.Application;
 import jobseek.model.ApplicationList;
-import jobseek.storage.Storage;
 import jobseek.ui.Ui;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ public class AddCommandTest {
     public void execute_validInputs_addsApplicationSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
         AddCommand command = new AddCommand("Google", "Software Engineer Intern");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(1, applications.size());
         Application added = applications.get(0);
@@ -43,7 +43,7 @@ public class AddCommandTest {
         ApplicationList applications = new ApplicationList();
         LocalDate deadline = LocalDate.of(2026, 12, 31);
 
-        new AddCommand("Google", "SWE Intern", deadline).execute(applications, new Ui(), new Storage());
+        new AddCommand("Google", "SWE Intern", deadline).execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(deadline, applications.get(0).getDeadline());
     }
@@ -52,7 +52,7 @@ public class AddCommandTest {
     public void execute_withoutDeadline_leavesDeadlineNull() throws Exception {
         ApplicationList applications = new ApplicationList();
 
-        new AddCommand("Google", "SWE Intern").execute(applications, new Ui(), new Storage());
+        new AddCommand("Google", "SWE Intern").execute(applications, new Ui(), TestStorage.create());
 
         assertNull(applications.get(0).getDeadline());
     }
@@ -61,7 +61,7 @@ public class AddCommandTest {
     public void execute_whitespaceAroundInputs_trimmedSuccessfully() throws Exception {
         ApplicationList applications = new ApplicationList();
         AddCommand command = new AddCommand("   Shopee   ", "   Backend Intern   ");
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(1, applications.size());
         assertEquals("Shopee", applications.get(0).getCompany());
@@ -71,9 +71,9 @@ public class AddCommandTest {
     @Test
     public void execute_multipleApplications_preservesInsertionOrder() throws Exception {
         ApplicationList applications = new ApplicationList();
-        new AddCommand("Google", "SWE").execute(applications, new Ui(), new Storage());
-        new AddCommand("Shopee", "Backend").execute(applications, new Ui(), new Storage());
-        new AddCommand("Grab", "Data").execute(applications, new Ui(), new Storage());
+        new AddCommand("Google", "SWE").execute(applications, new Ui(), TestStorage.create());
+        new AddCommand("Shopee", "Backend").execute(applications, new Ui(), TestStorage.create());
+        new AddCommand("Grab", "Data").execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(3, applications.size());
         assertEquals("Google", applications.get(0).getCompany());
@@ -84,9 +84,9 @@ public class AddCommandTest {
     @Test
     public void execute_emptyOrBlankCompany_doesNotAdd() throws Exception {
         ApplicationList applications = new ApplicationList();
-        new AddCommand("", "SWE Intern").execute(applications, new Ui(), new Storage());
-        new AddCommand("   ", "SWE Intern").execute(applications, new Ui(), new Storage());
-        new AddCommand(null, "SWE Intern").execute(applications, new Ui(), new Storage());
+        new AddCommand("", "SWE Intern").execute(applications, new Ui(), TestStorage.create());
+        new AddCommand("   ", "SWE Intern").execute(applications, new Ui(), TestStorage.create());
+        new AddCommand(null, "SWE Intern").execute(applications, new Ui(), TestStorage.create());
 
         assertTrue(applications.isEmpty());
     }
@@ -94,9 +94,9 @@ public class AddCommandTest {
     @Test
     public void execute_emptyOrBlankRole_doesNotAdd() throws Exception {
         ApplicationList applications = new ApplicationList();
-        new AddCommand("Google", "").execute(applications, new Ui(), new Storage());
-        new AddCommand("Google", "   ").execute(applications, new Ui(), new Storage());
-        new AddCommand("Google", null).execute(applications, new Ui(), new Storage());
+        new AddCommand("Google", "").execute(applications, new Ui(), TestStorage.create());
+        new AddCommand("Google", "   ").execute(applications, new Ui(), TestStorage.create());
+        new AddCommand("Google", null).execute(applications, new Ui(), TestStorage.create());
 
         assertTrue(applications.isEmpty());
     }
@@ -121,7 +121,7 @@ public class AddCommandTest {
         AddCommand command = new AddCommand("ByteDance", "Backend Intern", deadline,
                 "https://jobs.bytedance.com", "hr@bytedance.com", "OA deadline soon");
 
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(1, applications.size());
         Application added = applications.get(0);
@@ -136,7 +136,7 @@ public class AddCommandTest {
         ApplicationList applications = new ApplicationList();
         AddCommand command = new AddCommand("GovTech", "Software Engineer", null, null, null, null);
 
-        command.execute(applications, new Ui(), new Storage());
+        command.execute(applications, new Ui(), TestStorage.create());
 
         assertEquals(1, applications.size());
         Application added = applications.get(0);

@@ -1,5 +1,6 @@
 package jobseek.command;
 
+import jobseek.TestStorage;
 import jobseek.model.ApplicationList;
 import jobseek.storage.Storage;
 import jobseek.ui.Ui;
@@ -45,7 +46,7 @@ public class CommandHistoryTest {
         CommandHistory history = new CommandHistory();
         ApplicationList list = new ApplicationList();
         Ui ui = new Ui();
-        Storage storage = new Storage();
+        Storage storage = TestStorage.create();
 
         AddCommand addFirst = new AddCommand("Google", "SWE");
         addFirst.execute(list, ui, storage);
