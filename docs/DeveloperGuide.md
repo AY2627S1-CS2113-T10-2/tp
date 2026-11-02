@@ -8,6 +8,7 @@
 * **Documentation & Tools**:
   * [Mermaid](https://mermaid.js.org/) for rendering UML class and sequence diagrams.
   * [Gradle](https://gradle.org/) and [Checkstyle](https://checkstyle.sourceforge.io/) for building, testing and enforcing code style.
+* **OpenAI Codex**: I used it to help with my listing, search, sort, and menu work, along with related tests, documentation, and my portfolio page. (Beal Ng)
 
 ## Design & implementation
 
