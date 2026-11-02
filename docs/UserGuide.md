@@ -475,7 +475,8 @@ JobSeek automatically saves application data to `data/applications.txt` when com
 - Data files saved by older versions still load. Missing stages and legacy `Pending` values become `Applied`.
 - Company names beginning with `#`, such as `#Acme`, are saved and restored normally.
 - If the data file does not exist, JobSeek starts with an empty application list.
-- **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records.
+- **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records. Because saving rewrites the file, the skipped lines would be lost, so JobSeek first copies your original file to `data/applications.txt.bak` (before your first change in that session) and tells you when it starts. Copy any line you want to repair from the `.bak` file.
+- Files saved with a leading byte-order mark (added by some text editors) are read normally.
 - If loading completely fails due to an unrecoverable file-reading error, JobSeek displays an error and an empty list. Changes and saving are disabled to protect the original file. Repair or restore the data file, then restart JobSeek before adding or changing applications. Help, viewing commands and exit remain available.
 - `search`, `find`, `sort`, `list`, `view`, `today` and `help` only display information and do not modify saved data.
 - `undo` history is not saved: it is cleared when you exit JobSeek.
