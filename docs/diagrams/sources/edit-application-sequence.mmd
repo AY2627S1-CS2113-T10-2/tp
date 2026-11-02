@@ -52,7 +52,7 @@ sequenceDiagram
         deactivate ui
     else at least one value differs
         cmd->>app: setPortalLink(link)
-        Note over app,storage: Other choices call setCompany(), setRole(), setDeadline(),<br/>setEmail() or setNotes() instead. Choice 3 uses<br/>RecruitmentStageCommand and choice 8 sets every field
+        Note right of app: Other choices call setCompany(), setRole(), setDeadline(),<br/>setEmail() or setNotes() instead. Choice 3 uses<br/>RecruitmentStageCommand and choice 8 sets every field
         cmd->>cmd: markChanged()
         cmd->>cmd: saveOrRollback(applications, storage)
         activate cmd

@@ -25,7 +25,7 @@ sequenceDiagram
     activate ui
     ui-->>main: "2026-11-15"
     deactivate ui
-    Note over main,history: Portal link, contact email and notes<br/>are prompted in the same way
+    Note right of ui: Portal link, contact email and notes<br/>are prompted in the same way
     create participant cmd as :AddCommand
     main->>cmd: new AddCommand(company, role, deadline, portalLink, email, notes)
     deactivate main

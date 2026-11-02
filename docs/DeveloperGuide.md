@@ -16,7 +16,9 @@ The class, object, sequence and activity diagrams follow the UML notation of the
 
 The *Architecture Diagram* and the *Architecture and Command Pattern Flow* are informal block diagrams, not UML.
 
-Each diagram's Mermaid source is in `docs/diagrams/sources/` and the PNG next to it is generated from that file, for example `npx @mermaid-js/mermaid-cli -i docs/diagrams/sources/add-application-sequence.mmd -o docs/diagrams/add-application-sequence.png -s 2`. Edit the source, regenerate the PNG and commit both. Mermaid cannot draw every symbol exactly like the sheet (for example, the association label arrow is typed as a `▶` character and underlined object names use HTML).
+Each diagram's Mermaid source is in `docs/diagrams/sources/` and the PNG next to it is generated from that file by `docs/diagrams/render-diagrams.cjs`. Run `npm install @mermaid-js/mermaid-cli` once (it provides `mmdc` and Puppeteer), then `node render-diagrams.cjs` from `docs/diagrams` to redraw every diagram, or `node render-diagrams.cjs search-sequence sort-sequence` to redraw only some. Edit the source, regenerate the PNG and commit both.
+
+Mermaid cannot draw every symbol exactly like the sheet (for example, the association label arrow is typed as a `▶` character and underlined object names use HTML). For sequence diagrams the script therefore post-processes the SVG before it becomes a PNG: the condition of an `alt`/`loop`/`opt` frame is moved right beside the frame keyword, notes are redrawn with a folded corner, sized to their text and joined to the lifeline they describe by a dashed line, and every message label gets a white background so lifelines never strike through the text.
 
 ## Design & implementation
 
