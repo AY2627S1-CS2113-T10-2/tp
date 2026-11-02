@@ -230,7 +230,7 @@ The edit feature allows users to modify existing applications without deleting a
 - **Design and Implementation**:
   - `EditCommand` accepts a zero-based target index and nullable field replacements: `newCompany`, `newRole`, `newStage`, `newDeadline`, `newPortalLink`, `newEmail`, and `newNotes`. A `null` value indicates that the corresponding field should remain unchanged.
   - `RecruitmentStageCommand` provides direct, dedicated recruitment stage modification for targeted application records. The menu uses it when only the stage is edited.
-  - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by a field choice (1 to 8):
+  - In `Main.handleMenuEdit()`, the user chooses the target application index, followed by choosing a field from the structured edit menu (`Ui.showEditMenu()`, choices 1 to 8):
     - `1`: Company only (`EditCommand`)
     - `2`: Role only (`EditCommand`)
     - `3`: Recruitment stage only (`RecruitmentStageCommand`)
@@ -960,7 +960,17 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
    Error: Your application list is currently empty.
    ```
 2. Add an application using `1` with company `Googl` and role `SWE Intern`.
-3. Choose `9` and enter application index `1`.
+3. Choose `9` and enter application index `1`. Confirm the edit field selection menu appears:
+   ```text
+   ____________________________________________________________
+   [1] Company               [2] Role
+   [3] Recruitment stage     [4] Deadline
+   [5] Portal Link           [6] Email
+   [7] Notes                 [8] All
+   ____________________________________________________________
+   Enter field to edit:
+   > 
+   ```
 4. Choose `1` (Company). Enter `Google`. Confirm confirmation output displays updated company:
    ```text
    Application updated successfully.
