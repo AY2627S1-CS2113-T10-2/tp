@@ -38,7 +38,8 @@ import java.util.regex.Pattern;
  * <p>Supported formats (a field prefix is a single letter followed by a slash, e.g. {@code c/}):
  * <ul>
  * <li>{@code add c/COMPANY r/ROLE [d/YYYY-MM-DD]}</li>
- * <li>{@code edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE]}</li>
+ * <li>{@code edit INDEX [c/COMPANY] [r/ROLE] [s/STAGE] [d/DATE] [p/LINK] [e/EMAIL] [n/NOTES]}
+ *     (an empty {@code d/}, {@code p/}, {@code e/} or {@code n/} clears that field)</li>
  * <li>{@code delete INDEX}, {@code mark INDEX}, {@code unmark INDEX}</li>
  * <li>{@code find [c/TEXT] [r/TEXT] [s/STAGE] [b/DATE] [a/DATE] [m/yes|no]}, which combines filters</li>
  * <li>{@code search KEYWORD}, {@code sort}, {@code help}, {@code exit}</li>
@@ -59,8 +60,18 @@ public class CommandParser {
             + "[m/yes|no] (at least one filter; b/ = deadline on or before, a/ = on or after, "
             + "m/ = marked completed)";
 
-    /** A field prefix is a case-insensitive letter and a slash at the start of the text or after a space. */
-    private static final Pattern FIELD_PREFIX = Pattern.compile("(?i)(?:^|\\s)([a-z])/");
+    /**
+     * Letters that are field prefixes in at least one command. In {@code add} and {@code edit}, any other
+     * letter followed by a slash (as in "w/ recruiter" or "I/O") is ordinary text, not a prefix.
+     */
+    private static final String KNOWN_PREFIXES = "crsdpenbam";
+
+    /** Matches any single-letter prefix. Used by {@code find}, where free text is never valid. */
+    private static final Pattern ANY_FIELD_PREFIX = Pattern.compile("(?i)(?:^|\\s)([a-z])/");
+
+    /** Matches only letters that are real prefixes in some command, at the start of text or after a space. */
+    private static final Pattern KNOWN_FIELD_PREFIX =
+            Pattern.compile("(?i)(?:^|\\s)([" + KNOWN_PREFIXES + "])/");
 
     private static final Logger LOGGER = initLogger();
 
@@ -147,7 +158,7 @@ public class CommandParser {
     }
 
     private static Command parseAdd(String arguments) throws JobSeekException {
-        Fields fields = parseFields(arguments, "crdpen", ADD_USAGE);
+        Fields fields = parseFields(arguments, "crdpen", ADD_USAGE, false, "");
         if (!fields.leadingText.isEmpty()) {
             throw new JobSeekException("Unexpected text '" + fields.leadingText + "'. " + ADD_USAGE);
         }
@@ -164,12 +175,14 @@ public class CommandParser {
     }
 
     private static Command parseEdit(String arguments) throws JobSeekException {
-        Fields fields = parseFields(arguments, "crsdpen", EDIT_USAGE);
+        // d/, p/, e/ and n/ may be left empty in an edit, which clears that field.
+        Fields fields = parseFields(arguments, "crsdpen", EDIT_USAGE, false, "dpen");
         int index = parseIndex(fields.leadingText, EDIT_USAGE);
         String company = fields.values.get('c');
         String role = fields.values.get('r');
         String stageLabel = fields.values.get('s');
-        LocalDate deadline = fields.values.containsKey('d') ? parseDeadline(fields.values.get('d')) : null;
+        String deadlineText = fields.values.get('d');
+        LocalDate deadline = deadlineText == null || deadlineText.isEmpty() ? null : parseDeadline(deadlineText);
         String portalLink = fields.values.get('p');
         String email = fields.values.get('e');
         String notes = fields.values.get('n');
@@ -194,7 +207,7 @@ public class CommandParser {
      * {@code and}, so an application must satisfy all of them to be shown.
      */
     private static Command parseFind(String arguments) throws JobSeekException {
-        Fields fields = parseFields(arguments, "crsbam", FIND_USAGE);
+        Fields fields = parseFields(arguments, "crsbam", FIND_USAGE, true, "");
         if (!fields.leadingText.isEmpty()) {
             throw new JobSeekException("Unexpected text '" + fields.leadingText + "'. " + FIND_USAGE);
         }
@@ -302,10 +315,14 @@ public class CommandParser {
      * @param arguments Text after the command word.
      * @param allowedPrefixes Prefix letters this command accepts.
      * @param usage Usage message appended to errors.
+     * @param strict True if every letter followed by a slash is a prefix (unknown ones are errors);
+     *               false if only letters used by some command are prefixes and other slashes are text.
+     * @param emptyAllowed Prefix letters whose value may be empty (used to clear a field).
      */
-    private static Fields parseFields(String arguments, String allowedPrefixes, String usage)
-            throws JobSeekException {
-        List<MatchResult> prefixes = FIELD_PREFIX.matcher(arguments).results().toList();
+    private static Fields parseFields(String arguments, String allowedPrefixes, String usage,
+                                      boolean strict, String emptyAllowed) throws JobSeekException {
+        Pattern prefixPattern = strict ? ANY_FIELD_PREFIX : KNOWN_FIELD_PREFIX;
+        List<MatchResult> prefixes = prefixPattern.matcher(arguments).results().toList();
         Fields fields = new Fields();
         if (prefixes.isEmpty()) {
             fields.leadingText = arguments.trim().replace('\t', ' ');
@@ -325,7 +342,7 @@ public class CommandParser {
             if (fields.values.containsKey(key)) {
                 throw new JobSeekException("Field '" + key + "/' was given more than once. " + usage);
             }
-            if (value.isEmpty()) {
+            if (value.isEmpty() && emptyAllowed.indexOf(key) < 0) {
                 throw new JobSeekException("Field '" + key + "/' cannot be empty. " + usage);
             }
             fields.values.put(key, value);
