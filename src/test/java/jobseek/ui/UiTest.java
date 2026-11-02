@@ -42,6 +42,13 @@ public class UiTest {
     }
 
     @Test
+    public void showEmptyLine_printsEmptyLine() {
+        Ui ui = new Ui();
+        ui.showEmptyLine();
+        assertEquals(System.lineSeparator(), outputStream.toString());
+    }
+
+    @Test
     public void showMessage_printsMessageWithDividers() {
         Ui ui = new Ui();
         ui.showMessage("Test message");
@@ -94,8 +101,8 @@ public class UiTest {
         assertTrue(output.contains("[1] Add application       [2] List all applications"));
         assertTrue(output.contains("[3] List uncompleted      [4] Delete application"));
         assertTrue(output.contains("[5] Mark completed        [6] Unmark application"));
-        assertTrue(output.contains("[7] Help                  [8] Search applications"));
-        assertTrue(output.contains("[9] Sort alphabetically   [10] Edit application"));
+        assertTrue(output.contains("[7] Search applications   [8] Sort alphabetically"));
+        assertTrue(output.contains("[9] Edit application      [10] Help"));
         assertTrue(output.contains("[0] Exit"));
     }
 
@@ -145,6 +152,27 @@ public class UiTest {
         Ui ui = new Ui();
         ui.showPrompt("Prompt: ");
         assertEquals("Prompt: ", outputStream.toString());
+    }
+
+    @Test
+    public void showEditMenuOptions_printsAllFieldOptionsWithDividers() {
+        Ui ui = new Ui();
+        ui.showEditMenuOptions();
+        String output = outputStream.toString();
+        assertTrue(output.contains("____________________________________________________________"));
+        assertTrue(output.contains("[1] Company               [2] Role"));
+        assertTrue(output.contains("[3] Recruitment stage     [4] Deadline"));
+        assertTrue(output.contains("[5] Portal Link           [6] Email"));
+        assertTrue(output.contains("[7] Notes                 [8] All"));
+    }
+
+    @Test
+    public void showEditMenu_displaysOptionsAndPrompt() {
+        Ui ui = new Ui();
+        ui.showEditMenu();
+        String output = outputStream.toString();
+        assertTrue(output.contains("[1] Company               [2] Role"));
+        assertTrue(output.contains("Enter field to edit:\n> "));
     }
 
     @Test

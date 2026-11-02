@@ -29,7 +29,7 @@ import jobseek.ui.Ui;
  * Main entry point for the JobSeek CLI application.
  */
 public class Main {
-    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+    private static final Logger LOGGER = initLogger();
 
     private final Ui ui;
     private final Storage storage;
@@ -138,6 +138,8 @@ public class Main {
                 }
             }
             if (!isExit) {
+                ui.showEmptyLine();
+                ui.showMenuOptions();
                 ui.showPrompt("Enter option:\n> ");
             }
         }
@@ -185,13 +187,13 @@ public class Main {
         case "6":
             return handleMenuMark(false);
         case "7":
-            return new HelpCommand();
-        case "8":
             return handleMenuSearch();
-        case "9":
+        case "8":
             return new SortCommand();
-        case "10":
+        case "9":
             return handleMenuEdit();
+        case "10":
+            return new HelpCommand();
         case "0":
             return new ExitCommand();
         default:
@@ -287,8 +289,7 @@ public class Main {
             return null;
         }
 
-        ui.showPrompt("Enter field to edit (1: Company, 2: Role, 3: Recruitment stage, 4: Deadline, "
-                + "5: Portal Link, 6: Email, 7: Notes, 8: All):\n> ");
+        ui.showEditMenu();
         String fieldChoice = ui.readCommand();
         if (fieldChoice == null) {
             return null;
@@ -402,5 +403,11 @@ public class Main {
     public static void main(String[] args) {
         //assert false : "dummy assertion set to fail"; // Uncomment this line to test assertion failure handling
         new Main().run();
+    }
+
+    private static Logger initLogger() {
+        Logger jobseekLogger = Logger.getLogger("jobseek");
+        jobseekLogger.setUseParentHandlers(false);
+        return Logger.getLogger(Main.class.getName());
     }
 }

@@ -62,7 +62,7 @@ public class CommandParser {
     /** A field prefix is a case-insensitive letter and a slash at the start of the text or after a space. */
     private static final Pattern FIELD_PREFIX = Pattern.compile("(?i)(?:^|\\s)([a-z])/");
 
-    private static final Logger LOGGER = Logger.getLogger(CommandParser.class.getName());
+    private static final Logger LOGGER = initLogger();
 
     private CommandParser() {
         // Utility class: all methods are static.
@@ -337,5 +337,11 @@ public class CommandParser {
     private static class Fields {
         private String leadingText = "";
         private final Map<Character, String> values = new LinkedHashMap<>();
+    }
+
+    private static Logger initLogger() {
+        Logger jobseekLogger = Logger.getLogger("jobseek");
+        jobseekLogger.setUseParentHandlers(false);
+        return Logger.getLogger(CommandParser.class.getName());
     }
 }

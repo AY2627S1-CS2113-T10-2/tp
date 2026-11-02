@@ -42,6 +42,13 @@ public class Ui {
     }
 
     /**
+     * Prints an empty line for vertical spacing.
+     */
+    public void showEmptyLine() {
+        System.out.println();
+    }
+
+    /**
      * Displays a prompt message to the user without a trailing newline.
      *
      * @param prompt The prompt message to display.
@@ -137,15 +144,38 @@ public class Ui {
         System.out.println(count + (count == 1 ? " application tracked." : " applications tracked."));
     }
 
-    private void showMenuOptions() {
+    /**
+     * Displays the menu options section.
+     */
+    public void showMenuOptions() {
         showLine();
         System.out.println("[1] Add application       [2] List all applications");
         System.out.println("[3] List uncompleted      [4] Delete application");
         System.out.println("[5] Mark completed        [6] Unmark application");
-        System.out.println("[7] Help                  [8] Search applications");
-        System.out.println("[9] Sort alphabetically   [10] Edit application");
+        System.out.println("[7] Search applications   [8] Sort alphabetically");
+        System.out.println("[9] Edit application      [10] Help");
         System.out.println("[0] Exit");
         showLine();
+    }
+
+    /**
+     * Displays the edit field selection options section.
+     */
+    public void showEditMenuOptions() {
+        showLine();
+        System.out.println("[1] Company               [2] Role");
+        System.out.println("[3] Recruitment stage     [4] Deadline");
+        System.out.println("[5] Portal Link           [6] Email");
+        System.out.println("[7] Notes                 [8] All");
+        showLine();
+    }
+
+    /**
+     * Displays the edit field selection menu and prompt.
+     */
+    public void showEditMenu() {
+        showEditMenuOptions();
+        showPrompt("Enter field to edit:\n> ");
     }
 
     /**
