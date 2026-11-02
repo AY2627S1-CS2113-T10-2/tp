@@ -38,7 +38,6 @@ final class ApplicationListSnapshot {
             original.setEmail(saved.getEmail());
             original.setNotes(saved.getNotes());
         }
-        applications.getAll().clear();
-        applications.getAll().addAll(originals);
+        applications.replaceAll(originals);
     }
 }

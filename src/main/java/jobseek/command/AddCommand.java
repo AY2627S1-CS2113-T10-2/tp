@@ -53,12 +53,12 @@ public class AddCommand extends UndoableCommand {
      */
     public AddCommand(String company, String role, LocalDate deadline,
                       String portalLink, String email, String notes) {
-        this.company = company != null ? company.trim() : "";
-        this.role = role != null ? role.trim() : "";
+        this.company = company != null ? company.strip() : "";
+        this.role = role != null ? role.strip() : "";
         this.deadline = deadline;
-        this.portalLink = portalLink != null ? portalLink.trim() : "";
-        this.email = email != null ? email.trim() : "";
-        this.notes = notes != null ? notes.trim() : "";
+        this.portalLink = portalLink != null ? portalLink.strip() : "";
+        this.email = email != null ? email.strip() : "";
+        this.notes = notes != null ? notes.strip() : "";
     }
 
     /** Returns the company name entered for this command. */
