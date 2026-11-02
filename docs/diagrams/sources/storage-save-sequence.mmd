@@ -1,41 +1,44 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'neutral', 'sequence': {'mirrorActors': false, 'actorMargin': 60, 'messageMargin': 28}}}%%
 sequenceDiagram
-    participant cmd as :Command
+    participant cmd as :AddCommand
     participant storage as :Storage
     participant list as :ApplicationList
     participant app as :Application
+    participant files as <<class>><br/>Files
 
+    cmd->>cmd: saveOrRollback(applications, storage)
+    activate cmd
     cmd->>storage: save(applications)
     activate storage
+    storage->>storage: ensureWritable()
+    storage->>storage: backUpOriginalIfNeeded(path)
+    opt a previous load skipped corrupted lines
+        storage->>files: copy(path, backupPath, REPLACE_EXISTING)
+    end
     storage->>list: getAll()
     activate list
-    list-->>storage: applicationList
+    list-->>storage: read-only list of applications
     deactivate list
 
     loop for each application
-        storage->>app: getCompany()
+        storage->>app: getCompany(), getRole(), isCompleted(), getDeadline(), ...
         activate app
-        app-->>storage: company
-        deactivate app
-        storage->>app: getRole()
-        activate app
-        app-->>storage: role
-        deactivate app
-        storage->>app: isCompleted()
-        activate app
-        app-->>storage: isCompleted
-        deactivate app
-        storage->>app: getDeadline()
-        activate app
-        app-->>storage: deadline
+        app-->>storage: field values
         deactivate app
     end
 
-    storage->>storage: writeToFile(...)
+    storage->>storage: writeAtomically(path, lines)
     activate storage
+    storage->>files: createTempFile(directory, "applications-", ".tmp")
+    storage->>files: write(temporaryFile, lines)
+    storage->>files: move(temporaryFile, path, ATOMIC_MOVE, REPLACE_EXISTING)
     deactivate storage
-
-    storage-->>cmd: 
+    alt move succeeded
+        storage-->>cmd:
+    else IOException
+        storage->>files: deleteIfExists(temporaryFile)
+        storage-->>cmd: throw IOException
+        cmd->>cmd: undo(applications)
+    end
     deactivate storage
+    deactivate cmd

@@ -1,0 +1,79 @@
+%%{init: {'theme': 'neutral'}}%%
+classDiagram
+    direction LR
+    class ApplicationList {
+        -applications : ArrayList~Application~
+        +ApplicationList()
+        +ApplicationList(applications : Collection~Application~)
+        +add(app : Application) void
+        +insert(index : int, app : Application) void
+        +delete(index : int) Application
+        +get(index : int) Application
+        +size() int
+        +isEmpty() boolean
+        +isValidIndex(index : int) boolean
+        +getAll() List~Application~
+        +replaceAll(newContents : Collection~Application~) void
+    }
+    class Application {
+        +DEFAULT_STAGE : RecruitmentStage$
+        -company : String
+        -role : String
+        -isCompleted : boolean
+        -recruitmentStage : RecruitmentStage
+        -deadline : LocalDate
+        -portalLink : String
+        -email : String
+        -notes : String
+        +Application(company : String, role : String)
+        +getCompany() String
+        +setCompany(company : String) void
+        +getRole() String
+        +setRole(role : String) void
+        +isCompleted() boolean
+        +setCompleted(isCompleted : boolean) void
+        +getRecruitmentStage() RecruitmentStage
+        +setRecruitmentStage(stage : RecruitmentStage) void
+        +getStatus() String
+        +setStatus(status : String) void
+        +getDeadline() LocalDate
+        +setDeadline(deadline : LocalDate) void
+        +getPortalLink() String
+        +setPortalLink(portalLink : String) void
+        +getEmail() String
+        +setEmail(email : String) void
+        +getNotes() String
+        +setNotes(notes : String) void
+        +getStatusIcon() String
+        +getCompletionIcon() String
+        +toString() String
+        -requireText(value : String, fieldName : String)$ String
+        -parseStageOrDefault(label : String)$ RecruitmentStage
+    }
+    class RecruitmentStage {
+        <<enumeration>>
+        APPLIED
+        ONLINE_ASSESSMENT
+        INTERVIEW
+        OFFER
+        ACCEPTED
+        REJECTED
+        WITHDRAWN
+        +getLabel() String
+        +isTerminal() boolean
+        +fromChoice(choice : String)$ RecruitmentStage
+        +fromLabel(value : String)$ RecruitmentStage
+    }
+    class ApplicationFilters {
+        <<utility>>
+        +companyContains(text : String)$ Predicate~Application~
+        +roleContains(text : String)$ Predicate~Application~
+        +inStage(stage : RecruitmentStage)$ Predicate~Application~
+        +deadlineOnOrBefore(date : LocalDate)$ Predicate~Application~
+        +deadlineOnOrAfter(date : LocalDate)$ Predicate~Application~
+        +isCompleted(completed : boolean)$ Predicate~Application~
+    }
+    ApplicationList "1" *-- "0..*" Application : owns ▶
+    Application "*" --> "1" RecruitmentStage : is at ▶
+    ApplicationFilters ..> Application : tests ▶
+    ApplicationFilters ..> RecruitmentStage : compares ▶

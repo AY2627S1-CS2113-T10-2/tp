@@ -1,10 +1,23 @@
+%%{init: {'theme': 'neutral'}}%%
 flowchart LR
-    Start((●)) --> Prompt["Prompt application<br/>index"]
-    Prompt --> Check{"Valid index?"}
-    Check -->|"[yes]"| Del["Delete from<br/>ApplicationList"]
-    Check -->|"[no]"| ShowErr["Show error<br/>message"]
-    Del --> Save["Storage.save<br/>applications"]
-    Save --> Show["Display confirmation<br/>message"]
-    Show --> MergeEnd{ }
-    ShowErr --> MergeEnd
-    MergeEnd --> End(((◎)))
+    Start(( )):::start --> MergePrompt{ }
+    MergePrompt --> Prompt("Prompt application<br/>index")
+    Prompt --> Input{"Input?"}
+    Input -->|"[cancel or input ended]"| ShowCancel("Show 'Cancelled.<br/>No changes were made.'")
+    Input -->|"[invalid index]"| ShowErr("Show error<br/>message")
+    ShowErr --> MergePrompt
+    Input -->|"[valid index]"| Ask("Ask 'Delete ...? (y/n)'")
+    Ask --> Confirm{"Answer is<br/>y or yes?"}
+    Confirm -->|"[else]"| ShowKept("Show 'Deletion cancelled'")
+    Confirm -->|"[yes]"| Del("Delete from<br/>ApplicationList")
+    Del --> Save("Save applications<br/>to storage")
+    Save --> Saved{"Save<br/>succeeded?"}
+    Saved -->|"[yes]"| Show("Display confirmation<br/>message")
+    Saved -->|"[else]"| Restore("Reinsert application<br/>& show error")
+    ShowCancel --> MergeEnd{ }
+    ShowKept --> MergeEnd
+    Show --> MergeEnd
+    Restore --> MergeEnd
+    MergeEnd --> End(("●")):::finish
+    classDef start fill:#000,stroke:#000
+    classDef finish fill:#fff,stroke:#000,stroke-width:4px,font-size:26px

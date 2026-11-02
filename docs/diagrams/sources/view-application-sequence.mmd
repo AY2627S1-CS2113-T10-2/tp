@@ -1,28 +1,28 @@
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
-%%{init: {'theme': 'default', 'sequence': {'actorMargin': 85, 'messageMargin': 45}}}%%
+%%{init: {'theme': 'neutral', 'sequence': {'mirrorActors': false, 'actorMargin': 60, 'messageMargin': 28}}}%%
 sequenceDiagram
     actor user as User
-    participant ui as :Ui
     participant main as :Main
     participant parser as :CommandParser
-    participant cmd as :ViewCommand
+    participant vcls as <<class>><br/>ViewCommand
     participant list as :ApplicationList
     participant app as :Application
+    participant ui as :Ui
 
-    user->>main: Enter "view 1"
+    user->>main: view 1
     main->>parser: parse("view 1", history)
     activate parser
-    parser->>cmd: ViewCommand.parse("1")
-    activate cmd
-    cmd-->>parser: viewCommand
-    deactivate cmd
+    parser->>vcls: parse("1")
+    activate vcls
+    create participant cmd as :ViewCommand
+    vcls->>cmd: new ViewCommand(0)
+    vcls-->>parser: viewCommand
+    deactivate vcls
     parser-->>main: viewCommand
     deactivate parser
-    main->>cmd: execute(...)
+    main->>cmd: execute(applications, ui, storage)
     activate cmd
 
-    alt 0 <= targetIndex < size
+    alt targetIndex is within the list
         cmd->>list: get(0)
         activate list
         list-->>cmd: application
@@ -43,13 +43,14 @@ sequenceDiagram
         activate app
         app-->>cmd: false
         deactivate app
+        Note over cmd,app: getDeadline(), getPortalLink(), getEmail() and getNotes()<br/>are also read, but are shown only when recorded
         cmd->>ui: showMessage(card)
         activate ui
         ui-->>user: Structured card display
         deactivate ui
-        cmd-->>main: 
-    else invalid index
+        cmd-->>main:
+    else targetIndex is out of range
         cmd-->>main: throw JobSeekException
+        main->>ui: showError(message)
     end
-
     deactivate cmd
