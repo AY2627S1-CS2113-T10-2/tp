@@ -20,6 +20,48 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class StorageTest {
 
+    /** A leading hash in a valid company name must survive saving and restarting. */
+    @Test
+    public void saveThenLoad_companyStartsWithHash_preservesRecord() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-hash-test").resolve("applications.txt");
+        Storage storage = new Storage(file.toString());
+        ApplicationList applications = new ApplicationList();
+        applications.add(new Application("#Acme", "Intern"));
+        applications.add(new Application("#", "Developer"));
+        applications.add(new Application("Other Company", "Analyst"));
+
+        storage.save(applications);
+        Storage restartedStorage = new Storage(file.toString());
+        ApplicationList loaded = restartedStorage.load();
+
+        assertEquals(3, loaded.size());
+        assertEquals("#Acme", loaded.get(0).getCompany());
+        assertEquals("Intern", loaded.get(0).getRole());
+        assertEquals("#", loaded.get(1).getCompany());
+        assertEquals("Other Company", loaded.get(2).getCompany());
+        assertTrue(restartedStorage.getLoadWarnings().isEmpty());
+    }
+
+    /** Existing legacy records with hash-prefixed names remain readable alongside comments. */
+    @Test
+    public void load_hashCompanyInLegacyRecords_ignoresOnlyCommentLines() throws Exception {
+        Path file = Files.createTempDirectory("jobseek-hash-test").resolve("applications.txt");
+        Files.writeString(file, "# Saved application data\n"
+                + "#Acme\tIntern\tfalse\t\n"
+                + "#OtherCo\tDeveloper\ttrue\t2026-11-03\tAccepted\n");
+        Storage storage = new Storage(file.toString());
+
+        ApplicationList loaded = storage.load();
+
+        assertEquals(2, loaded.size());
+        assertEquals("#Acme", loaded.get(0).getCompany());
+        assertNull(loaded.get(0).getDeadline());
+        assertEquals("#OtherCo", loaded.get(1).getCompany());
+        assertTrue(loaded.get(1).isCompleted());
+        assertEquals(RecruitmentStage.ACCEPTED, loaded.get(1).getRecruitmentStage());
+        assertTrue(storage.getLoadWarnings().isEmpty());
+    }
+
     @Test
     public void defaultConstructor_usesDefaultFilePath() {
         Storage storage = new Storage();

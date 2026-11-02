@@ -133,7 +133,8 @@ public class Storage {
         List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
             String line = lines.get(lineNumber);
-            if (line.isBlank() || line.startsWith("#") || isHeaderLine(line)) {
+            // Application records contain tabs, even when the company starts with '#'.
+            if (line.isBlank() || (line.startsWith("#") && !line.contains("\t")) || isHeaderLine(line)) {
                 continue;
             }
 
