@@ -85,6 +85,10 @@ public class Main {
             for (String warning : storage.getLoadWarnings()) {
                 ui.showError(warning);
             }
+            if (storage.isBackupPending()) {
+                ui.showMessage("Skipped lines will be erased when your next change is saved. Your original file "
+                        + "will first be copied to " + storage.getBackupFilePath() + ".");
+            }
             return loaded;
         } catch (IOException e) {
             LOGGER.warning("IOException encountered during application load: " + e.getMessage());
