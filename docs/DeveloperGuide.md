@@ -70,7 +70,8 @@ The class diagram below illustrates the structural relationships, associations, 
 
 **Data model.** `ApplicationList` owns the `Application` objects. `RecruitmentStage` is an enum, so an application can only be in one of the known stages.
 
-![Application Data Model Class Diagram](diagrams/application-model-class.png?v=2)
+![Application Data Model Class Diagram](<img width="1647" height="827" alt="image" src="https://github.com/user-attachments/assets/745c2e65-a7a7-4189-aee6-b875e8206b5c" />
+)
 
 **Encapsulation in the model.** `ApplicationList` never hands out its internal list. `getAll()` returns an unmodifiable view, so callers such as `Storage` can read the applications but cannot add, remove or reorder them. The constructor copies the collection it is given. Code that has to restore an earlier state (`ApplicationListSnapshot`, used to roll back a failed save of an undo) calls the explicit `replaceAll(...)` operation instead of editing the list in place. The `Application` objects inside are still mutable, because that is how edits work.
 
