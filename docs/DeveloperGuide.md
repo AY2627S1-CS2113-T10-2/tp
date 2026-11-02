@@ -173,10 +173,10 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
   3. `MarkCommand.execute(applications, ui, storage)` checks whether `applications.isEmpty()`. If empty, it displays an error message via `Ui.showError()`.
   4. Validates that `targetIndex` is valid using `applications.isValidIndex(targetIndex)`. If invalid, displays a bounds error (e.g., `Invalid application index: 4. Please enter a number between 1 and 2.`).
   5. Retrieves the application and updates its completion state using `application.setCompleted(isCompleted)`.
-  6. Displays a confirmation message showing the updated application representation:
+  6. Calls `saveOrRollback(applications, storage)` to persist the change, restoring the previous completion flag if saving fails.
+  7. After a successful save, displays a confirmation message showing the updated application representation:
      - Marked: `"Nice! I've marked this application as completed:\n  " + application`
      - Unmarked: `"OK, I've marked this application as not completed yet:\n  " + application`
-  7. Persists the modification to disk immediately via `Storage.save(applications)`.
 
 ![Mark Application Sequence Diagram](diagrams/mark-application-sequence.png?v=2)
 
@@ -185,7 +185,7 @@ The `MarkCommand` allows users to toggle an application's lifecycle between acti
   - *Current choice*: A unified `MarkCommand` parameterized with boolean `isCompleted`. The workflow for validation, index checking, list mutation, and disk persistence is identical for both actions; unifying them eliminates code duplication.
   - *Alternative*: Separate `MarkCommand` and `UnmarkCommand` classes. This was rejected to avoid redundant boilerplate and maintenance overhead.
 - **Immediate disk persistence**:
-  - Changes to completion status immediately invoke `Storage.save(applications)` to guarantee that completion progress is preserved across application crashes or restarts.
+  - Changes to completion status are saved before success is reported. A failed save restores the previous in-memory flag; the current file-writing implementation does not guarantee atomic replacement during a crash.
 
 ### Delete application feature
 
@@ -200,9 +200,9 @@ The `DeleteCommand` allows users to permanently remove an application by its 1-b
   1. `Main.promptApplicationIndex()` checks whether `applications.isEmpty()`. If empty, an error is displayed and execution terminates.
   2. Prompts the user for the 1-based index and converts it to a 0-based integer.
   3. `DeleteCommand.execute()` validates index bounds via `applications.isValidIndex(targetIndex)`.
-  4. Calls `applications.delete(targetIndex)`, which removes the `Application` from the underlying `ArrayList` and renumbers following elements.
-  5. The removed application object is destroyed from in-memory tracking (represented by the UML destruction cross `X` on its lifeline).
-  6. The modified list is immediately saved to disk via `Storage.save(applications)`.
+  4. Requests confirmation; only `y` or `yes` proceeds. Then `applications.delete(targetIndex)` removes the entry and renumbers following elements.
+  5. Retains the removed object and its index for undo or rollback; the object is not destroyed.
+  6. Calls `saveOrRollback(applications, storage)`. If saving fails, the same object is reinserted at its original position and the command is not recorded in history.
   7. A confirmation message displaying the removed entry is shown via `Ui.showMessage()`.
 
 #### Delete Application Activity Diagram
@@ -364,15 +364,21 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 
 | Class | Responsibility |
 |---|---|
-| `UndoableCommand` | Abstract subclass of `Command` that adds `undo(ApplicationList)` and a `hasChanged()` flag. |
+| `UndoableCommand` | Adds `undo(ApplicationList)`, `hasChanged()` and `saveOrRollback()` to reverse failed changes. |
 | `AddCommand`, `DeleteCommand`, `EditCommand`, `RecruitmentStageCommand`, `MarkCommand` | Extend `UndoableCommand`. Each remembers what it needs (the affected `Application` and its old values) while executing. |
 | `CommandHistory` | A stack (`ArrayDeque`) of undoable commands that actually changed the list. |
-| `UndoCommand` | Pops the newest command, calls its `undo`, shows what was undone and saves. |
+| `UndoCommand` | Peeks at the newest command, snapshots the current list, undoes and saves; pops history and reports success only after saving. |
+| `ApplicationListSnapshot` | Restores list order, field values and original object identities if saving an undo fails. |
 | `Main` | Owns the `CommandHistory`, records each executed command, and creates `UndoCommand` for the text command `undo`. |
 
 ![Command History and Undo Class Diagram](diagrams/command-history-undo-class.png?v=2)
 
-![Delete Confirmation and Undo Sequence Diagram](diagrams/delete-confirmation-undo-sequence.png?v=2)
+**Undo execution sequence:**
+
+1. `UndoCommand` calls `history.peek()`; empty history produces an error without changing data.
+2. It captures an `ApplicationListSnapshot` and calls the latest command's `undo(applications)`.
+3. It calls `storage.save(applications)`.
+4. On success, it calls `history.pop()` and displays the confirmation. On `IOException`, it restores the snapshot and retains the history entry for retry.
 
 Confirmation happens inside `DeleteCommand.execute` by calling `ui.readCommand()`, so it applies however the command was created (menu option `4` or the typed `delete INDEX`). Only `y` or `yes` (case-insensitive) confirms; anything else, including end of input, cancels.
 
@@ -380,8 +386,8 @@ Undo works on the same `Application` objects that were changed. Commands keep a 
 
 #### Design considerations
 
-* **Command history vs. snapshots:** storing a copy of the whole list after each change is simpler but wastes memory and would hide which change was undone. Per-command undo gives a precise message and fits the existing Command pattern.
-* **`hasChanged()`:** rejected commands (invalid index, cancelled delete) never call `markChanged()`, so they are not recorded and `undo` never reverts something that did not happen.
+* **Command history and temporary snapshots:** persistent in-session history stores commands and their previous values. Undo additionally takes one temporary snapshot for save-failure recovery. Restoring the original objects preserves references in earlier history entries; replacing them with copies would break subsequent undo operations.
+* **`hasChanged()`:** rejected commands never call `markChanged()`. A failed save rolls back the change and clears this flag. Neither case adds an entry to history.
 * **Limitations:** history is in memory only and there is no redo.
 
 ### Today dashboard
@@ -496,6 +502,8 @@ The class relationships within the storage subsystem are illustrated below:
 
 ![Storage Class Diagram](diagrams/storage-class.png?v=2)
 
+The class diagrams show the core relationships. Save-failure protection additionally uses `Storage.ensureWritable()`, `UndoableCommand.saveOrRollback()`, `CommandHistory.peek()` and the temporary `ApplicationListSnapshot` described above. Earlier activity and sequence illustrations omit these failure branches; the workflows in the text define save-before-confirmation behavior and rollback.
+
 #### File format
 
 The file uses UTF-8 encoding and contains two header lines followed by application records. Each record contains eight tab-separated fields:
@@ -514,6 +522,8 @@ The file uses UTF-8 encoding and contains two header lines followed by applicati
 An empty deadline, portal link, email, or notes field represents an application where that optional attribute has not been recorded.
 
 Backslashes, tabs, newlines and carriage returns within text fields are escaped (`\\`, `\t`, `\n`, `\r`) before saving. During loading, `splitFields()` decodes these escape sequences. This prevents characters inside company, role, or notes from being mistaken for field or record separators.
+
+A line beginning with `#` is treated as a comment only if it contains no tab separators. A tab-separated record beginning with `#Acme` is therefore parsed normally, including in legacy four-field and five-field files.
 
 **Backward compatibility:** Files written by earlier versions have four fields (legacy, without stage) or five fields (prior stage format). `Storage.load()` accepts four-field, five-field, and modern eight-field records. Four-field records receive the default `Applied` stage, and existing `Pending` values automatically migrate to `Applied`. Missing portal link, email, and notes default to empty strings. It also accepts older column headers such as `status`. The next save rewrites the file in the full eight-field format with `stage` as the fifth column.
 
@@ -551,11 +561,11 @@ The following sequence diagram shows successful loading of an existing file. Fil
 
 JobSeek recovers gracefully from corrupted lines instead of discarding the entire file. If a line has an invalid escape sequence, the wrong number of fields, an invalid completion flag, an empty company or role, an invalid deadline or an unknown stage, `parseRecord()` skips that line, logs a warning, and records a warning message. All other valid lines in the file are loaded without interruption.
 
-After loading, `Main.loadApplications()` displays all recorded warnings via `Ui.showError()`. Only an unrecoverable I/O failure (such as file access permission denied) causes `load()` to throw an `IOException`, which `Main` catches specifically to inform the user and initialize with an empty list.
+After loading, `Main.loadApplications()` displays all recorded warnings via `Ui.showError()`. An unrecoverable I/O failure (such as file access permission denied or invalid UTF-8) causes `load()` to throw an `IOException`, which `Main` catches to inform the user and initialize with an empty list. Storage keeps saving blocked until a subsequent load succeeds. Before executing an undoable command or undo, `Main` calls `Storage.ensureWritable()` so the empty fallback list cannot be modified. `Storage.save()` repeats this check to protect direct callers. A confirmed missing file remains a normal, writable first launch; recoverable line-level warnings do not activate the block.
 
 Skipped lines are not rewritten until the next save, and the next save writes only the records that loaded. Users who want to repair a corrupted line should fix the file by hand before making further changes.
 
-Saving errors (`IOException`) propagate up to `Main.run()`, which catches them and presents a clear error message via `Ui.showError()`.
+Saving errors (`IOException`) propagate up to `Main.run()`, which catches them and presents a clear error message via `Ui.showError()`. Modifying commands call `UndoableCommand.saveOrRollback()` before displaying success. If saving fails, the command reverses its in-memory change and clears its changed flag, leaving prior history intact. `UndoCommand` instead peeks at the latest history entry and captures an `ApplicationListSnapshot` before undoing it. If saving fails, the snapshot restores fields, ordering and original object identities; the history entry is removed only after a successful save. This preserves references held by earlier commands and allows failed undo operations to be retried. This rollback protects in-memory state; atomic file replacement remains a separate possible improvement.
 
 #### Design considerations
 
@@ -1090,3 +1100,14 @@ These steps assume you start from a clean state. Delete `data/applications.txt` 
 2. Restart JobSeek. Confirm that both applications, their deadlines and details are restored.
 3. Exit, edit the file and change one line so that it has only two columns. Restart JobSeek. Confirm that a warning names the skipped line and that the other application still loads.
 4. Exit, delete the optional columns (an older four-column or five-column legacy file). Restart and confirm that the applications load correctly with stage `Applied` or their saved stages, and blank optional fields.
+
+### Regression checks for storage failures
+
+Use isolated test data for failure checks rather than a user's saved applications.
+
+- **Hash-prefixed company names:** Add `add c/#Acme r/Intern`, exit and restart. Confirm that the entry is still present without a load warning. `StorageTest` also covers four-field and five-field legacy records alongside comment lines.
+- **Fatal loading failure:** `StorageTest` writes invalid UTF-8 bytes to a temporary file, verifies that repeated saves are rejected without changing those bytes, repairs the file and verifies a successful reload and save. A separate test covers a normal first launch with no file.
+- **Startup protection:** `MainTest.run_failedStartupLoad_rejectsChangesButAllowsHelpAndExit` checks that attempted changes leave both the fallback list and original file untouched after a fatal load failure.
+- **Failed saves and undo:** `SaveFailureTest` injects write failures for add, delete, edit, stage changes and both completion directions. It checks field values, ordering, identity, absent success messages and retained history. It then retries undo successfully and checks the persisted result. A main-loop test verifies that a failed deletion does not break an earlier edit's undo entry.
+
+These tests verify application behavior when a save reports an error. They do not establish crash-safe or atomic file replacement.

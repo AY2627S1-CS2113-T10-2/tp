@@ -335,6 +335,7 @@ Reverses the most recent change to your applications, such as an accidental dele
 - Commands that only display information (`list`, `view`, `search`, `today`) and cancelled or failed commands are not recorded.
 - The history is kept in memory only, so it is cleared when you exit JobSeek.
 - If there is nothing to undo, JobSeek shows `Error: Nothing to undo.`.
+- If saving the undo fails, the application list stays as it was before the attempt and the history entry is retained. Resolve the storage problem and enter `undo` again to retry.
 
 ```text
 > undo
@@ -451,13 +452,16 @@ SUMMARY
 
 ## Data
 
+If saving a change fails, JobSeek reports the error and restores the previous in-memory application list. The failed change is not added to undo history. If saving an `undo` fails, its history entry is retained so you can retry after resolving the storage problem. Success messages appear only after saving succeeds.
+
 JobSeek automatically saves application data to `data/applications.txt` when commands modify application records. Saved records are loaded when you next start JobSeek.
 
 - Company, role, completion status, recruitment stage, optional deadline, company portal link, contact email, and notes are preserved between sessions.
 - Data files saved by older versions still load. Missing stages and legacy `Pending` values become `Applied`.
+- Company names beginning with `#`, such as `#Acme`, are saved and restored normally.
 - If the data file does not exist, JobSeek starts with an empty application list.
 - **Corrupted-line recovery**: If any line in the data file is corrupted (e.g., malformed format, invalid boolean flag, invalid deadline, or empty required field), JobSeek displays an informative warning, skips the corrupted record, and successfully loads all remaining valid records.
-- If loading completely fails due to an unrecoverable system I/O error, JobSeek displays an error and starts with an empty list.
+- If loading completely fails due to an unrecoverable file-reading error, JobSeek displays an error and an empty list. Changes and saving are disabled to protect the original file. Repair or restore the data file, then restart JobSeek before adding or changing applications. Help, viewing commands and exit remain available.
 - `search`, `find`, `sort`, `list`, `view`, `today` and `help` only display information and do not modify saved data.
 - `undo` history is not saved: it is cleared when you exit JobSeek.
 
