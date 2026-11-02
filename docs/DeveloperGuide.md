@@ -321,7 +321,7 @@ Besides the numbered menu, users can type a full command on one line, such as `a
 
 ![Typed Command Parser Sequence Diagram](diagrams/typed-command-sequence.png?v=2)
 
-Fields are found with the regular expression `(?:^|\s)([a-z])/`, which matches a single letter and a slash at the start of the text or after whitespace. Everything between one prefix and the next is that field's value, so values can contain spaces. Text before the first prefix is kept separately; `edit` treats it as the index, and `add` and `find` reject it. Because the prefix must follow whitespace, slashes inside words such as `AT&T/Intel` are ordinary text. The parser also rejects unknown prefixes, repeated prefixes and empty values.
+Fields are found with a regular expression such as `(?:^|\s)([crsdpenbam])/`, which matches one prefix letter and a slash at the start of the text or after whitespace. `add` and `edit` only treat letters that are prefixes in some command as prefixes, so slashes after other letters (`w/ HR`, `I/O`) stay in the value; `find` accepts any letter and reports unknown ones, because it has no free text. Everything between one prefix and the next is that field's value, so values can contain spaces. Text before the first prefix is kept separately; `edit` treats it as the index, and `add` and `find` reject it. Because the prefix must follow whitespace, slashes inside words such as `AT&T/Intel` are ordinary text. The parser also rejects prefixes that belong to a different command (for example `s/` in `add`), repeated prefixes and empty values. The exception is `edit`, where an empty `d/`, `p/`, `e/` or `n/` is valid and clears that field.
 
 User-typed indexes are one-based, and the parser converts them to the zero-based indexes that commands expect. A stage typed after `s/` is validated with `RecruitmentStage.fromLabel` so a typo is reported as a normal error before any command runs.
 
@@ -329,7 +329,7 @@ User-typed indexes are one-based, and the parser converts them to the zero-based
 
 * **Separate class vs. more code in `Main`:** `Main` already held all the menu prompting. Putting parsing in its own class keeps `Main` smaller and lets the parser be unit-tested without simulating console input (`CommandParserTest`).
 * **Prefix syntax vs. positional arguments:** with `add Google SWE Intern` it is impossible to tell where the company name ends. Prefixes allow multi-word values and any field order.
-* **Limitation:** a value cannot contain a space followed by a single letter and a slash (for example ` r/`).
+* **Limitation:** a value cannot contain a space followed by one of the real prefix letters and a slash (for example ` r/`). Other letters are fine.
 
 ### Combined filters (`find`)
 
