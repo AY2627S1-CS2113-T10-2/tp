@@ -9,7 +9,7 @@ import java.util.Scanner;
  */
 public class Ui {
     private static final String DIVIDER = "____________________________________________________________";
-    private static final String VERSION = "2.0.0";
+    private static final String VERSION = "2.1.0";
     private static final String LOGO = "     _       _    ____            _\n"
             + "    | | ___ | |__/ ___|  ___  ___| | __\n"
             + " _  | |/ _ \\| '_ \\___ \\ / _ \\/ _ \\ |/ /\n"
