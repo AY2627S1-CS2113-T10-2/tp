@@ -72,8 +72,9 @@ public class StorageAtomicSaveTest {
         // Another process holding the file open is a real cause of failed saves (e.g. sync tools on Windows).
         // Where the operating system lets the replacement succeed anyway, the assertions below still hold.
         try (RandomAccessFile open = new RandomAccessFile(file.toFile(), "rw");
-             FileChannel channel = open.getChannel();
-             FileLock ignored = channel.lock(0, Long.MAX_VALUE, false)) {
+            FileChannel channel = open.getChannel();
+            FileLock lock = channel.lock(0, Long.MAX_VALUE, false)) {
+            assertTrue(lock.isValid());
             try {
                 storage.save(applications);
             } catch (IOException e) {
